@@ -8,6 +8,10 @@
     "s3",
     "client"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nikeee/lean-s3"
+  },
   "exports": {
     "types": "./src/index.d.ts",
     "default": "./src/index.js"

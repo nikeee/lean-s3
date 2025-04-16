@@ -1,3 +1,5 @@
+// @ts-check
+
 export default class S3Error extends Error {
 	/**
 	 * @type {string}
@@ -10,7 +12,7 @@ export default class S3Error extends Error {
 	 */
 	path;
 	/**
-	 * @type {string | undefined}
+	 * @type {string}
 	 * @readonly
 	 */
 	message;
@@ -48,7 +50,7 @@ export default class S3Error extends Error {
 		super(message, { cause });
 		this.code = code;
 		this.path = path;
-		this.message = message;
+		this.message = message ?? "Some unknown error occurred.";
 		this.requestId = requestId;
 		this.hostId = hostId;
 	}

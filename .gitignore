@@ -1,0 +1,8 @@
+/build
+/docs
+node_modules
+*.0x
+*.env
+*.log
+*.tgz
+*.tap

@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "target": "es2024",
+    "lib": [
+      "es2024"
+    ],
+    "noEmit": true,
+    "allowJs": true,
+    "strict": true
+  },
+  "include": [
+    "./src"
+  ],
+  "typedocOptions": {
+    "entryPoints": [
+      "src/index.d.ts"
+    ],
+    "excludePrivate": true,
+    "out": "docs"
+  }
+}

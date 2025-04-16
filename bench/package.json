@@ -1,0 +1,21 @@
+{
+  "name": "lean-s3-benchmark",
+  "private": true,
+  "version": "1.0.0",
+  "main": "benchmark.js",
+  "scripts": {
+    "start": "node ./benchmark.js",
+    "start:bun": "bun run ./benchmark.js"
+  },
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.787.0",
+    "@aws-sdk/s3-request-presigner": "^3.787.0",
+    "@testcontainers/localstack": "^10.24.2",
+    "aws4fetch": "^1.0.20",
+    "bun": "^1.2.9",
+    "minio": "^8.0.5",
+    "mitata": "^1.0.34"
+  }
+}

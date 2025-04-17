@@ -120,6 +120,81 @@ export default class S3Client {
 	}
 
 	/**
+	 * Generate a presigned URL for temporary access to a file.
+	 * Useful for generating upload/download URLs without exposing credentials.
+	 * @param {string} path
+	 * @param {Partial<S3FilePresignOptions & OverridableS3ClientOptions>} [signOptions]
+	 * @returns {string} The operation on {@link S3Client#presign.path} as a pre-signed URL.
+	 *
+	 * @example
+	 * ```js
+	 * const downloadUrl = client.presign("file.pdf", {
+	 *   expiresIn: 3600 // 1 hour
+	 * });
+	 * ```
+	 */
+	presign(
+		path,
+		{
+			method = "GET",
+			expiresIn = 3600, // TODO: Maybe rename this to expiresInSeconds
+			storageClass,
+			acl,
+			region: regionOverride,
+			bucket: bucketOverride,
+			endpoint: endpointOverride,
+		} = {},
+	) {
+		const now = new Date();
+		const date = amzDate.getAmzDate(now);
+		const options = this.#options;
+
+		const region = regionOverride ?? options.region;
+		const bucket = bucketOverride ?? options.bucket;
+		const endpoint = endpointOverride ?? options.endpoint;
+
+		const res = buildRequestUrl(endpoint, bucket, region, path);
+
+		const query = buildSearchParams(
+			`${options.accessKeyId}/${date.date}/${region}/s3/aws4_request`,
+			date,
+			expiresIn,
+			"host",
+			undefined,
+			storageClass,
+			options.sessionToken,
+			acl,
+		);
+
+		const dataDigest = sign.createCanonicalDataDigestHostOnly(
+			method,
+			res.pathname,
+			query.toString(),
+			res.host,
+		);
+
+		const signingKey = this.#keyCache.computeIfAbsent(
+			date,
+			region,
+			options.accessKeyId,
+			options.secretAccessKey,
+		);
+
+		const signature = sign.signCanonicalDataHash(
+			signingKey,
+			dataDigest,
+			date,
+			region,
+		);
+
+		// See `buildSearchParams` for casing on this parameter
+		query.set("X-Amz-Signature", signature);
+
+		res.search = query.toString();
+		return res.toString();
+	}
+
+	/**
 	 *
 	 * @param {{
 	 *   prefix?: string;
@@ -204,81 +279,6 @@ export default class S3Client {
 		throw new Error(
 			`Response code not implemented yet: ${response.statusCode}`,
 		);
-	}
-
-	/**
-	 * Generate a presigned URL for temporary access to a file.
-	 * Useful for generating upload/download URLs without exposing credentials.
-	 * @param {string} path
-	 * @param {Partial<S3FilePresignOptions & OverridableS3ClientOptions>} [signOptions]
-	 * @returns {string} The operation on {@link S3Client#presign.path} as a pre-signed URL.
-	 *
-	 * @example
-	 * ```js
-	 * const downloadUrl = client.presign("file.pdf", {
-	 *   expiresIn: 3600 // 1 hour
-	 * });
-	 * ```
-	 */
-	presign(
-		path,
-		{
-			method = "GET",
-			expiresIn = 3600, // TODO: Maybe rename this to expiresInSeconds
-			storageClass,
-			acl,
-			region: regionOverride,
-			bucket: bucketOverride,
-			endpoint: endpointOverride,
-		} = {},
-	) {
-		const now = new Date();
-		const date = amzDate.getAmzDate(now);
-		const options = this.#options;
-
-		const region = regionOverride ?? options.region;
-		const bucket = bucketOverride ?? options.bucket;
-		const endpoint = endpointOverride ?? options.endpoint;
-
-		const res = buildRequestUrl(endpoint, bucket, region, path);
-
-		const query = buildSearchParams(
-			`${options.accessKeyId}/${date.date}/${region}/s3/aws4_request`,
-			date,
-			expiresIn,
-			"host",
-			undefined,
-			storageClass,
-			options.sessionToken,
-			acl,
-		);
-
-		const dataDigest = sign.createCanonicalDataDigestHostOnly(
-			method,
-			res.pathname,
-			query.toString(),
-			res.host,
-		);
-
-		const signingKey = this.#keyCache.computeIfAbsent(
-			date,
-			region,
-			options.accessKeyId,
-			options.secretAccessKey,
-		);
-
-		const signature = sign.signCanonicalDataHash(
-			signingKey,
-			dataDigest,
-			date,
-			region,
-		);
-
-		// See `buildSearchParams` for casing on this parameter
-		query.set("X-Amz-Signature", signature);
-
-		res.search = query.toString();
-		return res.toString();
 	}
 
 	/**

@@ -436,7 +436,6 @@ export default class S3Client {
 						this.#options.accessKeyId,
 						this.#options.secretAccessKey,
 					),
-					accept: "application/json", // So that we can parse errors as JSON instead of XML, if the server supports that
 					"user-agent": "lean-s3",
 				},
 				body: data,
@@ -455,25 +454,6 @@ export default class S3Client {
 			return;
 		}
 
-		const ct = response.headers["content-type"];
-		if (ct === "application/json") {
-			/** @type {any} */
-			let error = undefined;
-			try {
-				error = await response.body.json();
-			} catch (cause) {
-				throw new S3Error("Unknown", path, {
-					message: "Could not read response body.",
-					cause,
-				});
-			}
-			throw new S3Error(error?.Code ?? "Unknown", path, {
-				message: error?.Message || undefined, // Message might be "",
-				requestId: error?.RequestId || undefined, // RequestId might be ""
-				hostId: error?.HostId || undefined, // HostId might be ""
-			});
-		}
-
 		let body = undefined;
 		try {
 			body = await response.body.text();
@@ -483,12 +463,23 @@ export default class S3Client {
 				cause,
 			});
 		}
-		if (ct === "application/xml") {
-			const error = tryProcessXMLError(body);
-			throw new S3Error(error.code ?? "Unknown", path, {
-				message: error.message || undefined, // Message might be "",
+
+		if (response.headers["content-type"] === "application/xml") {
+			let error = undefined;
+			try {
+				error = xmlParser.parse(body);
+			} catch (cause) {
+				throw new S3Error("Unknown", path, {
+					message: "Could not parse XML error response.",
+					cause,
+				});
+			}
+
+			throw new S3Error(error.Code || "Unknown", path, {
+				message: error.Message || undefined, // Message might be "",
 			});
 		}
+
 		throw new S3Error("Unknown", path, {
 			message: "Unknown error during S3 request.",
 		});
@@ -599,26 +590,22 @@ export default class S3Client {
 						const responseText = undefined;
 						const ct = response.headers["content-type"];
 
-						if (ct === "application/xml") {
+						if (response.headers["content-type"] === "application/xml") {
 							return response.body.text().then(body => {
-								const error = tryProcessXMLError(body);
-								const code = error?.code || "Unknown"; // || instead of ??, so we coerce empty strings
+								let error = undefined;
+								try {
+									error = xmlParser.parse(body);
+								} catch (cause) {
+									return controller.error(
+										new S3Error("Unknown", path, {
+											message: "Could not parse XML error response.",
+											cause,
+										}),
+									);
+								}
 								return controller.error(
-									new S3Error(code, path, {
-										message: error?.message || undefined, // || instead of ??, so we coerce empty strings
-										cause: responseText,
-									}),
-								);
-							}, onNetworkError);
-						}
-
-						if (typeof ct === "string" && ct.startsWith("application/json")) {
-							return response.body.json().then((/** @type {any} */ error) => {
-								const code = error?.code || "Unknown"; // || instead of ??, so we coerce empty strings
-								return controller.error(
-									new S3Error(code, path, {
-										message: error?.message || undefined, // || instead of ??, so we coerce empty strings
-										cause: responseText,
+									new S3Error(error.Code || "Unknown", path, {
+										message: error.Message || undefined, // Message might be "",
 									}),
 								);
 							}, onNetworkError);
@@ -741,18 +728,4 @@ export function buildSearchParams(
 		q.set("X-Amz-Acl", acl);
 	}
 	return q;
-}
-
-const codePattern = /<Code>([a-zA-Z0-9\s-]+?)<\/Code>/g;
-const messagePattern = /<Message>([a-zA-Z0-9\s-\.]+?)<\/Message>/g;
-/**
- * @param {string} responseText May or may not be XML
- */
-function tryProcessXMLError(responseText) {
-	// We don't have an XML parser in Node.js' std lib and we don't want to reference one for an optional diagnostic
-	// So... :hide-the-pain-harold:
-	return {
-		code: codePattern.exec(responseText)?.[1] ?? undefined,
-		message: messagePattern.exec(responseText)?.[1] ?? undefined,
-	};
 }

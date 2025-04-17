@@ -99,6 +99,8 @@ export function createCanonicalDataDigest(
 	sortedHeaders,
 	contentHashStr,
 ) {
+	// Use this for debugging
+	/*
 	const xHash = {
 		h: createHash("sha256"),
 		m: "",
@@ -112,10 +114,11 @@ export function createCanonicalDataDigest(
 			return this.h.digest(v);
 		},
 	};
+	*/
 
 	const sortedHeaderNames = Object.keys(sortedHeaders);
 	// TODO: Investigate if its actually faster than just concatenating the parts and do a single update()
-	const hash = xHash // createHash("sha256")
+	const hash = createHash("sha256")
 		.update(method)
 		.update("\n")
 		.update(path)

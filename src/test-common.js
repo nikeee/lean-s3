@@ -106,7 +106,7 @@ export function runTests(
 			.file(`${runId}/${testId}/test-b-3.txt`)
 			.write(crypto.randomUUID());
 
-		const all = await client.list();
+		const all = await client.list({ prefix: `${runId}/${testId}` });
 		expect(all.contents.length).toEqual(4);
 
 		const result0 = await client.list({

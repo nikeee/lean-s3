@@ -1,5 +1,3 @@
-// @ts-check
-
 /**
  * @param {string} endpoint
  * @param {string} bucket

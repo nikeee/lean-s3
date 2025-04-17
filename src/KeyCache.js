@@ -1,5 +1,3 @@
-// @ts-check
-
 import * as sign from "./sign.js";
 
 /**@typedef {import("./AmzDate.js").AmzDate} AmzDate */

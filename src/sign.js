@@ -1,4 +1,3 @@
-// @ts-check
 import { createHmac, createHash } from "node:crypto";
 
 // Spec:

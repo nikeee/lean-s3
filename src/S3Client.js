@@ -1,5 +1,3 @@
-// @ts-check
-
 import { request, Dispatcher, Agent } from "undici";
 
 import S3File from "./S3File.js";

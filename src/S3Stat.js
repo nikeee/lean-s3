@@ -1,5 +1,3 @@
-// @ts-check
-
 import { inspect } from "node:util";
 
 export default class S3Stat {

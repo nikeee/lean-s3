@@ -1,5 +1,3 @@
-// @ts-check
-
 export default class S3Error extends Error {
 	/**
 	 * @type {string}

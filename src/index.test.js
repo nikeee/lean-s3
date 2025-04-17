@@ -1,5 +1,3 @@
-// @ts-check
-
 import { after, before, describe } from "node:test";
 import {
 	S3Client as AwsS3Client,

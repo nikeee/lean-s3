@@ -2,7 +2,6 @@
  * @module Used by integration tests and unit tests.
  */
 
-// @ts-check
 import { test } from "node:test";
 import { expect } from "expect";
 

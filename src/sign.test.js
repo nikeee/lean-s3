@@ -1,6 +1,4 @@
-// @ts-check
-
-import { describe, test, todo } from "node:test";
+import { describe, test } from "node:test";
 import { createHash } from "node:crypto";
 
 import { expect } from "expect";

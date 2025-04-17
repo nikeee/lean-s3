@@ -271,6 +271,13 @@ export default class S3Client {
 			}
 
 			const res = parsed.ListBucketResult;
+			if (!res) {
+				console.log(JSON.stringify(parsed));
+				throw new S3Error("Unknown", "", {
+					message: "Response did not contain `ListBucketResult`.",
+				});
+			}
+
 			// TODO: investigate if we have other fields missing
 			// console.log(res);
 

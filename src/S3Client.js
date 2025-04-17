@@ -208,19 +208,20 @@ export default class S3Client {
 	async list(options = {}) {
 		// See `benchmark-simple-qs.js` on why we don't use URLSearchParams but string concat
 		// tldr: This is faster and we know the params exactly, so we can focus our encoding
-		let query = "list-type=2";
 
-		// GET /?list-type=2&continuation-token=ContinuationToken&delimiter=Delimiter&encoding-type=EncodingType&fetch-owner=FetchOwner&max-keys=MaxKeys&prefix=Prefix&start-after=StartAfter HTTP/1.1
+		// ! minio requires these params to be in alphabetical order
+
+		let query = "";
 
 		if (typeof options.continuationToken !== "undefined") {
 			if (typeof options.continuationToken !== "string") {
 				throw new TypeError("`continuationToken` should be a `string`.");
 			}
 
-			query += `&continuation-token=${encodeURIComponent(options.continuationToken)}`;
+			query += `continuation-token=${encodeURIComponent(options.continuationToken)}&`;
 		}
 
-		// TODO: delimiter?
+		query += "list-type=2";
 
 		if (typeof options.maxKeys !== "undefined") {
 			if (typeof options.maxKeys !== "number") {
@@ -229,6 +230,8 @@ export default class S3Client {
 
 			query += `&max-keys=${options.maxKeys}`; // no encoding needed, it's a number
 		}
+
+		// TODO: delimiter?
 
 		// plan `if(a)` check, so empty strings will also not go into this branch, omitting the parameter
 		if (options.prefix) {
@@ -261,7 +264,10 @@ export default class S3Client {
 		if (response.statusCode === 200) {
 			const text = await response.body.text();
 			const res = xmlParser.parse(text)?.ListBucketResult;
-			console.log(res);
+
+			// TODO: investigate if we have other fields missing
+			// console.log(res);
+
 			return {
 				name: res.Name,
 				prefix: res.Prefix,
@@ -277,8 +283,7 @@ export default class S3Client {
 
 		// undicis docs state that we shoul dump the body if not used
 		response.body.dump();
-
-		console.log(await response.body.text());
+		// console.log(await response.body.text());
 
 		throw new Error(
 			`Response code not implemented yet: ${response.statusCode}`,

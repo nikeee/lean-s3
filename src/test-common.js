@@ -112,7 +112,6 @@ export function runTests(
 		const result0 = await client.list({
 			prefix: `${runId}/${testId}`,
 		});
-		console.log("aaa");
 		expect(result0).toStrictEqual(
 			expect.objectContaining({
 				isTruncated: false,
@@ -168,7 +167,6 @@ export function runTests(
 			prefix: `${runId}/${testId}`,
 			maxKeys: 2,
 		});
-		console.log("bbb");
 		expect(result1).toStrictEqual(
 			expect.objectContaining({
 				isTruncated: true,
@@ -207,7 +205,6 @@ export function runTests(
 			maxKeys: 2,
 			continuationToken: result1.nextContinuationToken,
 		});
-		console.log("ccc");
 		expect(result2).toStrictEqual(
 			expect.objectContaining({
 				isTruncated: false,
@@ -245,7 +242,6 @@ export function runTests(
 			prefix: `${runId}/${testId}`,
 			startAfter: `${runId}/${testId}/test-a-1.txt`,
 		});
-		console.log("ddd");
 		expect(result3).toStrictEqual(
 			expect.objectContaining({
 				isTruncated: false,

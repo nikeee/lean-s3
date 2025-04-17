@@ -123,6 +123,8 @@ export function runTests(
 						etag: expect.any(String),
 						lastModified: expect.any(Date),
 						storageClass: "STANDARD",
+						checksumAlgorithm: expect.anything(), // minio returns something, localstack doesn't
+						checksumType: expect.anything(), // minio returns something, localstack doesn't
 					}),
 					expect.objectContaining({
 						key: `${runId}/${testId}/test-a-1.txt`,
@@ -130,6 +132,8 @@ export function runTests(
 						etag: expect.any(String),
 						lastModified: expect.any(Date),
 						storageClass: "STANDARD",
+						checksumAlgorithm: expect.anything(), // minio returns something, localstack doesn't
+						checksumType: expect.anything(), // minio returns something, localstack doesn't
 					}),
 					expect.objectContaining({
 						key: `${runId}/${testId}/test-b-2.txt`,
@@ -137,6 +141,8 @@ export function runTests(
 						etag: expect.any(String),
 						lastModified: expect.any(Date),
 						storageClass: "STANDARD",
+						checksumAlgorithm: expect.anything(), // minio returns something, localstack doesn't
+						checksumType: expect.anything(), // minio returns something, localstack doesn't
 					}),
 					expect.objectContaining({
 						key: `${runId}/${testId}/test-b-3.txt`,
@@ -144,6 +150,8 @@ export function runTests(
 						etag: expect.any(String),
 						lastModified: expect.any(Date),
 						storageClass: "STANDARD",
+						checksumAlgorithm: expect.anything(), // minio returns something, localstack doesn't
+						checksumType: expect.anything(), // minio returns something, localstack doesn't
 					}),
 				],
 			}),
@@ -166,6 +174,8 @@ export function runTests(
 						etag: expect.any(String),
 						lastModified: expect.any(Date),
 						storageClass: "STANDARD",
+						checksumAlgorithm: expect.anything(), // minio returns something, localstack doesn't
+						checksumType: expect.anything(), // minio returns something, localstack doesn't
 					}),
 					expect.objectContaining({
 						key: `${runId}/${testId}/test-a-1.txt`,
@@ -173,6 +183,8 @@ export function runTests(
 						etag: expect.any(String),
 						lastModified: expect.any(Date),
 						storageClass: "STANDARD",
+						checksumAlgorithm: expect.anything(), // minio returns something, localstack doesn't
+						checksumType: expect.anything(), // minio returns something, localstack doesn't
 					}),
 				],
 			}),
@@ -196,6 +208,8 @@ export function runTests(
 						etag: expect.any(String),
 						lastModified: expect.any(Date),
 						storageClass: "STANDARD",
+						checksumAlgorithm: expect.anything(), // minio returns something, localstack doesn't
+						checksumType: expect.anything(), // minio returns something, localstack doesn't
 					}),
 					expect.objectContaining({
 						key: `${runId}/${testId}/test-b-3.txt`,
@@ -203,6 +217,8 @@ export function runTests(
 						etag: expect.any(String),
 						lastModified: expect.any(Date),
 						storageClass: "STANDARD",
+						checksumAlgorithm: expect.anything(), // minio returns something, localstack doesn't
+						checksumType: expect.anything(), // minio returns something, localstack doesn't
 					}),
 				],
 			}),
@@ -225,6 +241,8 @@ export function runTests(
 						etag: expect.any(String),
 						lastModified: expect.any(Date),
 						storageClass: "STANDARD",
+						checksumAlgorithm: expect.anything(), // minio returns something, localstack doesn't
+						checksumType: expect.anything(), // minio returns something, localstack doesn't
 					}),
 					expect.objectContaining({
 						key: `${runId}/${testId}/test-b-3.txt`,
@@ -232,6 +250,8 @@ export function runTests(
 						etag: expect.any(String),
 						lastModified: expect.any(Date),
 						storageClass: "STANDARD",
+						checksumAlgorithm: expect.anything(), // minio returns something, localstack doesn't
+						checksumType: expect.anything(), // minio returns something, localstack doesn't
 					}),
 				],
 			}),

@@ -113,7 +113,7 @@ export function runTests(
 			prefix: `${runId}/${testId}`,
 		});
 		console.log("aaa");
-		expect(result0).toEqual(
+		expect(result0).toStrictEqual(
 			expect.objectContaining({
 				isTruncated: false,
 				maxKeys: 1000,
@@ -130,8 +130,8 @@ export function runTests(
 						etag: expect.any(String),
 						lastModified: expect.any(Date),
 						storageClass: "STANDARD",
-						checksumAlgorithm: expect.anything(), // minio returns something, localstack doesn't
-						checksumType: expect.anything(), // minio returns something, localstack doesn't
+						// checksumAlgorithm: minio returns something, localstack doesn't
+						// checksumType: minio returns something, localstack doesn't
 					}),
 					expect.objectContaining({
 						key: `${runId}/${testId}/test-a-1.txt`,
@@ -139,8 +139,8 @@ export function runTests(
 						etag: expect.any(String),
 						lastModified: expect.any(Date),
 						storageClass: "STANDARD",
-						checksumAlgorithm: expect.anything(), // minio returns something, localstack doesn't
-						checksumType: expect.anything(), // minio returns something, localstack doesn't
+						// checksumAlgorithm: minio returns something, localstack doesn't
+						// checksumType: minio returns something, localstack doesn't
 					}),
 					expect.objectContaining({
 						key: `${runId}/${testId}/test-b-2.txt`,
@@ -148,8 +148,8 @@ export function runTests(
 						etag: expect.any(String),
 						lastModified: expect.any(Date),
 						storageClass: "STANDARD",
-						checksumAlgorithm: expect.anything(), // minio returns something, localstack doesn't
-						checksumType: expect.anything(), // minio returns something, localstack doesn't
+						// checksumAlgorithm: minio returns something, localstack doesn't
+						// checksumType: minio returns something, localstack doesn't
 					}),
 					expect.objectContaining({
 						key: `${runId}/${testId}/test-b-3.txt`,
@@ -157,8 +157,8 @@ export function runTests(
 						etag: expect.any(String),
 						lastModified: expect.any(Date),
 						storageClass: "STANDARD",
-						checksumAlgorithm: expect.anything(), // minio returns something, localstack doesn't
-						checksumType: expect.anything(), // minio returns something, localstack doesn't
+						// checksumAlgorithm: minio returns something, localstack doesn't
+						// checksumType: minio returns something, localstack doesn't
 					}),
 				],
 			}),
@@ -169,7 +169,7 @@ export function runTests(
 			maxKeys: 2,
 		});
 		console.log("bbb");
-		expect(result1).toEqual(
+		expect(result1).toStrictEqual(
 			expect.objectContaining({
 				isTruncated: true,
 				maxKeys: 2,
@@ -186,8 +186,8 @@ export function runTests(
 						etag: expect.any(String),
 						lastModified: expect.any(Date),
 						storageClass: "STANDARD",
-						checksumAlgorithm: expect.anything(), // minio returns something, localstack doesn't
-						checksumType: expect.anything(), // minio returns something, localstack doesn't
+						// checksumAlgorithm: minio returns something, localstack doesn't
+						// checksumType: minio returns something, localstack doesn't
 					}),
 					expect.objectContaining({
 						key: `${runId}/${testId}/test-a-1.txt`,
@@ -195,8 +195,8 @@ export function runTests(
 						etag: expect.any(String),
 						lastModified: expect.any(Date),
 						storageClass: "STANDARD",
-						checksumAlgorithm: expect.anything(), // minio returns something, localstack doesn't
-						checksumType: expect.anything(), // minio returns something, localstack doesn't
+						// checksumAlgorithm: minio returns something, localstack doesn't
+						// checksumType minio returns something, localstack doesn't
 					}),
 				],
 			}),
@@ -205,10 +205,10 @@ export function runTests(
 		const result2 = await client.list({
 			prefix: `${runId}/${testId}`,
 			maxKeys: 2,
-			//continuationToken: result1.nextContinuationToken,
+			continuationToken: result1.nextContinuationToken,
 		});
 		console.log("ccc");
-		expect(result2).toEqual(
+		expect(result2).toStrictEqual(
 			expect.objectContaining({
 				isTruncated: false,
 				maxKeys: 2,
@@ -225,8 +225,8 @@ export function runTests(
 						etag: expect.any(String),
 						lastModified: expect.any(Date),
 						storageClass: "STANDARD",
-						checksumAlgorithm: expect.anything(), // minio returns something, localstack doesn't
-						checksumType: expect.anything(), // minio returns something, localstack doesn't
+						// checksumAlgorithm: minio returns something, localstack doesn't
+						// checksumType: minio returns something, localstack doesn't
 					}),
 					expect.objectContaining({
 						key: `${runId}/${testId}/test-b-3.txt`,
@@ -234,8 +234,8 @@ export function runTests(
 						etag: expect.any(String),
 						lastModified: expect.any(Date),
 						storageClass: "STANDARD",
-						checksumAlgorithm: expect.anything(), // minio returns something, localstack doesn't
-						checksumType: expect.anything(), // minio returns something, localstack doesn't
+						// checksumAlgorithm: minio returns something, localstack doesn't
+						// checksumType: minio returns something, localstack doesn't
 					}),
 				],
 			}),
@@ -246,14 +246,14 @@ export function runTests(
 			startAfter: `${runId}/${testId}/test-a-1.txt`,
 		});
 		console.log("ddd");
-		expect(result3).toEqual(
+		expect(result3).toStrictEqual(
 			expect.objectContaining({
 				isTruncated: false,
 				maxKeys: 1000,
 				keyCount: 2,
 				name: "test-bucket",
 				prefix: `${runId}/${testId}`,
-				startAfter: undefined,
+				startAfter: `${runId}/${testId}/test-a-1.txt`,
 				continuationToken: undefined,
 				nextContinuationToken: undefined,
 				contents: [
@@ -263,8 +263,8 @@ export function runTests(
 						etag: expect.any(String),
 						lastModified: expect.any(Date),
 						storageClass: "STANDARD",
-						checksumAlgorithm: expect.anything(), // minio returns something, localstack doesn't
-						checksumType: expect.anything(), // minio returns something, localstack doesn't
+						// checksumAlgorithm: minio returns something, localstack doesn't
+						// checksumType: minio returns something, localstack doesn't
 					}),
 					expect.objectContaining({
 						key: `${runId}/${testId}/test-b-3.txt`,
@@ -272,8 +272,8 @@ export function runTests(
 						etag: expect.any(String),
 						lastModified: expect.any(Date),
 						storageClass: "STANDARD",
-						checksumAlgorithm: expect.anything(), // minio returns something, localstack doesn't
-						checksumType: expect.anything(), // minio returns something, localstack doesn't
+						// checksumAlgorithm: minio returns something, localstack doesn't
+						// checksumType: minio returns something, localstack doesn't
 					}),
 				],
 			}),

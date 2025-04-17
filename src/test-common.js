@@ -106,15 +106,22 @@ export function runTests(
 			.file(`${runId}/${testId}/test-b-3.txt`)
 			.write(crypto.randomUUID());
 
+		const all = await client.list();
+		expect(all.contents.length).toEqual(4);
+
 		const result0 = await client.list({
 			prefix: `${runId}/${testId}`,
 		});
-
+		console.log("aaa");
 		expect(result0).toEqual(
 			expect.objectContaining({
 				isTruncated: false,
 				maxKeys: 1000,
 				keyCount: 4,
+				name: "test-bucket",
+				prefix: `${runId}/${testId}`,
+				startAfter: undefined,
+				continuationToken: undefined,
 				nextContinuationToken: undefined,
 				contents: [
 					expect.objectContaining({
@@ -161,11 +168,16 @@ export function runTests(
 			prefix: `${runId}/${testId}`,
 			maxKeys: 2,
 		});
+		console.log("bbb");
 		expect(result1).toEqual(
 			expect.objectContaining({
 				isTruncated: true,
 				maxKeys: 2,
 				keyCount: 2,
+				name: "test-bucket",
+				prefix: `${runId}/${testId}`,
+				startAfter: undefined,
+				continuationToken: undefined,
 				nextContinuationToken: expect.any(String),
 				contents: [
 					expect.objectContaining({
@@ -193,13 +205,18 @@ export function runTests(
 		const result2 = await client.list({
 			prefix: `${runId}/${testId}`,
 			maxKeys: 2,
-			continuationToken: result1.nextContinuationToken,
+			//continuationToken: result1.nextContinuationToken,
 		});
+		console.log("ccc");
 		expect(result2).toEqual(
 			expect.objectContaining({
 				isTruncated: false,
 				maxKeys: 2,
 				keyCount: 2,
+				name: "test-bucket",
+				prefix: `${runId}/${testId}`,
+				startAfter: undefined,
+				continuationToken: result1.nextContinuationToken,
 				nextContinuationToken: undefined,
 				contents: [
 					expect.objectContaining({
@@ -228,11 +245,16 @@ export function runTests(
 			prefix: `${runId}/${testId}`,
 			startAfter: `${runId}/${testId}/test-a-1.txt`,
 		});
+		console.log("ddd");
 		expect(result3).toEqual(
 			expect.objectContaining({
 				isTruncated: false,
 				maxKeys: 1000,
 				keyCount: 2,
+				name: "test-bucket",
+				prefix: `${runId}/${testId}`,
+				startAfter: undefined,
+				continuationToken: undefined,
 				nextContinuationToken: undefined,
 				contents: [
 					expect.objectContaining({

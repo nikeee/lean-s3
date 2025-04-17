@@ -17,3 +17,5 @@ tsconfig.json
 *.log
 *.tgz
 *.tap
+
+test-common.js

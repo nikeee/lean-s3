@@ -1,5 +1,3 @@
-// @ts-check
-
 /**
  * @typedef {import("./index.js").StorageClass} StorageClass
  * @typedef {import("./index.js").ChecksumAlgorithm} ChecksumAlgorithm

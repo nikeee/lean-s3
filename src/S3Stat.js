@@ -1,5 +1,3 @@
-import { inspect } from "node:util";
-
 export default class S3Stat {
 	/**
 	 * @type {string}
@@ -66,9 +64,5 @@ export default class S3Stat {
 		}
 
 		return new S3Stat(etag, new Date(lm), size, ct);
-	}
-
-	toString() {
-		return `S3Stats {\n\tlastModified: ${inspect(this.lastModified)},\n\tsize: ${inspect(this.size)},\n\ttype: ${inspect(this.type)},\n\tetag: ${inspect(this.etag)}\n}`;
 	}
 }

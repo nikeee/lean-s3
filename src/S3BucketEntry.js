@@ -6,6 +6,9 @@
  * @typedef {import("./index.js").ChecksumType} ChecksumType
  */
 
+/**
+ * @internal Normally, we'd use an interface for that, but having a class with pre-defined fields makes it easier for V8 top optimize hidden classes.
+ */
 export default class S3BucketEntry {
 	/**
 	 * @readonly

@@ -202,10 +202,10 @@ export default class S3Client {
 	 *   startAfter?: string;
 	 *   continuationToken?: string;
 	 *   signal?: AbortSignal;
-	 * }} options
+	 * }} [options]
 	 * // TODO: Maybe support `delimiter`
 	 */
-	async list(options) {
+	async list(options = {}) {
 		// See `benchmark-simple-qs.js` on why we don't use URLSearchParams but string concat
 		// tldr: This is faster and we know the params exactly, so we can focus our encoding
 		let query = "list-type=2";

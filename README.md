@@ -61,7 +61,7 @@ pnpm add lean-s3
 ```
 
 ## Why?
-[@aws-sdk/client-s3](https://github.com/aws/aws-sdk-js-v3) is cumbersome to use and doesn't align well with the current web standards. It is focused on providing a great experienced when used in conjunction with other AWS services. This comes at the cost of performance and package size:
+[@aws-sdk/client-s3](https://github.com/aws/aws-sdk-js-v3) is cumbersome to use and doesn't align well with the current web standards. It is focused on providing a great experience when used in conjunction with other AWS services. This comes at the cost of performance and package size:
 
 ```sh
 $ npm i @aws-sdk/client-s3 @aws-sdk/s3-request-presigner

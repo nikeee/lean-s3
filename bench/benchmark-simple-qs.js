@@ -32,49 +32,51 @@ mitata.summary(() => {
 		})
 		.gc("once");
 
-		mitata
-			.bench("string concat", async () => {
-				let s = "list-type=2";
+	mitata
+		.bench("string concat", async () => {
+			let s = "list-type=2";
 
-				if (options.prefix) {
+			if (options.prefix) {
+				// biome-ignore lint/style/useTemplate: <explanation>
+				s += "&prefix=" + encodeURIComponent(options.prefix);
+			}
+			if (options.startAfter) {
+				// biome-ignore lint/style/useTemplate: <explanation>
+				s += "&start-after=" + encodeURIComponent(options.startAfter);
+			}
+			if (options.maxKeys) {
+				// biome-ignore lint/style/useTemplate: <explanation>
+				s += "&max-keys=" + options.maxKeys; // no encoding needed, since it's a number
+			}
+			if (options.continuationToken) {
+				s +=
 					// biome-ignore lint/style/useTemplate: <explanation>
-					s += "&prefix=" + encodeURIComponent(options.prefix);
-				}
-				if (options.startAfter) {
-					// biome-ignore lint/style/useTemplate: <explanation>
-					s += "&start-after=" + encodeURIComponent(options.startAfter);
-				}
-				if (options.maxKeys) {
-					// biome-ignore lint/style/useTemplate: <explanation>
-					s += "&mey-keys=" + options.maxKeys; // no encoding needed, since it's a number
-				}
-				if (options.continuationToken) {
-					// biome-ignore lint/style/useTemplate: <explanation>
-					s += "&continuation-token=" + encodeURIComponent(options.continuationToken);
-				}
-				const _ = s;
-			})
-			.gc("once");
+					"&continuation-token=" +
+					encodeURIComponent(options.continuationToken);
+			}
+			const _ = s;
+		})
+		.gc("once");
 
-			mitata
-				.bench("string concat with template", async () => {
-					let s = "list-type=2";
+	mitata
+		.bench("string concat with template", async () => {
+			let s = "list-type=2";
 
-					if (options.prefix) {
-						s += `&prefix=${encodeURIComponent(options.prefix)}`;
-					}
-					if (options.startAfter) {
-						s += `&start-after=${encodeURIComponent(options.startAfter)}`;
-					}
-					if (options.maxKeys) {
-						s += `&mey-keys=${options.maxKeys}`; // no encoding needed, since it's a number
-					}
-					if (options.continuationToken) {
-						s += `&continuation-token=${encodeURIComponent(options.continuationToken)}`;
-					}
-					const _ = s;
-				})
-				.gc("once");
+			if (options.prefix) {
+				s += `&prefix=${encodeURIComponent(options.prefix)}`;
+			}
+			if (options.startAfter) {
+				s += `&start-after=${encodeURIComponent(options.startAfter)}`;
+			}
+			if (options.maxKeys) {
+				s += `&max-keys=${options.maxKeys}`; // no encoding needed, since it's a number
+			}
+			if (options.continuationToken) {
+				s += `&continuation-token=${encodeURIComponent(options.continuationToken)}`;
+			}
+			const _ = s;
+		})
+		.gc("once");
 });
 
 await mitata.run();

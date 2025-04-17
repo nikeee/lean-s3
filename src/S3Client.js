@@ -263,8 +263,14 @@ export default class S3Client {
 
 		if (response.statusCode === 200) {
 			const text = await response.body.text();
-			const res = xmlParser.parse(text)?.ListBucketResult;
+			const parsed = xmlParser.parse(text);
+			if (!parsed) {
+				throw new S3Error("Unknown", "", {
+					message: "Could not read bucket contents.",
+				});
+			}
 
+			const res = parsed.ListBucketResult;
 			// TODO: investigate if we have other fields missing
 			// console.log(res);
 

@@ -26,6 +26,7 @@ const xmlParser = new XMLParser();
  * @typedef {import("./index.d.ts").S3FilePresignOptions} S3FilePresignOptions
  * @typedef {import("./index.d.ts").OverridableS3ClientOptions} OverridableS3ClientOptions
  * @typedef {import("./index.d.ts").CreateFileInstanceOptions} CreateFileInstanceOptions
+ * @typedef {import("./index.d.ts").ListObjectsResponse} ListObjectsResponse
  */
 
 /**
@@ -203,7 +204,7 @@ export default class S3Client {
 	 *   continuationToken?: string;
 	 *   signal?: AbortSignal;
 	 * }} [options]
-	 * // TODO: Maybe support `delimiter`
+	 * @returns {Promise<ListObjectsResponse>}
 	 */
 	async list(options = {}) {
 		// See `benchmark-simple-qs.js` on why we don't use URLSearchParams but string concat
@@ -263,16 +264,23 @@ export default class S3Client {
 
 		if (response.statusCode === 200) {
 			const text = await response.body.text();
-			const res = xmlParser.parse(text)?.ListBucketResult;
+
+			let res = undefined;
+			try {
+				res = xmlParser.parse(text)?.ListBucketResult;
+			} catch (cause) {
+				// Possible according to AWS docs
+				throw new S3Error("Unknown", "", {
+					message: "S3 service responded with invalid XML.",
+					cause,
+				});
+			}
 
 			if (!res) {
 				throw new S3Error("Unknown", "", {
 					message: "Could not read bucket contents.",
 				});
 			}
-
-			// TODO: investigate if we have other fields missing
-			// console.log(res);
 
 			return {
 				name: res.Name,
@@ -283,14 +291,12 @@ export default class S3Client {
 				maxKeys: res.MaxKeys,
 				keyCount: res.KeyCount,
 				nextContinuationToken: res.NextContinuationToken,
-				contents: res.Contents?.map(S3BucketEntry.parse),
+				contents: res.Contents?.map(S3BucketEntry.parse) ?? [],
 			};
 		}
 
-		// undicis docs state that we shoul dump the body if not used
+		// undici docs state that we shoul dump the body if not used
 		response.body.dump();
-		// console.log(await response.body.text());
-
 		throw new Error(
 			`Response code not implemented yet: ${response.statusCode}`,
 		);

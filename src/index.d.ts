@@ -1,9 +1,12 @@
 import type { Readable } from "node:stream";
 
+import type S3BucketEntry from "./S3BucketEntry.js";
+
 export { default as S3File } from "./S3File.js";
 export { default as S3Client } from "./S3Client.js";
 export { default as S3Error } from "./S3Error.js";
 export { default as S3Stat } from "./S3Stat.js";
+export { default as S3BucketEntry } from "./S3BucketEntry.js";
 
 export interface S3ClientOptions {
 	bucket: string;
@@ -87,3 +90,15 @@ export type ByteSource = UndiciBodyInit | Blob;
 // | Response
 // | S3File
 // | ReadableStream<Uint8Array>
+
+export type ListObjectsResponse = {
+	name: string;
+	prefix: string | undefined;
+	startAfter: string | undefined;
+	isTruncated: boolean;
+	continuationToken: string | undefined;
+	maxKeys: number;
+	keyCount: number;
+	nextContinuationToken: string | undefined;
+	contents: readonly S3BucketEntry[];
+};

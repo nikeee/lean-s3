@@ -210,6 +210,26 @@ export default class S3Client {
 		// tldr: This is faster and we know the params exactly, so we can focus our encoding
 		let query = "list-type=2";
 
+		// GET /?list-type=2&continuation-token=ContinuationToken&delimiter=Delimiter&encoding-type=EncodingType&fetch-owner=FetchOwner&max-keys=MaxKeys&prefix=Prefix&start-after=StartAfter HTTP/1.1
+
+		if (typeof options.continuationToken !== "undefined") {
+			if (typeof options.continuationToken !== "string") {
+				throw new TypeError("`continuationToken` should be a `string`.");
+			}
+
+			query += `&continuation-token=${encodeURIComponent(options.continuationToken)}`;
+		}
+
+		// TODO: delimiter?
+
+		if (typeof options.maxKeys !== "undefined") {
+			if (typeof options.maxKeys !== "number") {
+				throw new TypeError("`maxKeys` should be a `number`.");
+			}
+
+			query += `&max-keys=${options.maxKeys}`; // no encoding needed, it's a number
+		}
+
 		// plan `if(a)` check, so empty strings will also not go into this branch, omitting the parameter
 		if (options.prefix) {
 			if (typeof options.prefix !== "string") {
@@ -225,22 +245,6 @@ export default class S3Client {
 			}
 
 			query += `&start-after=${encodeURIComponent(options.startAfter)}`;
-		}
-
-		if (typeof options.maxKeys !== "undefined") {
-			if (typeof options.maxKeys !== "number") {
-				throw new TypeError("`maxKeys` should be a `number`.");
-			}
-
-			query += `&max-keys=${options.maxKeys}`; // no encoding needed, it's a number
-		}
-
-		if (typeof options.continuationToken !== "undefined") {
-			if (typeof options.continuationToken !== "string") {
-				throw new TypeError("`continuationToken` should be a `string`.");
-			}
-
-			query += `&continuation-token=${encodeURIComponent(options.continuationToken)}`;
 		}
 
 		const response = await this.#signedRequest(

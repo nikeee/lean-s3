@@ -223,7 +223,6 @@ export default class S3Client {
 		// Signed headers have to be sorted
 		// To enhance sorting, we're adding all possible values somehow pre-ordered
 		const headersToBeSigned = prepareHeadersForSigning({
-			"amz-sdk-invocation-id": crypto.randomUUID(),
 			"content-length": contentLength?.toString() ?? undefined,
 			"content-type": contentType,
 			host: url.host,

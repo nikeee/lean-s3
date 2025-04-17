@@ -37,6 +37,15 @@ export type StorageClass =
 	| "SNOW"
 	| "STANDARD_IA";
 
+export type ChecksumAlgorithm =
+	| "CRC32"
+	| "CRC32C"
+	| "CRC64NVME"
+	| "SHA1"
+	| "SHA256";
+
+export type ChecksumType = "COMPOSITE" | "FULL_OBJECT";
+
 export type PresignableHttpMethod = "GET" | "DELETE" | "PUT" | "HEAD";
 
 export interface S3FilePresignOptions {

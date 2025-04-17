@@ -1,7 +1,9 @@
 import { request, Dispatcher, Agent } from "undici";
+import { XMLParser } from "fast-xml-parser";
 
 import S3File from "./S3File.js";
 import S3Error from "./S3Error.js";
+import S3BucketEntry from "./S3BucketEntry.js";
 import KeyCache from "./KeyCache.js";
 import * as amzDate from "./AmzDate.js";
 import * as sign from "./sign.js";
@@ -13,6 +15,8 @@ import {
 
 export const write = Symbol("write");
 export const stream = Symbol("stream");
+
+const xmlParser = new XMLParser();
 
 /**
  * @typedef {import("./index.d.ts").S3ClientOptions} S3ClientOptions
@@ -191,6 +195,176 @@ export default class S3Client {
 	}
 
 	/**
+	 *
+	 * @param {{
+	 *   prefix?: string;
+	 *   maxKeys?: number;
+	 *   startAfter?: string;
+	 *   continuationToken?: string;
+	 *   signal?: AbortSignal;
+	 * }} [options]
+	 * // TODO: Maybe support `delimiter`
+	 */
+	async list(options = {}) {
+		// See `benchmark-simple-qs.js` on why we don't use URLSearchParams but string concat
+		// tldr: This is faster and we know the params exactly, so we can focus our encoding
+
+		// ! minio requires these params to be in alphabetical order
+
+		let query = "";
+
+		if (typeof options.continuationToken !== "undefined") {
+			if (typeof options.continuationToken !== "string") {
+				throw new TypeError("`continuationToken` should be a `string`.");
+			}
+
+			query += `continuation-token=${encodeURIComponent(options.continuationToken)}&`;
+		}
+
+		query += "list-type=2";
+
+		if (typeof options.maxKeys !== "undefined") {
+			if (typeof options.maxKeys !== "number") {
+				throw new TypeError("`maxKeys` should be a `number`.");
+			}
+
+			query += `&max-keys=${options.maxKeys}`; // no encoding needed, it's a number
+		}
+
+		// TODO: delimiter?
+
+		// plan `if(a)` check, so empty strings will also not go into this branch, omitting the parameter
+		if (options.prefix) {
+			if (typeof options.prefix !== "string") {
+				throw new TypeError("`prefix` should be a `string`.");
+			}
+
+			query += `&prefix=${encodeURIComponent(options.prefix)}`;
+		}
+
+		if (typeof options.startAfter !== "undefined") {
+			if (typeof options.startAfter !== "string") {
+				throw new TypeError("`startAfter` should be a `string`.");
+			}
+
+			query += `&start-after=${encodeURIComponent(options.startAfter)}`;
+		}
+
+		const response = await this.#signedRequest(
+			"GET",
+			"",
+			query,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			options.signal,
+		);
+
+		if (response.statusCode === 200) {
+			const text = await response.body.text();
+			const res = xmlParser.parse(text)?.ListBucketResult;
+
+			// TODO: investigate if we have other fields missing
+			// console.log(res);
+
+			return {
+				name: res.Name,
+				prefix: res.Prefix,
+				startAfter: res.StartAfter,
+				isTruncated: res.IsTruncated,
+				continuationToken: res.ContinuationToken,
+				maxKeys: res.MaxKeys,
+				keyCount: res.KeyCount,
+				nextContinuationToken: res.NextContinuationToken,
+				contents: res.Contents?.map(S3BucketEntry.parse),
+			};
+		}
+
+		// undicis docs state that we shoul dump the body if not used
+		response.body.dump();
+		// console.log(await response.body.text());
+
+		throw new Error(
+			`Response code not implemented yet: ${response.statusCode}`,
+		);
+	}
+
+	/**
+	 * @param {string} method
+	 * @param {string} pathWithoutBucket
+	 * @param {string | undefined} query
+	 * @param {import("./index.d.ts").UndiciBodyInit | undefined} body
+	 * @param {Record<string, string>| undefined} additionalSignedHeaders
+	 * @param {Record<string, string> | undefined} additionalUnsignedHeaders
+	 * @param {Buffer | undefined} contentHash
+	 * @param {AbortSignal | undefined} signal
+	 */
+	async #signedRequest(
+		method,
+		pathWithoutBucket,
+		query,
+		body,
+		additionalSignedHeaders,
+		additionalUnsignedHeaders,
+		contentHash,
+		signal,
+	) {
+		const bucket = this.#options.bucket;
+		const endpoint = this.#options.endpoint;
+		const region = this.#options.region;
+
+		const url = buildRequestUrl(endpoint, bucket, region, pathWithoutBucket);
+		if (query) {
+			url.search = query;
+		}
+
+		const now = amzDate.now();
+
+		// Signed headers have to be sorted
+		// To enhance sorting, we're adding all possible values somehow pre-ordered
+		const headersToBeSigned = prepareHeadersForSigning({
+			host: url.host,
+			"x-amz-date": now.dateTime,
+			"x-amz-content-sha256":
+				contentHash?.toString("hex") ?? "UNSIGNED-PAYLOAD",
+			...additionalSignedHeaders,
+		});
+
+		try {
+			return await request(url, {
+				method,
+				signal,
+				dispatcher: this.#dispatcher,
+				headers: {
+					...headersToBeSigned,
+					authorization: this.#getAuthorizationHeader(
+						method,
+						url.pathname,
+						query ?? "",
+						now,
+						headersToBeSigned,
+						region,
+						contentHash,
+						this.#options.accessKeyId,
+						this.#options.secretAccessKey,
+					),
+					...additionalUnsignedHeaders,
+					accept: "application/json", // So that we can parse errors as JSON instead of XML, if the server supports that
+					"user-agent": "lean-s3",
+				},
+				body,
+			});
+		} catch (cause) {
+			signal?.throwIfAborted();
+			throw new S3Error("Unknown", pathWithoutBucket, {
+				message: "Unknown error during S3 request.",
+				cause,
+			});
+		}
+	}
+
+	/**
 	 * @internal
 	 * @param {string} path
 	 * @param {import("./index.d.ts").UndiciBodyInit} data TODO
@@ -223,7 +397,6 @@ export default class S3Client {
 		// Signed headers have to be sorted
 		// To enhance sorting, we're adding all possible values somehow pre-ordered
 		const headersToBeSigned = prepareHeadersForSigning({
-			"amz-sdk-invocation-id": crypto.randomUUID(),
 			"content-length": contentLength?.toString() ?? undefined,
 			"content-type": contentType,
 			host: url.host,
@@ -463,7 +636,7 @@ export default class S3Client {
 	}
 
 	/**
-	 * @param {PresignableHttpMethod} method
+	 * @param {string} method
 	 * @param {string} path
 	 * @param {string} query
 	 * @param {amzDate.AmzDate} date

@@ -50,6 +50,7 @@ export type ChecksumAlgorithm =
 export type ChecksumType = "COMPOSITE" | "FULL_OBJECT";
 
 export type PresignableHttpMethod = "GET" | "DELETE" | "PUT" | "HEAD";
+export type HttpMethod = PresignableHttpMethod | "POST"; // There are also others, but we don't want to support them yet
 
 export interface S3FilePresignOptions {
 	contentHash: Buffer;

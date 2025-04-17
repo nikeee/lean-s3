@@ -303,7 +303,7 @@ export default class S3Client {
 	}
 
 	/**
-	 * @param {string} method
+	 * @param {import("./index.js").HttpMethod} method
 	 * @param {string} pathWithoutBucket
 	 * @param {string | undefined} query
 	 * @param {import("./index.d.ts").UndiciBodyInit | undefined} body
@@ -647,7 +647,7 @@ export default class S3Client {
 	}
 
 	/**
-	 * @param {string} method
+	 * @param {import("./index.js").HttpMethod} method
 	 * @param {string} path
 	 * @param {string} query
 	 * @param {amzDate.AmzDate} date

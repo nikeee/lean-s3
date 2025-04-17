@@ -85,7 +85,7 @@ export function createCanonicalDataDigestHostOnly(method, path, query, host) {
 }
 
 /**
- * @param {import("./index.js").PresignableHttpMethod} method
+ * @param {import("./index.js").HttpMethod} method
  * @param {string} path
  * @param {string} query
  * @param {Record<string, string>} sortedHeaders

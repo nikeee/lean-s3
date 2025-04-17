@@ -263,18 +263,11 @@ export default class S3Client {
 
 		if (response.statusCode === 200) {
 			const text = await response.body.text();
-			const parsed = xmlParser.parse(text);
-			if (!parsed) {
+			const res = xmlParser.parse(text)?.ListBucketResult;
+
+			if (!res) {
 				throw new S3Error("Unknown", "", {
 					message: "Could not read bucket contents.",
-				});
-			}
-
-			const res = parsed.ListBucketResult;
-			if (!res) {
-				console.log(JSON.stringify(parsed));
-				throw new S3Error("Unknown", "", {
-					message: "Response did not contain `ListBucketResult`.",
 				});
 			}
 
@@ -363,7 +356,6 @@ export default class S3Client {
 						this.#options.secretAccessKey,
 					),
 					...additionalUnsignedHeaders,
-					accept: "application/json", // So that we can parse errors as JSON instead of XML, if the server supports that
 					"user-agent": "lean-s3",
 				},
 				body,

@@ -90,4 +90,151 @@ export function runTests(
 			await f.delete();
 		}
 	});
+
+	test("list", async () => {
+		const testId = crypto.randomUUID();
+		await client
+			.file(`${runId}/${testId}/test-a-0.txt`)
+			.write(crypto.randomUUID());
+		await client
+			.file(`${runId}/${testId}/test-a-1.txt`)
+			.write(crypto.randomUUID());
+		await client
+			.file(`${runId}/${testId}/test-b-2.txt`)
+			.write(crypto.randomUUID());
+		await client
+			.file(`${runId}/${testId}/test-b-3.txt`)
+			.write(crypto.randomUUID());
+
+		const result0 = await client.list({
+			prefix: `${runId}/${testId}`,
+		});
+
+		expect(result0).toEqual(
+			expect.objectContaining({
+				isTruncated: false,
+				maxKeys: 1000,
+				keyCount: 4,
+				nextContinuationToken: undefined,
+				contents: [
+					expect.objectContaining({
+						key: `${runId}/${testId}/test-a-0.txt`,
+						size: 36,
+						etag: expect.any(String),
+						lastModified: expect.any(Date),
+						storageClass: "STANDARD",
+					}),
+					expect.objectContaining({
+						key: `${runId}/${testId}/test-a-1.txt`,
+						size: 36,
+						etag: expect.any(String),
+						lastModified: expect.any(Date),
+						storageClass: "STANDARD",
+					}),
+					expect.objectContaining({
+						key: `${runId}/${testId}/test-b-2.txt`,
+						size: 36,
+						etag: expect.any(String),
+						lastModified: expect.any(Date),
+						storageClass: "STANDARD",
+					}),
+					expect.objectContaining({
+						key: `${runId}/${testId}/test-b-3.txt`,
+						size: 36,
+						etag: expect.any(String),
+						lastModified: expect.any(Date),
+						storageClass: "STANDARD",
+					}),
+				],
+			}),
+		);
+
+		const result1 = await client.list({
+			prefix: `${runId}/${testId}`,
+			maxKeys: 2,
+		});
+		expect(result1).toEqual(
+			expect.objectContaining({
+				isTruncated: true,
+				maxKeys: 2,
+				keyCount: 2,
+				nextContinuationToken: expect.any(String),
+				contents: [
+					expect.objectContaining({
+						key: `${runId}/${testId}/test-a-0.txt`,
+						size: 36,
+						etag: expect.any(String),
+						lastModified: expect.any(Date),
+						storageClass: "STANDARD",
+					}),
+					expect.objectContaining({
+						key: `${runId}/${testId}/test-a-1.txt`,
+						size: 36,
+						etag: expect.any(String),
+						lastModified: expect.any(Date),
+						storageClass: "STANDARD",
+					}),
+				],
+			}),
+		);
+
+		const result2 = await client.list({
+			prefix: `${runId}/${testId}`,
+			maxKeys: 2,
+			continuationToken: result1.nextContinuationToken,
+		});
+		expect(result2).toEqual(
+			expect.objectContaining({
+				isTruncated: false,
+				maxKeys: 2,
+				keyCount: 2,
+				nextContinuationToken: undefined,
+				contents: [
+					expect.objectContaining({
+						key: `${runId}/${testId}/test-b-2.txt`,
+						size: 36,
+						etag: expect.any(String),
+						lastModified: expect.any(Date),
+						storageClass: "STANDARD",
+					}),
+					expect.objectContaining({
+						key: `${runId}/${testId}/test-b-3.txt`,
+						size: 36,
+						etag: expect.any(String),
+						lastModified: expect.any(Date),
+						storageClass: "STANDARD",
+					}),
+				],
+			}),
+		);
+
+		const result3 = await client.list({
+			prefix: `${runId}/${testId}`,
+			startAfter: `${runId}/${testId}/test-a-1.txt`,
+		});
+		expect(result3).toEqual(
+			expect.objectContaining({
+				isTruncated: false,
+				maxKeys: 1000,
+				keyCount: 2,
+				nextContinuationToken: undefined,
+				contents: [
+					expect.objectContaining({
+						key: `${runId}/${testId}/test-b-2.txt`,
+						size: 36,
+						etag: expect.any(String),
+						lastModified: expect.any(Date),
+						storageClass: "STANDARD",
+					}),
+					expect.objectContaining({
+						key: `${runId}/${testId}/test-b-3.txt`,
+						size: 36,
+						etag: expect.any(String),
+						lastModified: expect.any(Date),
+						storageClass: "STANDARD",
+					}),
+				],
+			}),
+		);
+	});
 }

@@ -1,4 +1,6 @@
 //@ts-check
+import { createHash } from "node:crypto";
+
 import { summary, group, bench, run } from "mitata";
 
 /**
@@ -17,9 +19,6 @@ summary(() => {
 			sessionToken,
 			acl,
 		) {
-			// We tried to make these query params entirely lower-cased, just like the headers
-			// but Cloudflare R2 requires them to have this exact casing
-
 			const q = new URLSearchParams();
 
 			if (acl) {
@@ -58,16 +57,7 @@ summary(() => {
 			sessionToken,
 			acl,
 		) {
-			// We tried to make these query params entirely lower-cased, just like the headers
-			// but Cloudflare R2 requires them to have this exact casing
-
-			// We didn't have any issues with them being in non-alphaetical order, but as some implementations decide to require sorting
-			// in non-pre-signed cases, we do it here as well
-
-			// See `benchmark-simple-qs.js` on why we don't use URLSearchParams but string concat
-
 			let res = "";
-
 			if (acl) {
 				res += `X-Amz-Acl=${encodeURIComponent(acl)}&`;
 			}
@@ -95,7 +85,7 @@ summary(() => {
 			return res;
 		}
 
-		bench("URLSearchParams", async () => {
+		bench("URLSearchParams", () => {
 			for (let i = 0; i < 10000; ++i) {
 				buildSearchParamsURLSP(
 					"dsadsadfasdf",
@@ -130,7 +120,7 @@ summary(() => {
 			}
 		});
 
-		bench("string concat", async () => {
+		bench("string concat", () => {
 			for (let i = 0; i < 10000; ++i) {
 				buildSearchParamsConcat(
 					"dsadsadfasdf",
@@ -172,7 +162,7 @@ summary(() => {
 			maxKeys: 100,
 		};
 
-		bench("URLSearchParams", async () => {
+		bench("URLSearchParams", () => {
 			const q = new URLSearchParams({
 				"list-type": "2",
 			});
@@ -191,7 +181,7 @@ summary(() => {
 			const _ = q.toString();
 		}).gc("once");
 
-		bench("string concat", async () => {
+		bench("string concat", () => {
 			let s = "list-type=2";
 
 			if (options.prefix) {
@@ -215,7 +205,7 @@ summary(() => {
 			const _ = s;
 		}).gc("once");
 
-		bench("string concat with template", async () => {
+		bench("string concat with template", () => {
 			let s = "list-type=2";
 
 			if (options.prefix) {
@@ -232,6 +222,43 @@ summary(() => {
 			}
 			const _ = s;
 		}).gc("once");
+	});
+
+	group(() => {
+		function signUpdate(method, path, query, host) {
+			return createHash("sha256")
+				.update(method)
+				.update("\n")
+				.update(path)
+				.update("\n")
+				.update(query)
+				.update("\nhost:")
+				.update(host)
+				.update("\n\nhost\nUNSIGNED-PAYLOAD")
+				.digest();
+		}
+		function signLargeString(method, path, query, host) {
+			return createHash("sha256")
+				.update(
+					`${method}\n${path}\n${query}\nhost:${host}\n\nhost\nUNSIGNED-PAYLOAD`,
+				)
+				.digest();
+		}
+
+		bench("large string", () => {
+			for(let i = 0; i < 1000; ++i) {
+				signLargeString("GET", "/test.json", "a=b&c=d&x-amazon-whatever=public-read", "fsn1.your-objectstorage.com");
+				signLargeString("PUT", "/some/long/pathtest.json", "a=b&c=d&x-amazon-whatever=private&wat=wut", "localhost:1337");
+				signLargeString("DELETE", "/some/long/pathtest.json", "a=b&c=d&x-amazon-whatever=private&wat=wut", "localhost:1337");
+			}
+		});
+		bench("update calls", () => {
+			for(let i = 0; i < 1000; ++i) {
+				signUpdate("GET", "/test.json", "a=b&c=d&x-amazon-whatever=public-read", "fsn1.your-objectstorage.com");
+				signUpdate("PUT", "/some/long/pathtest.json", "a=b&c=d&x-amazon-whatever=private&wat=wut", "localhost:1337");
+				signUpdate("DELETE", "/some/long/pathtest.json", "a=b&c=d&x-amazon-whatever=private&wat=wut", "localhost:1337");
+			}
+		});
 	});
 });
 

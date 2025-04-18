@@ -239,7 +239,7 @@ export default class S3Client {
 	 * @returns {Promise<ListObjectsResponse>}
 	 */
 	async list(options = {}) {
-		// See `benchmark-simple-qs.js` on why we don't use URLSearchParams but string concat
+		// See `benchmark-operations.js` on why we don't use URLSearchParams but string concat
 		// tldr: This is faster and we know the params exactly, so we can focus our encoding
 
 		// ! minio requires these params to be in alphabetical order
@@ -750,7 +750,7 @@ export function buildSearchParams(
 	// We didn't have any issues with them being in non-alphaetical order, but as some implementations decide to require sorting
 	// in non-pre-signed cases, we do it here as well
 
-	// See `benchmark-simple-qs.js` on why we don't use URLSearchParams but string concat
+	// See `benchmark-operations.js` on why we don't use URLSearchParams but string concat
 
 	let res = "";
 

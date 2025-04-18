@@ -99,6 +99,18 @@ export default class S3Client {
 		};
 	}
 
+	cors = {
+		get: () => {
+			// TODO: GetBucketCors
+		},
+		set: () => {
+			// TODO: PutBucketCors
+		},
+		delete: () => {
+			// TODO: DeleteBucketCors
+		},
+	};
+
 	/**
 	 * Creates an S3File instance for the given path.
 	 *

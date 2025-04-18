@@ -91,6 +91,29 @@ export function runTests(
 		}
 	});
 
+	test("listIterating", async () => {
+		const testId = crypto.randomUUID();
+		await client
+			.file(`${runId}/${testId}/test-a-0.txt`)
+			.write(crypto.randomUUID());
+		await client
+			.file(`${runId}/${testId}/test-a-1.txt`)
+			.write(crypto.randomUUID());
+		await client
+			.file(`${runId}/${testId}/test-b-2.txt`)
+			.write(crypto.randomUUID());
+		await client
+			.file(`${runId}/${testId}/test-b-3.txt`)
+			.write(crypto.randomUUID());
+
+		const entries = [];
+		for await (const e of client.listIterating({ internalPageSize: 1 })) {
+			entries.push(e);
+		}
+
+		expect(entries.length).toBe(4);
+	});
+
 	test("list", async () => {
 		const testId = crypto.randomUUID();
 		await client

@@ -196,6 +196,40 @@ export default class S3Client {
 	}
 
 	/**
+	 * Uses `ListObjectsV2` to iterate over all keys. Pagination and continuation is handled internally.
+
+	* @param {{
+	 *   prefix?: string;
+	 *   startAfter?: string;
+	 *   signal?: AbortSignal;
+	 *   internalPageSize?: number;
+	 * }} [options]
+	 * @returns {AsyncGenerator<S3BucketEntry>}
+	 */
+	async *listIterating(options) {
+		// only used to get smaller pages, so we can test this properly
+		const maxKeys = options?.internalPageSize ?? undefined;
+
+		let res = undefined;
+		let continuationToken = undefined;
+		do {
+			res = await this.list({
+				...options,
+				maxKeys,
+				continuationToken,
+			});
+
+			if (!res || res.contents.length === 0) {
+				break;
+			}
+
+			yield* res.contents;
+
+			continuationToken = res.nextContinuationToken;
+		} while (continuationToken);
+	}
+
+	/**
 	 *
 	 * @param {{
 	 *   prefix?: string;

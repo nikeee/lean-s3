@@ -750,23 +750,29 @@ export function buildSearchParams(
 	// but Cloudflare R2 requires them to have this exact casing
 
 	const q = new URLSearchParams();
+
+	if (acl) {
+		q.set("X-Amz-Acl", acl);
+	}
+
 	q.set("X-Amz-Algorithm", "AWS4-HMAC-SHA256");
-	q.set("X-Amz-Credential", amzCredential);
-	q.set("X-Amz-Date", date.dateTime);
-	q.set("X-Amz-Expires", expiresIn.toString());
-	q.set("X-Amz-SignedHeaders", headerList);
 
 	if (contentHashStr) {
 		q.set("X-Amz-Content-Sha256", contentHashStr);
 	}
-	if (storageClass) {
-		q.set("X-Amz-Storage-Class", storageClass);
-	}
+
+	q.set("X-Amz-Credential", amzCredential);
+	q.set("X-Amz-Date", date.dateTime);
+	q.set("X-Amz-Expires", expiresIn.toString());
+
 	if (sessionToken) {
 		q.set("X-Amz-Security-Token", sessionToken);
 	}
-	if (acl) {
-		q.set("X-Amz-Acl", acl);
+
+	q.set("X-Amz-SignedHeaders", headerList);
+
+	if (storageClass) {
+		q.set("X-Amz-Storage-Class", storageClass);
 	}
 	return q;
 }

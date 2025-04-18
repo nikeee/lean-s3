@@ -193,6 +193,8 @@ export default class S3Client {
 		return res.toString();
 	}
 
+	//#region list
+
 	/**
 	 * Uses `ListObjectsV2` to iterate over all keys. Pagination and continuation is handled internally.
 
@@ -340,6 +342,8 @@ export default class S3Client {
 			`Response code not implemented yet: ${response.statusCode}`,
 		);
 	}
+
+	//#endregion
 
 	/**
 	 * @param {import("./index.js").HttpMethod} method

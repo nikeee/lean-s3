@@ -107,7 +107,10 @@ export function runTests(
 			.write(crypto.randomUUID());
 
 		const entries = [];
-		for await (const e of client.listIterating({ internalPageSize: 1 })) {
+		for await (const e of client.listIterating({
+			prefix: `${runId}/${testId}`,
+			internalPageSize: 1,
+		})) {
 			entries.push(e);
 		}
 

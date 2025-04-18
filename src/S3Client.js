@@ -170,7 +170,7 @@ export default class S3Client {
 		const dataDigest = sign.createCanonicalDataDigestHostOnly(
 			method,
 			res.pathname,
-			query.toString(),
+			query,
 			res.host,
 		);
 
@@ -189,9 +189,7 @@ export default class S3Client {
 		);
 
 		// See `buildSearchParams` for casing on this parameter
-		query.set("X-Amz-Signature", signature);
-
-		res.search = query.toString();
+		res.search = `${query}&X-Amz-Signature=${signature}`;
 		return res.toString();
 	}
 
@@ -734,7 +732,7 @@ export default class S3Client {
  * @param {string | null | undefined} sessionToken
  * @param {Acl | null | undefined} acl
  * @param {string | null | undefined} contentHashStr
- * @returns
+ * @returns {string}
  */
 export function buildSearchParams(
 	amzCredential,
@@ -749,30 +747,36 @@ export function buildSearchParams(
 	// We tried to make these query params entirely lower-cased, just like the headers
 	// but Cloudflare R2 requires them to have this exact casing
 
-	const q = new URLSearchParams();
+	// We didn't have any issues with them being in non-alphaetical order, but as some implementations decide to require sorting
+	// in non-pre-signed cases, we do it here as well
+
+	// See `benchmark-simple-qs.js` on why we don't use URLSearchParams but string concat
+
+	let res = "";
 
 	if (acl) {
-		q.set("X-Amz-Acl", acl);
+		res += `X-Amz-Acl=${encodeURIComponent(acl)}&`;
 	}
 
-	q.set("X-Amz-Algorithm", "AWS4-HMAC-SHA256");
+	res += "X-Amz-Algorithm=AWS4-HMAC-SHA256";
 
 	if (contentHashStr) {
-		q.set("X-Amz-Content-Sha256", contentHashStr);
+		// We assume that this is always hex-encoded, so no encoding needed
+		res += `&X-Amz-Content-Sha256=${contentHashStr}`;
 	}
 
-	q.set("X-Amz-Credential", amzCredential);
-	q.set("X-Amz-Date", date.dateTime);
-	q.set("X-Amz-Expires", expiresIn.toString());
+	res += `&X-Amz-Credential=${encodeURIComponent(amzCredential)}`;
+	res += `&X-Amz-Date=${date.dateTime}`; // internal dateTimes don't need encoding
+	res += `&X-Amz-Expires=${expiresIn}`; // number -> no encoding
 
 	if (sessionToken) {
-		q.set("X-Amz-Security-Token", sessionToken);
+		res += `&X-Amz-Security-Token=${encodeURIComponent(sessionToken)}`;
 	}
 
-	q.set("X-Amz-SignedHeaders", headerList);
+	res += `&X-Amz-SignedHeaders=${encodeURIComponent(headerList)}`;
 
 	if (storageClass) {
-		q.set("X-Amz-Storage-Class", storageClass);
+		res += `&X-Amz-Storage-Class=${storageClass}`;
 	}
-	return q;
+	return res;
 }

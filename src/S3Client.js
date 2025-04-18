@@ -282,6 +282,13 @@ export default class S3Client {
 				});
 			}
 
+			// S3 is weird and doesn't return an array if there is only one item
+			const contents = Array.isArray(res.Contents)
+				? (res.Contents?.map(S3BucketEntry.parse) ?? [])
+				: res.Contents
+					? [res.Contents]
+					: [];
+
 			return {
 				name: res.Name,
 				prefix: res.Prefix,
@@ -291,7 +298,7 @@ export default class S3Client {
 				maxKeys: res.MaxKeys,
 				keyCount: res.KeyCount,
 				nextContinuationToken: res.NextContinuationToken,
-				contents: res.Contents?.map(S3BucketEntry.parse) ?? [],
+				contents,
 			};
 		}
 

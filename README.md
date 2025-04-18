@@ -83,27 +83,27 @@ lean-s3 is currently about 20x faster than AWS SDK when it comes to pre-signing 
 ```
 benchmark                    avg (min … max) p75 / p99
 -------------------------------------------- ---------
-@aws-sdk/s3-request-presigner 184.32 µs/iter 183.38 µs
-                       (141.15 µs … 1.19 ms) 579.17 µs
-                     (312.00  b …   5.07 mb) 233.20 kb
+@aws-sdk/s3-request-presigner 130.73 µs/iter 128.99 µs
+                     (102.27 µs … 938.72 µs) 325.96 µs
+                     (712.00  b …   5.85 mb) 228.48 kb
 
-lean-s3                         8.48 µs/iter   8.21 µs
-                         (7.85 µs … 1.06 ms)  11.23 µs
-                     (128.00  b … 614.83 kb)   5.26 kb
+lean-s3                         4.22 µs/iter   4.20 µs
+                         (4.02 µs … 5.96 µs)   4.52 µs
+                     (  3.54 kb …   3.54 kb)   3.54 kb
 
-aws4fetch                      65.49 µs/iter  62.83 µs
-                        (52.43 µs … 1.01 ms) 158.99 µs
-                     ( 24.00  b …   1.42 mb)  53.38 kb
+aws4fetch                      52.41 µs/iter  50.71 µs
+                        (36.06 µs … 1.79 ms) 173.15 µs
+                     ( 24.00  b …   1.66 mb)  51.60 kb
 
-minio client                   19.82 µs/iter  18.35 µs
-                        (17.28 µs … 1.61 ms)  34.41 µs
-                     (768.00  b … 721.07 kb)  16.18 kb
+minio client                   16.21 µs/iter  15.13 µs
+                        (13.14 µs … 1.25 ms)  27.08 µs
+                     (192.00  b …   1.43 mb)  16.02 kb
 
 summary
   lean-s3
-   2.34x faster than minio client
-   7.72x faster than aws4fetch
-   21.74x faster than @aws-sdk/s3-request-presigner
+   3.84x faster than minio client
+   12.42x faster than aws4fetch
+   30.99x faster than @aws-sdk/s3-request-presigner
 ```
 
 Don't trust this benchmark and run it yourself[^2]. I am just some random internet guy trying to tell you [how much better this s3 client is](https://xkcd.com/927/). For `PUT` operations, it is ~1.45x faster than `@aws-sdk/client-s3`. We still work on improving these numbers.

@@ -385,13 +385,14 @@ export default class S3Client {
 
 		const now = amzDate.now();
 
+		const contentHashStr = contentHash?.toString("hex") ?? sign.unsignedPayload;
+
 		// Signed headers have to be sorted
 		// To enhance sorting, we're adding all possible values somehow pre-ordered
 		const headersToBeSigned = prepareHeadersForSigning({
 			host: url.host,
 			"x-amz-date": now.dateTime,
-			"x-amz-content-sha256":
-				contentHash?.toString("hex") ?? "UNSIGNED-PAYLOAD",
+			"x-amz-content-sha256": contentHashStr,
 			...additionalSignedHeaders,
 		});
 
@@ -409,7 +410,7 @@ export default class S3Client {
 						now,
 						headersToBeSigned,
 						region,
-						contentHash,
+						contentHashStr,
 						this.#options.accessKeyId,
 						this.#options.secretAccessKey,
 					),
@@ -457,6 +458,8 @@ export default class S3Client {
 
 		const now = amzDate.now();
 
+		const contentHashStr = contentHash?.toString("hex") ?? sign.unsignedPayload;
+
 		// Signed headers have to be sorted
 		// To enhance sorting, we're adding all possible values somehow pre-ordered
 		const headersToBeSigned = prepareHeadersForSigning({
@@ -464,7 +467,7 @@ export default class S3Client {
 			"content-type": contentType,
 			host: url.host,
 			range: getRangeHeader(rageStart, rangeEndExclusive),
-			"x-amz-content-sha256": contentHash?.toString("hex") ?? undefined,
+			"x-amz-content-sha256": contentHashStr,
 			"x-amz-date": now.dateTime,
 		});
 
@@ -484,7 +487,7 @@ export default class S3Client {
 						now,
 						headersToBeSigned,
 						region,
-						contentHash,
+						contentHashStr,
 						this.#options.accessKeyId,
 						this.#options.secretAccessKey,
 					),
@@ -556,14 +559,15 @@ export default class S3Client {
 
 		const range = getRangeHeader(rageStart, rangeEndExclusive);
 
+		const contentHashStr = contentHash?.toString("hex") ?? sign.unsignedPayload;
+
 		const headersToBeSigned = prepareHeadersForSigning({
 			"amz-sdk-invocation-id": crypto.randomUUID(),
 			// TODO: Maybe support retries and do "amz-sdk-request": attempt=1; max=3
 			host: url.host,
 			range,
 			// Hetzner doesnt care if the x-amz-content-sha256 header is missing, R2 requires it to be present
-			"x-amz-content-sha256":
-				contentHash?.toString("hex") ?? "UNSIGNED-PAYLOAD",
+			"x-amz-content-sha256": contentHashStr,
 			"x-amz-date": now.dateTime,
 		});
 
@@ -594,7 +598,7 @@ export default class S3Client {
 							now,
 							headersToBeSigned,
 							region,
-							contentHash,
+							contentHashStr,
 							this.#options.accessKeyId,
 							this.#options.secretAccessKey,
 						),
@@ -692,7 +696,7 @@ export default class S3Client {
 	 * @param {amzDate.AmzDate} date
 	 * @param {Record<string, string>} sortedSignedHeaders
 	 * @param {string} region
-	 * @param {Buffer | undefined} contentHash
+	 * @param {string} contentHashStr
 	 * @param {string} accessKeyId
 	 * @param {string} secretAccessKey
 	 */
@@ -703,7 +707,7 @@ export default class S3Client {
 		date,
 		sortedSignedHeaders,
 		region,
-		contentHash,
+		contentHashStr,
 		accessKeyId,
 		secretAccessKey,
 	) {
@@ -712,7 +716,7 @@ export default class S3Client {
 			path,
 			query,
 			sortedSignedHeaders,
-			contentHash?.toString("hex") ?? sign.unsignedPayload,
+			contentHashStr,
 		);
 
 		const signingKey = this.#keyCache.computeIfAbsent(

@@ -195,9 +195,12 @@ export default class S3Client {
 	}
 
 	/**
+	 * Uses `DeleteObjects` to delete multiple objects in a single request.
 	 *
 	 * @param {readonly S3BucketEntry[] | readonly string[]} objects
-	 * @param {*} options
+	 * @param {{
+	 *    signal?: AbortSignal;
+	 * }} [options]
 	 */
 	async deleteObjects(objects, options) {
 		throw new Error("Not implemented");
@@ -207,8 +210,8 @@ export default class S3Client {
 
 	/**
 	 * Uses `ListObjectsV2` to iterate over all keys. Pagination and continuation is handled internally.
-
-	* @param {{
+	 *
+	 * @param {{
 	 *   prefix?: string;
 	 *   startAfter?: string;
 	 *   signal?: AbortSignal;

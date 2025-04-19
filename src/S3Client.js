@@ -876,8 +876,6 @@ function parseAndGetXmlError(body, path) {
 		});
 	}
 
-	console.log(error);
-
 	if (error.Error) {
 		const e = error.Error;
 		return new S3Error(e.Code || "Unknown", path, {

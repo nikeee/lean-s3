@@ -202,8 +202,69 @@ export default class S3Client {
 	 *    signal?: AbortSignal;
 	 * }} [options]
 	 */
-	async deleteObjects(objects, options) {
-		throw new Error("Not implemented");
+	async deleteObjects(objects, options = {}) {
+		const body = xmlBuilder.build({
+			Delete: {
+				Quiet: true,
+				Object: objects.map(o => ({
+					Key: typeof o === "string" ? o : o.key,
+				})),
+			},
+		});
+
+		const response = await this.#signedRequest(
+			"POST",
+			"",
+			"delete=", // "=" is needed by minio for some reason
+			body,
+			{
+				"content-md5": sign.md5Base64(body),
+			},
+			undefined,
+			undefined,
+			options.signal,
+		);
+
+		if (response.statusCode === 200) {
+			const text = await response.body.text();
+
+			let res = undefined;
+			try {
+				// Quite mode omits all deleted elements, so it will be parsed as "", wich we need to coalasce to null/undefined
+				res = (xmlParser.parse(text)?.DeleteResult || undefined)?.Error ?? [];
+			} catch (cause) {
+				// Possible according to AWS docs
+				throw new S3Error("Unknown", "", {
+					message: "S3 service responded with invalid XML.",
+					cause,
+				});
+			}
+
+			if (!res || !Array.isArray(res)) {
+				throw new S3Error("Unknown", "", {
+					message: "Could not process response.",
+				});
+			}
+
+			const errors = res.map(e => ({
+				code: e.Code,
+				key: e.Key,
+				message: e.Message,
+				versionId: e.VersionId,
+			}));
+
+			return errors.length > 0 ? { errors } : null;
+		}
+
+		if (400 <= response.statusCode && response.statusCode < 500) {
+			throw await getResponseError(response, "");
+		}
+
+		// undici docs state that we shoul dump the body if not used
+		response.body.dump();
+		throw new Error(
+			`Response code not implemented yet: ${response.statusCode}`,
+		);
 	}
 
 	//#region list

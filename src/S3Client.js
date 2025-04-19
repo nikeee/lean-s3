@@ -193,6 +193,15 @@ export default class S3Client {
 		return res.toString();
 	}
 
+	/**
+	 *
+	 * @param {readonly S3BucketEntry[] | readonly string[]} objects
+	 * @param {*} options
+	 */
+	async deleteObjects(objects, options) {
+		throw new Error("Not implemented");
+	}
+
 	//#region list
 
 	/**

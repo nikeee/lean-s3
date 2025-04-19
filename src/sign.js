@@ -138,3 +138,11 @@ export function createCanonicalDataDigest(
 export function sha256(data) {
 	return createHash("sha256").update(data).digest();
 }
+
+/**
+ * @param {import("node:crypto").BinaryLike} data
+ * @returns {string}
+ */
+export function md5Hex(data) {
+	return createHash("md5").update(data).digest("hex");
+}

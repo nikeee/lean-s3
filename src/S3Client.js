@@ -513,35 +513,7 @@ export default class S3Client {
 			return;
 		}
 
-		let body = undefined;
-		try {
-			body = await response.body.text();
-		} catch (cause) {
-			throw new S3Error("Unknown", path, {
-				message: "Could not read response body.",
-				cause,
-			});
-		}
-
-		if (response.headers["content-type"] === "application/xml") {
-			let error = undefined;
-			try {
-				error = xmlParser.parse(body);
-			} catch (cause) {
-				throw new S3Error("Unknown", path, {
-					message: "Could not parse XML error response.",
-					cause,
-				});
-			}
-
-			throw new S3Error(error.Code || "Unknown", path, {
-				message: error.Message || undefined, // Message might be "",
-			});
-		}
-
-		throw new S3Error("Unknown", path, {
-			message: "Unknown error during S3 request.",
-		});
+		throw await getResponseError(response, path);
 	}
 
 	// TODO: Support abortSignal
@@ -800,4 +772,59 @@ export function buildSearchParams(
 		res += `&X-Amz-Storage-Class=${storageClass}`;
 	}
 	return res;
+}
+
+/**
+ * @param {Dispatcher.ResponseData<unknown>} response
+ * @param {string} path
+ * @returns {Promise<S3Error>}
+ */
+async function getResponseError(response, path) {
+	let body = undefined;
+	try {
+		body = await response.body.text();
+	} catch (cause) {
+		return new S3Error("Unknown", path, {
+			message: "Could not read response body.",
+			cause,
+		});
+	}
+
+	if (response.headers["content-type"] === "application/xml") {
+		return parseAndGetXmlError(body, path);
+	}
+
+	return new S3Error("Unknown", path, {
+		message: "Unknown error during S3 request.",
+	});
+}
+
+/**
+ * @param {string} body
+ * @param {string} path
+ * @returns {S3Error}
+ */
+function parseAndGetXmlError(body, path) {
+	let error = undefined;
+	try {
+		error = xmlParser.parse(body);
+	} catch (cause) {
+		return new S3Error("Unknown", path, {
+			message: "Could not parse XML error response.",
+			cause,
+		});
+	}
+
+	console.log(error);
+
+	if (error.Error) {
+		const e = error.Error;
+		return new S3Error(e.Code || "Unknown", path, {
+			message: e.Message || undefined, // Message might be "",
+		});
+	}
+
+	return new S3Error(error.Code || "Unknown", path, {
+		message: error.Message || undefined, // Message might be "",
+	});
 }

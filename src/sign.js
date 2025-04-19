@@ -143,6 +143,6 @@ export function sha256(data) {
  * @param {import("node:crypto").BinaryLike} data
  * @returns {string}
  */
-export function md5Hex(data) {
-	return createHash("md5").update(data).digest("hex");
+export function md5Base64(data) {
+	return createHash("md5").update(data).digest("base64");
 }

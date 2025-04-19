@@ -1,5 +1,5 @@
 import { request, Dispatcher, Agent } from "undici";
-import { XMLParser } from "fast-xml-parser";
+import { XMLParser, XMLBuilder } from "fast-xml-parser";
 
 import S3File from "./S3File.js";
 import S3Error from "./S3Error.js";
@@ -17,6 +17,7 @@ export const write = Symbol("write");
 export const stream = Symbol("stream");
 
 const xmlParser = new XMLParser();
+const xmlBuilder = new XMLBuilder();
 
 /**
  * @typedef {import("./index.d.ts").S3ClientOptions} S3ClientOptions

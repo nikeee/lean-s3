@@ -120,12 +120,13 @@ export function createCanonicalDataDigest(
 
 	hash.update("\n");
 
-	for (let i = 0; i < sortedHeaderNames.length; ++i) {
-		if (i < sortedHeaderNames.length - 1) {
-			hash.update(`${sortedHeaderNames[i]};`);
-		} else {
-			hash.update(sortedHeaderNames[i]);
-		}
+	if (sortedHeaderNames.length > 0) {
+		// emit the first header without ";", so we can avoid branching inside the loop the the other headers
+		hash.update(sortedHeaderNames[0]);
+	}
+
+	for (let i = 1; i < sortedHeaderNames.length; ++i) {
+		hash.update(`;${sortedHeaderNames[i]}`);
 	}
 
 	return hash.update(`\n${contentHashStr}`).digest("hex");

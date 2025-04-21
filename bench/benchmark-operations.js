@@ -260,6 +260,42 @@ summary(() => {
 			}
 		});
 	});
+
+	group(() => {
+
+		const headers = [
+			["host"].sort(),
+			["host", "x-amz-date"].sort(),
+			["host", "x-amz-date", "x-amz-content-sha256"].sort(),
+			["host", "x-amz-date", "x-amz-content-sha256", "range"].sort(),
+			["host", "x-amz-date", "x-amz-content-sha256", "range", "content-type"].sort(),
+			["host", "x-amz-date", "x-amz-content-sha256", "range", "content-type", "content-length"].sort(),
+		];
+
+		function join(h) {
+			return h.join(";");
+		}
+
+		function concat(h) {
+			let res = h.length > 0 ? h[0] : "";
+			for (let i = 1; i < h.length; ++i) {
+				res += `;${h[i]}`;
+			}
+			return res;
+		}
+
+		bench("string concat join", () => {
+			for(let i = 0; i < headers.length; ++i){
+				const x = concat(headers[i]);
+			}
+		});
+
+		bench("array string join", () => {
+			for(let i = 0; i < headers.length; ++i){
+				const x = join(headers[i]);
+			}
+		});
+	});
 });
 
 await run();

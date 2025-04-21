@@ -120,16 +120,14 @@ export function createCanonicalDataDigest(
 
 	hash.update("\n");
 
-	if (sortedHeaderNames.length > 0) {
-		// emit the first header without ";", so we can avoid branching inside the loop the the other headers
-		hash.update(sortedHeaderNames[0]);
-	}
-
+	// emit the first header without ";", so we can avoid branching inside the loop for the other headers
+	// this is just a version of `sortedHeaderList.join(";")` that seems about 2x faster (see `benchmark-operations.js`)
+	let joinedHeaders = sortedHeaderNames.length > 0 ? sortedHeaderNames[0] : "";
 	for (let i = 1; i < sortedHeaderNames.length; ++i) {
-		hash.update(`;${sortedHeaderNames[i]}`);
+		joinedHeaders += `;${sortedHeaderNames[i]}`;
 	}
 
-	return hash.update(`\n${contentHashStr}`).digest("hex");
+	return hash.update(`${joinedHeaders}\n${contentHashStr}`).digest("hex");
 }
 
 /**

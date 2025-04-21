@@ -109,25 +109,23 @@ export function createCanonicalDataDigest(
 
 	const sortedHeaderNames = Object.keys(sortedHeaders);
 	// it is actually faster to pass a single large string instead of doing multiple .update() chains with the parameters
-	// TODO: Maybe actually create a large string here
 	// see `benchmark-operations.js`
 
-	const hash = createHash("sha256").update(`${method}\n${path}\n${query}\n`);
-
+	let canonData = `${method}\n${path}\n${query}\n`;
 	for (const header of sortedHeaderNames) {
-		hash.update(`${header}:${sortedHeaders[header]}\n`);
+		canonData += `${header}:${sortedHeaders[header]}\n`;
 	}
-
-	hash.update("\n");
+	canonData += "\n";
 
 	// emit the first header without ";", so we can avoid branching inside the loop for the other headers
 	// this is just a version of `sortedHeaderList.join(";")` that seems about 2x faster (see `benchmark-operations.js`)
-	let joinedHeaders = sortedHeaderNames.length > 0 ? sortedHeaderNames[0] : "";
+	canonData += sortedHeaderNames.length > 0 ? sortedHeaderNames[0] : "";
 	for (let i = 1; i < sortedHeaderNames.length; ++i) {
-		joinedHeaders += `;${sortedHeaderNames[i]}`;
+		canonData += `;${sortedHeaderNames[i]}`;
 	}
+	canonData += `\n${contentHashStr}`;
 
-	return hash.update(`${joinedHeaders}\n${contentHashStr}`).digest("hex");
+	return createHash("sha256").update(canonData).digest("hex");
 }
 
 /**

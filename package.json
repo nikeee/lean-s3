@@ -27,14 +27,14 @@
     "format": "biome format --write ./src && biome lint --write ./src && biome check --write ./src"
   },
   "devDependencies": {
-    "@aws-sdk/client-s3": "^3.799.0",
+    "@aws-sdk/client-s3": "^3.802.0",
     "@biomejs/biome": "^1.9.4",
-    "@testcontainers/localstack": "^10.24.2",
-    "@testcontainers/minio": "^10.24.2",
+    "@testcontainers/localstack": "^10.25.0",
+    "@testcontainers/minio": "^10.25.0",
     "@types/node": "^22.15.3",
     "expect": "^29.7.0",
     "lefthook": "^1.11.12",
-    "typedoc": "^0.28.3"
+    "typedoc": "^0.28.4"
   },
   "engines": {
     "node": "^20.19.0 || ^22.14.0 || ^24.0.0"

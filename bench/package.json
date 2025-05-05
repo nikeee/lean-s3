@@ -11,7 +11,7 @@
   "type": "module",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.802.0",
-    "@aws-sdk/s3-request-presigner": "^3.802.0",
+    "@aws-sdk/s3-request-presigner": "^3.803.0",
     "@testcontainers/localstack": "^10.25.0",
     "aws4fetch": "^1.0.20",
     "bun": "^1.2.12",

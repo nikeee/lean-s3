@@ -14,7 +14,7 @@
     "@aws-sdk/s3-request-presigner": "^3.803.0",
     "@testcontainers/localstack": "^10.25.0",
     "aws4fetch": "^1.0.20",
-    "bun": "^1.2.12",
+    "bun": "^1.2.13",
     "minio": "^8.0.5",
     "mitata": "^1.0.34"
   }

@@ -79,7 +79,7 @@ BUT...
 
 Due to its scalability, portability and AWS integrations, pre-signing URLs is `async` and performs poorly in high-performance scenarios. By taking different trade-offs, lean-s3 can presign URLs much faster. I promise! This is the reason you cannot use lean-s3 in the browser.
 
-lean-s3 is currently about 20x faster than AWS SDK when it comes to pre-signing URLs[^1]:
+lean-s3 is currently about 30x faster than AWS SDK when it comes to pre-signing URLs[^1]:
 ```
 benchmark                    avg (min … max) p75 / p99
 -------------------------------------------- ---------

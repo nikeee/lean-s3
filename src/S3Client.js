@@ -195,20 +195,84 @@ export default class S3Client {
 	}
 
 	/**
+	 * Uses `DeleteObjects` to delete multiple objects in a single request.
 	 *
 	 * @param {readonly S3BucketEntry[] | readonly string[]} objects
-	 * @param {*} options
+	 * @param {{
+	 *    signal?: AbortSignal;
+	 * }} [options]
 	 */
-	async deleteObjects(objects, options) {
-		throw new Error("Not implemented");
+	async deleteObjects(objects, options = {}) {
+		const body = xmlBuilder.build({
+			Delete: {
+				Quiet: true,
+				Object: objects.map(o => ({
+					Key: typeof o === "string" ? o : o.key,
+				})),
+			},
+		});
+
+		const response = await this.#signedRequest(
+			"POST",
+			"",
+			"delete=", // "=" is needed by minio for some reason
+			body,
+			{
+				"content-md5": sign.md5Base64(body),
+			},
+			undefined,
+			undefined,
+			options.signal,
+		);
+
+		if (response.statusCode === 200) {
+			const text = await response.body.text();
+
+			let res = undefined;
+			try {
+				// Quite mode omits all deleted elements, so it will be parsed as "", wich we need to coalasce to null/undefined
+				res = (xmlParser.parse(text)?.DeleteResult || undefined)?.Error ?? [];
+			} catch (cause) {
+				// Possible according to AWS docs
+				throw new S3Error("Unknown", "", {
+					message: "S3 service responded with invalid XML.",
+					cause,
+				});
+			}
+
+			if (!res || !Array.isArray(res)) {
+				throw new S3Error("Unknown", "", {
+					message: "Could not process response.",
+				});
+			}
+
+			const errors = res.map(e => ({
+				code: e.Code,
+				key: e.Key,
+				message: e.Message,
+				versionId: e.VersionId,
+			}));
+
+			return errors.length > 0 ? { errors } : null;
+		}
+
+		if (400 <= response.statusCode && response.statusCode < 500) {
+			throw await getResponseError(response, "");
+		}
+
+		// undici docs state that we shoul dump the body if not used
+		response.body.dump();
+		throw new Error(
+			`Response code not implemented yet: ${response.statusCode}`,
+		);
 	}
 
 	//#region list
 
 	/**
 	 * Uses `ListObjectsV2` to iterate over all keys. Pagination and continuation is handled internally.
-
-	* @param {{
+	 *
+	 * @param {{
 	 *   prefix?: string;
 	 *   startAfter?: string;
 	 *   signal?: AbortSignal;
@@ -510,35 +574,7 @@ export default class S3Client {
 			return;
 		}
 
-		let body = undefined;
-		try {
-			body = await response.body.text();
-		} catch (cause) {
-			throw new S3Error("Unknown", path, {
-				message: "Could not read response body.",
-				cause,
-			});
-		}
-
-		if (response.headers["content-type"] === "application/xml") {
-			let error = undefined;
-			try {
-				error = xmlParser.parse(body);
-			} catch (cause) {
-				throw new S3Error("Unknown", path, {
-					message: "Could not parse XML error response.",
-					cause,
-				});
-			}
-
-			throw new S3Error(error.Code || "Unknown", path, {
-				message: error.Message || undefined, // Message might be "",
-			});
-		}
-
-		throw new S3Error("Unknown", path, {
-			message: "Unknown error during S3 request.",
-		});
+		throw await getResponseError(response, path);
 	}
 
 	// TODO: Support abortSignal
@@ -797,4 +833,57 @@ export function buildSearchParams(
 		res += `&X-Amz-Storage-Class=${storageClass}`;
 	}
 	return res;
+}
+
+/**
+ * @param {Dispatcher.ResponseData<unknown>} response
+ * @param {string} path
+ * @returns {Promise<S3Error>}
+ */
+async function getResponseError(response, path) {
+	let body = undefined;
+	try {
+		body = await response.body.text();
+	} catch (cause) {
+		return new S3Error("Unknown", path, {
+			message: "Could not read response body.",
+			cause,
+		});
+	}
+
+	if (response.headers["content-type"] === "application/xml") {
+		return parseAndGetXmlError(body, path);
+	}
+
+	return new S3Error("Unknown", path, {
+		message: "Unknown error during S3 request.",
+	});
+}
+
+/**
+ * @param {string} body
+ * @param {string} path
+ * @returns {S3Error}
+ */
+function parseAndGetXmlError(body, path) {
+	let error = undefined;
+	try {
+		error = xmlParser.parse(body);
+	} catch (cause) {
+		return new S3Error("Unknown", path, {
+			message: "Could not parse XML error response.",
+			cause,
+		});
+	}
+
+	if (error.Error) {
+		const e = error.Error;
+		return new S3Error(e.Code || "Unknown", path, {
+			message: e.Message || undefined, // Message might be "",
+		});
+	}
+
+	return new S3Error(error.Code || "Unknown", path, {
+		message: error.Message || undefined, // Message might be "",
+	});
 }

@@ -12,7 +12,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.817.0",
     "@aws-sdk/s3-request-presigner": "^3.821.0",
-    "@testcontainers/localstack": "^10.28.0",
+    "@testcontainers/localstack": "^11.0.0",
     "aws4fetch": "^1.0.20",
     "bun": "^1.2.15",
     "minio": "^8.0.5",

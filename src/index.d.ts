@@ -103,3 +103,25 @@ export type ListObjectsResponse = {
 	nextContinuationToken: string | undefined;
 	contents: readonly S3BucketEntry[];
 };
+
+export type BucketCreationOptions = {
+	locationConstraint?: string;
+	location?: BucketLocationInfo;
+	info?: BucketInfo;
+};
+
+/**
+ * Ref: https://docs.aws.amazon.com/AmazonS3/latest/API/API_LocationInfo.html
+ */
+export type BucketLocationInfo = {
+	name?: string;
+	type?: string;
+};
+
+/**
+ * Ref: https://docs.aws.amazon.com/AmazonS3/latest/API/API_BucketInfo.html
+ */
+export type BucketInfo = {
+	dataRedundancy?: string;
+	type?: string;
+};

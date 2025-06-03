@@ -17,7 +17,9 @@ export const write = Symbol("write");
 export const stream = Symbol("stream");
 
 const xmlParser = new XMLParser();
-const xmlBuilder = new XMLBuilder();
+const xmlBuilder = new XMLBuilder({
+	attributeNamePrefix: "$",
+});
 
 /**
  * @typedef {import("./index.d.ts").S3ClientOptions} S3ClientOptions
@@ -201,6 +203,42 @@ export default class S3Client {
 	 */
 	async deleteObjects(objects, options) {
 		throw new Error("Not implemented");
+	}
+
+	/**
+	 *
+	 * @param {string} name
+	 * @param {import("./index.d.ts").BucketCreationOptions} [options]
+	 */
+	async createBucket(name, options) {
+		let body = undefined;
+		if (options) {
+			const location =
+				options.location && (options.location.name || options.location.type)
+					? {
+							Name: options.location.name ?? undefined,
+							Type: options.location.type ?? undefined,
+						}
+					: undefined;
+			const bucket =
+				options.info && (options.info.dataRedundancy || options.info.type)
+					? {
+							DataRedundancy: options.info.dataRedundancy ?? undefined,
+							Type: options.info.type ?? undefined,
+						}
+					: undefined;
+
+			body = xmlBuilder.build({
+				CreateBucketConfiguration: {
+					$xmlns: "http://s3.amazonaws.com/doc/2006-03-01/",
+					LocationConstraint: options.locationConstraint ?? undefined,
+					Location: location,
+					Bucket: bucket,
+				},
+			});
+		}
+
+		console.log(name, body);
 	}
 
 	//#region list

@@ -77,7 +77,7 @@ $ du -sh node_modules
 `lean-s3` is _so_ lean that it is ~1.8MB just to do a couple of HTTP requests <img src="https://cdn.frankerfacez.com/emoticon/480839/1" width="20" height="20">
 BUT...
 
-Due to its scalability, portability and AWS integrations, pre-signing URLs is `async` and performs poorly in high-performance scenarios. By taking different trade-offs, lean-s3 can presign URLs much faster. I promise! This is the reason you cannot use lean-s3 in the browser.
+Due to the scalability, portability and AWS integrations of @aws-sdk/client-s3, pre-signing URLs is `async` and performs poorly in high-performance scenarios. By taking different trade-offs, lean-s3 can presign URLs much faster. I promise! This is the reason you cannot use lean-s3 in the browser.
 
 lean-s3 is currently about 30x faster than AWS SDK when it comes to pre-signing URLs[^1]:
 ```

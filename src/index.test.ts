@@ -28,7 +28,9 @@ describe("minio", async () => {
 			// 	console.log(`Leftover: ${f.key}`);
 			// }
 
+			expect(await client.bucketExists("test-bucket")).toBe(true);
 			await client.deleteBucket("test-bucket");
+			expect(await client.bucketExists("test-bucket")).toBe(false);
 			await s3.stop();
 		});
 		before(async () => {
@@ -61,7 +63,9 @@ describe("localstack", async () => {
 		});
 
 		after(async () => {
+			expect(await client.bucketExists("test-bucket")).toBe(true);
 			await client.deleteBucket("test-bucket");
+			expect(await client.bucketExists("test-bucket")).toBe(false);
 			await s3.stop();
 		});
 		before(async () => {

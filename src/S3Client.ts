@@ -99,6 +99,9 @@ export type BucketCreationOptions = {
 export type BucketDeletionOptions = {
 	signal?: AbortSignal;
 };
+export type BucketExistsOptions = {
+	signal?: AbortSignal;
+};
 
 /**
  * A configured S3 bucket instance for managing files.
@@ -455,6 +458,49 @@ export default class S3Client {
 
 		if (response.statusCode === 204) {
 			return;
+		}
+		throw new Error(`Response code not supported: ${response.statusCode}`);
+	}
+
+	/**
+	 * Checks if a bucket exists.
+	 * @param name The name of the bucket to delete. Same restrictions as in {@link S3Client#createBucket}.
+	 * @throws {Error} If the bucket name is invalid.
+	 * @remarks Uses [`HeadBucket`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadBucket.html).
+	 */
+	async bucketExists(
+		name: string,
+		options?: BucketExistsOptions,
+	): Promise<boolean> {
+		ensureValidBucketName(name);
+
+		const response = await this.#signedRequest(
+			"HEAD",
+			"",
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			name,
+			options?.signal,
+		);
+
+		if (
+			response.statusCode !== 404 &&
+			400 <= response.statusCode &&
+			response.statusCode < 500
+		) {
+			throw await getResponseError(response, "");
+		}
+
+		await response.body.dump(); // undici docs state that we should dump the body if not used
+
+		if (response.statusCode === 200) {
+			return true;
+		}
+		if (response.statusCode === 404) {
+			return false;
 		}
 		throw new Error(`Response code not supported: ${response.statusCode}`);
 	}

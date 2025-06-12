@@ -30,7 +30,6 @@
     "prepublishOnly": "npm run clean && npm run build"
   },
   "devDependencies": {
-    "@aws-sdk/client-s3": "^3.828.0",
     "@biomejs/biome": "^1.9.4",
     "@testcontainers/localstack": "^11.0.3",
     "@testcontainers/minio": "^11.0.3",

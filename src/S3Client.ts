@@ -409,6 +409,8 @@ export default class S3Client {
 		console.log(response);
 
 		if (response.statusCode === 200) {
+			// undici docs state that we should dump the body if not used
+			response.body.dump();
 			return;
 		}
 

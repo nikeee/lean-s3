@@ -420,6 +420,15 @@ export default class S3Client {
 		throw new Error(`Response code not supported: ${response.statusCode}`);
 	}
 
+	/**
+	 *
+	 * @param name The name of the bucket to delete.
+	 * @remarks Uses [`DeleteBucket`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucket.html).
+	 */
+	async deleteBucket(name: string) {
+		throw new Error("`deleteBucket` is not implemented yet.");
+	}
+
 	//#region list
 
 	/**

@@ -92,6 +92,9 @@ export type BucketCreationOptions = {
 	info?: BucketInfo;
 	signal?: AbortSignal;
 };
+export type BucketDeletionOptions = {
+	signal?: AbortSignal;
+};
 
 /**
  * A configured S3 bucket instance for managing files.
@@ -354,6 +357,7 @@ export default class S3Client {
 	 * - Bucket names must not be formatted as an IP address (for example, `192.168.5.4`).
 	 *
 	 * @throws {Error} If the bucket name is invalid.
+	 * @throws {S3Error} If the bucket could not be created, e.g. if it already exists.
 	 * @remarks Uses [`CreateBucket`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html)
 	 */
 	async createBucket(name: string, options?: BucketCreationOptions) {
@@ -422,12 +426,34 @@ export default class S3Client {
 	 * Deletes a bucket from the S3 server.
 	 * @param name The name of the bucket to delete. Same restrictions as in {@link S3Client#createBucket}.
 	 * @throws {Error} If the bucket name is invalid.
+	 * @throws {S3Error} If the bucket could not be deleted, e.g. if it is not empty.
 	 * @remarks Uses [`DeleteBucket`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucket.html).
 	 */
-	async deleteBucket(name: string) {
+	async deleteBucket(name: string, options?: BucketDeletionOptions) {
 		ensureValidBucketName(name);
+		const response = await this.#signedRequest(
+			"DELETE",
+			"",
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			name,
+			options?.signal,
+		);
 
-		throw new Error("`deleteBucket` is not implemented yet.");
+		if (response.statusCode === 204) {
+			response.body.dump(); // undici docs state that we should dump the body if not used
+			return;
+		}
+
+		if (400 <= response.statusCode && response.statusCode < 500) {
+			throw await getResponseError(response, "");
+		}
+
+		response.body.dump(); // undici docs state that we should dump the body if not used
+		throw new Error(`Response code not supported: ${response.statusCode}`);
 	}
 
 	//#region list

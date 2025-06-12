@@ -1,33 +1,107 @@
-import { request, Dispatcher, Agent } from "undici";
-import { XMLParser } from "fast-xml-parser";
+import { request, Agent, type Dispatcher } from "undici";
+import { XMLParser, XMLBuilder } from "fast-xml-parser";
 
-import S3File from "./S3File.js";
-import S3Error from "./S3Error.js";
-import S3BucketEntry from "./S3BucketEntry.js";
-import KeyCache from "./KeyCache.js";
-import * as amzDate from "./AmzDate.js";
-import * as sign from "./sign.js";
+import S3File from "./S3File.ts";
+import S3Error from "./S3Error.ts";
+import S3BucketEntry from "./S3BucketEntry.ts";
+import KeyCache from "./KeyCache.ts";
+import * as amzDate from "./AmzDate.ts";
+import * as sign from "./sign.ts";
 import {
 	buildRequestUrl,
 	getRangeHeader,
 	prepareHeadersForSigning,
-} from "./url.js";
+} from "./url.ts";
+import type {
+	Acl,
+	BucketInfo,
+	BucketLocationInfo,
+	HttpMethod,
+	PresignableHttpMethod,
+	StorageClass,
+	UndiciBodyInit,
+} from "./index.ts";
 
 export const write = Symbol("write");
 export const stream = Symbol("stream");
 
 const xmlParser = new XMLParser();
+const xmlBuilder = new XMLBuilder({
+	attributeNamePrefix: "$",
+	ignoreAttributes: false,
+});
 
-/**
- * @typedef {import("./index.d.ts").S3ClientOptions} S3ClientOptions
- * @typedef {import("./index.d.ts").PresignableHttpMethod} PresignableHttpMethod
- * @typedef {import("./index.d.ts").StorageClass} StorageClass
- * @typedef {import("./index.d.ts").Acl} Acl
- * @typedef {import("./index.d.ts").S3FilePresignOptions} S3FilePresignOptions
- * @typedef {import("./index.d.ts").OverridableS3ClientOptions} OverridableS3ClientOptions
- * @typedef {import("./index.d.ts").CreateFileInstanceOptions} CreateFileInstanceOptions
- * @typedef {import("./index.d.ts").ListObjectsResponse} ListObjectsResponse
- */
+export interface S3ClientOptions {
+	bucket: string;
+	region: string;
+	endpoint: string;
+	accessKeyId: string;
+	secretAccessKey: string;
+	sessionToken?: string;
+}
+export type OverridableS3ClientOptions = Pick<
+	S3ClientOptions,
+	"region" | "bucket" | "endpoint"
+>;
+
+// biome-ignore lint/complexity/noBannedTypes: TODO
+export type CreateFileInstanceOptions = {}; // TODO
+
+export type DeleteObjectsOptions = {
+	signal?: AbortSignal;
+};
+
+export interface S3FilePresignOptions {
+	contentHash: Buffer;
+	/** Seconds. */
+	expiresIn: number; // TODO: Maybe support Temporal.Duration once major support arrives
+	method: PresignableHttpMethod;
+	storageClass: StorageClass;
+	acl: Acl;
+}
+
+export type ListObjectsOptions = {
+	bucket?: string;
+
+	prefix?: string;
+	maxKeys?: number;
+	startAfter?: string;
+	continuationToken?: string;
+	signal?: AbortSignal;
+};
+export type ListObjectsIteratingOptions = {
+	bucket?: string;
+
+	prefix?: string;
+	startAfter?: string;
+	signal?: AbortSignal;
+	internalPageSize?: number;
+};
+
+export type ListObjectsResponse = {
+	name: string;
+	prefix: string | undefined;
+	startAfter: string | undefined;
+	isTruncated: boolean;
+	continuationToken: string | undefined;
+	maxKeys: number;
+	keyCount: number;
+	nextContinuationToken: string | undefined;
+	contents: readonly S3BucketEntry[];
+};
+
+export type BucketCreationOptions = {
+	locationConstraint?: string;
+	location?: BucketLocationInfo;
+	info?: BucketInfo;
+	signal?: AbortSignal;
+};
+export type BucketDeletionOptions = {
+	signal?: AbortSignal;
+};
+export type BucketExistsOptions = {
+	signal?: AbortSignal;
+};
 
 /**
  * A configured S3 bucket instance for managing files.
@@ -46,20 +120,18 @@ const xmlParser = new XMLParser();
  * ```
  */
 export default class S3Client {
-	/** @type {Readonly<S3ClientOptions>} */
-	#options;
+	#options: Readonly<S3ClientOptions>;
 	#keyCache = new KeyCache();
 
-	// TODO: pass options to this in client
-	/** @type {Dispatcher} */
-	#dispatcher = new Agent();
+	// TODO: pass options to this in client? Do we want to expose tjhe internal use of undici?
+	#dispatcher: Dispatcher = new Agent();
 
 	/**
 	 * Create a new instance of an S3 bucket so that credentials can be managed from a single instance instead of being passed to every method.
 	 *
-	 * @param {S3ClientOptions} options The default options to use for the S3 client.
+	 * @param  options The default options to use for the S3 client.
 	 */
-	constructor(options) {
+	constructor(options: S3ClientOptions) {
 		if (!options) {
 			throw new Error("`options` is required.");
 		}
@@ -114,9 +186,27 @@ export default class S3Client {
 	/**
 	 * Creates an S3File instance for the given path.
 	 *
-	 * @param {string} path
-	 * @param {Partial<CreateFileInstanceOptions> | undefined} [options] TODO
-	 * @returns {S3File}
+	 * @param {string} path The path to the object in the bucket. ALso known as [object key](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html).
+	 * We recommend not using the following characters in a key name because of significant special character handling, which isn't consistent across all applications (see [AWS docs](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html)):
+	 * - Backslash (`\\`)
+	 * - Left brace (`{`)
+	 * - Non-printable ASCII characters (128–255 decimal characters)
+	 * - Caret or circumflex (`^`)
+	 * - Right brace (`}`)
+	 * - Percent character (`%`)
+	 * - Grave accent or backtick (`\``)
+	 * - Right bracket (`]`)
+	 * - Quotation mark (`"`)
+	 * - Greater than sign (`>`)
+	 * - Left bracket (`[`)
+	 * - Tilde (`~`)
+	 * - Less than sign (`<`)
+	 * - Pound sign (`#`)
+	 * - Vertical bar or pipe (`|`)
+	 *
+	 * lean-s3 does not enforce these restrictions.
+	 *
+	 * @param {Partial<CreateFileInstanceOptions>} [options] TODO
 	 * @example
 	 * ```js
 	 * const file = client.file("image.jpg");
@@ -128,16 +218,15 @@ export default class S3Client {
 	 * });
 	 * ```
 	 */
-	file(path, options) {
+	file(path: string, options?: Partial<CreateFileInstanceOptions>): S3File {
+		// TODO: Check max path length in bytes
 		return new S3File(this, path, undefined, undefined, undefined);
 	}
 
 	/**
 	 * Generate a presigned URL for temporary access to a file.
 	 * Useful for generating upload/download URLs without exposing credentials.
-	 * @param {string} path
-	 * @param {Partial<S3FilePresignOptions & OverridableS3ClientOptions>} [signOptions]
-	 * @returns {string} The operation on {@link S3Client#presign.path} as a pre-signed URL.
+	 * @returns The operation on {@link S3Client#presign.path} as a pre-signed URL.
 	 *
 	 * @example
 	 * ```js
@@ -147,7 +236,7 @@ export default class S3Client {
 	 * ```
 	 */
 	presign(
-		path,
+		path: string,
 		{
 			method = "GET",
 			expiresIn = 3600, // TODO: Maybe rename this to expiresInSeconds
@@ -156,8 +245,8 @@ export default class S3Client {
 			region: regionOverride,
 			bucket: bucketOverride,
 			endpoint: endpointOverride,
-		} = {},
-	) {
+		}: Partial<S3FilePresignOptions & OverridableS3ClientOptions> = {},
+	): string {
 		const now = new Date();
 		const date = amzDate.getAmzDate(now);
 		const options = this.#options;
@@ -205,20 +294,237 @@ export default class S3Client {
 		return res.toString();
 	}
 
+	/**
+	 * Uses [`DeleteObjects`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html) to delete multiple objects in a single request.
+	 */
+	async deleteObjects(
+		objects: readonly S3BucketEntry[] | readonly string[],
+		options: DeleteObjectsOptions = {},
+	) {
+		const body = xmlBuilder.build({
+			Delete: {
+				Quiet: true,
+				Object: objects.map(o => ({
+					Key: typeof o === "string" ? o : o.key,
+				})),
+			},
+		});
+
+		const response = await this.#signedRequest(
+			"POST",
+			"",
+			"delete=", // "=" is needed by minio for some reason
+			body,
+			{
+				"content-md5": sign.md5Base64(body),
+			},
+			undefined,
+			undefined,
+			this.#options.bucket,
+			options.signal,
+		);
+
+		if (response.statusCode === 200) {
+			const text = await response.body.text();
+
+			let res = undefined;
+			try {
+				// Quite mode omits all deleted elements, so it will be parsed as "", wich we need to coalasce to null/undefined
+				res = (xmlParser.parse(text)?.DeleteResult || undefined)?.Error ?? [];
+			} catch (cause) {
+				// Possible according to AWS docs
+				throw new S3Error("Unknown", "", {
+					message: "S3 service responded with invalid XML.",
+					cause,
+				});
+			}
+
+			if (!res || !Array.isArray(res)) {
+				throw new S3Error("Unknown", "", {
+					message: "Could not process response.",
+				});
+			}
+
+			const errors = res.map(e => ({
+				code: e.Code,
+				key: e.Key,
+				message: e.Message,
+				versionId: e.VersionId,
+			}));
+
+			return errors.length > 0 ? { errors } : null;
+		}
+
+		if (400 <= response.statusCode && response.statusCode < 500) {
+			throw await getResponseError(response, "");
+		}
+
+		response.body.dump(); // undici docs state that we should dump the body if not used
+		throw new Error(
+			`Response code not implemented yet: ${response.statusCode}`,
+		);
+	}
+
+	/**
+	 * Creates a new bucket on the S3 server.
+	 *
+	 * @param name The name of the bucket to create. AWS the name according to [some rules](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html). The most important ones are:
+	 * - Bucket names must be between `3` (min) and `63` (max) characters long.
+	 * - Bucket names can consist only of lowercase letters, numbers, periods (`.`), and hyphens (`-`).
+	 * - Bucket names must begin and end with a letter or number.
+	 * - Bucket names must not contain two adjacent periods.
+	 * - Bucket names must not be formatted as an IP address (for example, `192.168.5.4`).
+	 *
+	 * @throws {Error} If the bucket name is invalid.
+	 * @throws {S3Error} If the bucket could not be created, e.g. if it already exists.
+	 * @remarks Uses [`CreateBucket`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html)
+	 */
+	async createBucket(name: string, options?: BucketCreationOptions) {
+		ensureValidBucketName(name);
+
+		let body = undefined;
+		if (options) {
+			const location =
+				options.location && (options.location.name || options.location.type)
+					? {
+							Name: options.location.name ?? undefined,
+							Type: options.location.type ?? undefined,
+						}
+					: undefined;
+			const bucket =
+				options.info && (options.info.dataRedundancy || options.info.type)
+					? {
+							DataRedundancy: options.info.dataRedundancy ?? undefined,
+							Type: options.info.type ?? undefined,
+						}
+					: undefined;
+
+			body =
+				location || bucket || options.locationConstraint
+					? xmlBuilder.build({
+							CreateBucketConfiguration: {
+								$xmlns: "http://s3.amazonaws.com/doc/2006-03-01/",
+								LocationConstraint: options.locationConstraint ?? undefined,
+								Location: location,
+								Bucket: bucket,
+							},
+						})
+					: undefined;
+		}
+
+		const additionalSignedHeaders = body
+			? { "content-md5": sign.md5Base64(body) }
+			: undefined;
+
+		const response = await this.#signedRequest(
+			"PUT",
+			"",
+			undefined,
+			body,
+			additionalSignedHeaders,
+			undefined,
+			undefined,
+			name,
+			options?.signal,
+		);
+
+		if (400 <= response.statusCode && response.statusCode < 500) {
+			throw await getResponseError(response, "");
+		}
+
+		await response.body.dump(); // undici docs state that we should dump the body if not used
+
+		if (response.statusCode === 200) {
+			return;
+		}
+
+		throw new Error(`Response code not supported: ${response.statusCode}`);
+	}
+
+	/**
+	 * Deletes a bucket from the S3 server.
+	 * @param name The name of the bucket to delete. Same restrictions as in {@link S3Client#createBucket}.
+	 * @throws {Error} If the bucket name is invalid.
+	 * @throws {S3Error} If the bucket could not be deleted, e.g. if it is not empty.
+	 * @remarks Uses [`DeleteBucket`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucket.html).
+	 */
+	async deleteBucket(name: string, options?: BucketDeletionOptions) {
+		ensureValidBucketName(name);
+		const response = await this.#signedRequest(
+			"DELETE",
+			"",
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			name,
+			options?.signal,
+		);
+
+		if (400 <= response.statusCode && response.statusCode < 500) {
+			throw await getResponseError(response, "");
+		}
+
+		await response.body.dump(); // undici docs state that we should dump the body if not used
+
+		if (response.statusCode === 204) {
+			return;
+		}
+		throw new Error(`Response code not supported: ${response.statusCode}`);
+	}
+
+	/**
+	 * Checks if a bucket exists.
+	 * @param name The name of the bucket to delete. Same restrictions as in {@link S3Client#createBucket}.
+	 * @throws {Error} If the bucket name is invalid.
+	 * @remarks Uses [`HeadBucket`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadBucket.html).
+	 */
+	async bucketExists(
+		name: string,
+		options?: BucketExistsOptions,
+	): Promise<boolean> {
+		ensureValidBucketName(name);
+
+		const response = await this.#signedRequest(
+			"HEAD",
+			"",
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			name,
+			options?.signal,
+		);
+
+		if (
+			response.statusCode !== 404 &&
+			400 <= response.statusCode &&
+			response.statusCode < 500
+		) {
+			throw await getResponseError(response, "");
+		}
+
+		await response.body.dump(); // undici docs state that we should dump the body if not used
+
+		if (response.statusCode === 200) {
+			return true;
+		}
+		if (response.statusCode === 404) {
+			return false;
+		}
+		throw new Error(`Response code not supported: ${response.statusCode}`);
+	}
+
 	//#region list
 
 	/**
-	 * Uses `ListObjectsV2` to iterate over all keys. Pagination and continuation is handled internally.
-
-	* @param {{
-	 *   prefix?: string;
-	 *   startAfter?: string;
-	 *   signal?: AbortSignal;
-	 *   internalPageSize?: number;
-	 * }} [options]
-	 * @returns {AsyncGenerator<S3BucketEntry>}
+	 * Uses [`ListObjectsV2`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html) to iterate over all keys. Pagination and continuation is handled internally.
 	 */
-	async *listIterating(options) {
+	async *listIterating(
+		options: ListObjectsIteratingOptions,
+	): AsyncGenerator<S3BucketEntry> {
 		// only used to get smaller pages, so we can test this properly
 		const maxKeys = options?.internalPageSize ?? undefined;
 
@@ -242,17 +548,9 @@ export default class S3Client {
 	}
 
 	/**
-	 *
-	 * @param {{
-	 *   prefix?: string;
-	 *   maxKeys?: number;
-	 *   startAfter?: string;
-	 *   continuationToken?: string;
-	 *   signal?: AbortSignal;
-	 * }} [options]
-	 * @returns {Promise<ListObjectsResponse>}
+	 * Implements [`ListObjectsV2`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html) to iterate over all keys.
 	 */
-	async list(options = {}) {
+	async list(options: ListObjectsOptions = {}): Promise<ListObjectsResponse> {
 		// See `benchmark-operations.js` on why we don't use URLSearchParams but string concat
 		// tldr: This is faster and we know the params exactly, so we can focus our encoding
 
@@ -305,6 +603,7 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
+			options.bucket ?? this.#options.bucket,
 			options.signal,
 		);
 
@@ -348,8 +647,7 @@ export default class S3Client {
 			};
 		}
 
-		// undici docs state that we shoul dump the body if not used
-		response.body.dump();
+		response.body.dump(); // undici docs state that we should dump the body if not used
 		throw new Error(
 			`Response code not implemented yet: ${response.statusCode}`,
 		);
@@ -357,27 +655,17 @@ export default class S3Client {
 
 	//#endregion
 
-	/**
-	 * @param {import("./index.js").HttpMethod} method
-	 * @param {string} pathWithoutBucket
-	 * @param {string | undefined} query
-	 * @param {import("./index.d.ts").UndiciBodyInit | undefined} body
-	 * @param {Record<string, string>| undefined} additionalSignedHeaders
-	 * @param {Record<string, string> | undefined} additionalUnsignedHeaders
-	 * @param {Buffer | undefined} contentHash
-	 * @param {AbortSignal | undefined} signal
-	 */
 	async #signedRequest(
-		method,
-		pathWithoutBucket,
-		query,
-		body,
-		additionalSignedHeaders,
-		additionalUnsignedHeaders,
-		contentHash,
-		signal,
+		method: HttpMethod,
+		pathWithoutBucket: string,
+		query: string | undefined,
+		body: UndiciBodyInit | undefined,
+		additionalSignedHeaders: Record<string, string> | undefined,
+		additionalUnsignedHeaders: Record<string, string> | undefined,
+		contentHash: Buffer | undefined,
+		bucket: string,
+		signal: AbortSignal | undefined = undefined,
 	) {
-		const bucket = this.#options.bucket;
 		const endpoint = this.#options.endpoint;
 		const region = this.#options.region;
 
@@ -388,13 +676,14 @@ export default class S3Client {
 
 		const now = amzDate.now();
 
+		const contentHashStr = contentHash?.toString("hex") ?? sign.unsignedPayload;
+
 		// Signed headers have to be sorted
 		// To enhance sorting, we're adding all possible values somehow pre-ordered
 		const headersToBeSigned = prepareHeadersForSigning({
 			host: url.host,
 			"x-amz-date": now.dateTime,
-			"x-amz-content-sha256":
-				contentHash?.toString("hex") ?? "UNSIGNED-PAYLOAD",
+			"x-amz-content-sha256": contentHashStr,
 			...additionalSignedHeaders,
 		});
 
@@ -412,7 +701,7 @@ export default class S3Client {
 						now,
 						headersToBeSigned,
 						region,
-						contentHash,
+						contentHashStr,
 						this.#options.accessKeyId,
 						this.#options.secretAccessKey,
 					),
@@ -432,26 +721,18 @@ export default class S3Client {
 
 	/**
 	 * @internal
-	 * @param {string} path
 	 * @param {import("./index.d.ts").UndiciBodyInit} data TODO
-	 * @param {string} contentType
-	 * @param {number | undefined} contentLength
-	 * @param {Buffer | undefined} contentHash
-	 * @param {number | undefined} rageStart
-	 * @param {number | undefined} rangeEndExclusive
-	 * @param {AbortSignal | undefined} signal
-	 * @returns {Promise<void>}
 	 */
 	async [write](
-		path,
-		data,
-		contentType,
-		contentLength,
-		contentHash,
-		rageStart,
-		rangeEndExclusive,
-		signal,
-	) {
+		path: string,
+		data: UndiciBodyInit,
+		contentType: string,
+		contentLength: number | undefined,
+		contentHash: Buffer | undefined,
+		rageStart: number | undefined,
+		rangeEndExclusive: number | undefined,
+		signal: AbortSignal | undefined = undefined,
+	): Promise<void> {
 		const bucket = this.#options.bucket;
 		const endpoint = this.#options.endpoint;
 		const region = this.#options.region;
@@ -460,6 +741,8 @@ export default class S3Client {
 
 		const now = amzDate.now();
 
+		const contentHashStr = contentHash?.toString("hex") ?? sign.unsignedPayload;
+
 		// Signed headers have to be sorted
 		// To enhance sorting, we're adding all possible values somehow pre-ordered
 		const headersToBeSigned = prepareHeadersForSigning({
@@ -467,7 +750,7 @@ export default class S3Client {
 			"content-type": contentType,
 			host: url.host,
 			range: getRangeHeader(rageStart, rangeEndExclusive),
-			"x-amz-content-sha256": contentHash?.toString("hex") ?? undefined,
+			"x-amz-content-sha256": contentHashStr,
 			"x-amz-date": now.dateTime,
 		});
 
@@ -487,7 +770,7 @@ export default class S3Client {
 						now,
 						headersToBeSigned,
 						region,
-						contentHash,
+						contentHashStr,
 						this.#options.accessKeyId,
 						this.#options.secretAccessKey,
 					),
@@ -509,48 +792,20 @@ export default class S3Client {
 			return;
 		}
 
-		let body = undefined;
-		try {
-			body = await response.body.text();
-		} catch (cause) {
-			throw new S3Error("Unknown", path, {
-				message: "Could not read response body.",
-				cause,
-			});
-		}
-
-		if (response.headers["content-type"] === "application/xml") {
-			let error = undefined;
-			try {
-				error = xmlParser.parse(body);
-			} catch (cause) {
-				throw new S3Error("Unknown", path, {
-					message: "Could not parse XML error response.",
-					cause,
-				});
-			}
-
-			throw new S3Error(error.Code || "Unknown", path, {
-				message: error.Message || undefined, // Message might be "",
-			});
-		}
-
-		throw new S3Error("Unknown", path, {
-			message: "Unknown error during S3 request.",
-		});
+		throw await getResponseError(response, path);
 	}
 
 	// TODO: Support abortSignal
 
 	/**
 	 * @internal
-	 * @param {string} path
-	 * @param {Buffer | undefined} contentHash
-	 * @param {number | undefined} rageStart
-	 * @param {number | undefined} rangeEndExclusive
-	 * @returns
 	 */
-	[stream](path, contentHash, rageStart, rangeEndExclusive) {
+	[stream](
+		path: string,
+		contentHash: Buffer | undefined,
+		rageStart: number | undefined,
+		rangeEndExclusive: number | undefined,
+	) {
 		const bucket = this.#options.bucket;
 		const endpoint = this.#options.endpoint;
 		const region = this.#options.region;
@@ -559,14 +814,15 @@ export default class S3Client {
 
 		const range = getRangeHeader(rageStart, rangeEndExclusive);
 
+		const contentHashStr = contentHash?.toString("hex") ?? sign.unsignedPayload;
+
 		const headersToBeSigned = prepareHeadersForSigning({
 			"amz-sdk-invocation-id": crypto.randomUUID(),
 			// TODO: Maybe support retries and do "amz-sdk-request": attempt=1; max=3
 			host: url.host,
 			range,
 			// Hetzner doesnt care if the x-amz-content-sha256 header is missing, R2 requires it to be present
-			"x-amz-content-sha256":
-				contentHash?.toString("hex") ?? "UNSIGNED-PAYLOAD",
+			"x-amz-content-sha256": contentHashStr,
 			"x-amz-date": now.dateTime,
 		});
 
@@ -575,7 +831,7 @@ export default class S3Client {
 		return new ReadableStream({
 			type: "bytes",
 			start: controller => {
-				const onNetworkError = (/** @type {unknown} */ cause) => {
+				const onNetworkError = (cause: unknown) => {
 					controller.error(
 						new S3Error("Unknown", path, {
 							message: undefined,
@@ -597,7 +853,7 @@ export default class S3Client {
 							now,
 							headersToBeSigned,
 							region,
-							contentHash,
+							contentHashStr,
 							this.#options.accessKeyId,
 							this.#options.secretAccessKey,
 						),
@@ -688,34 +944,23 @@ export default class S3Client {
 		});
 	}
 
-	/**
-	 * @param {import("./index.js").HttpMethod} method
-	 * @param {string} path
-	 * @param {string} query
-	 * @param {amzDate.AmzDate} date
-	 * @param {Record<string, string>} sortedSignedHeaders
-	 * @param {string} region
-	 * @param {Buffer | undefined} contentHash
-	 * @param {string} accessKeyId
-	 * @param {string} secretAccessKey
-	 */
 	#getAuthorizationHeader(
-		method,
-		path,
-		query,
-		date,
-		sortedSignedHeaders,
-		region,
-		contentHash,
-		accessKeyId,
-		secretAccessKey,
+		method: HttpMethod,
+		path: string,
+		query: string,
+		date: amzDate.AmzDate,
+		sortedSignedHeaders: Record<string, string>,
+		region: string,
+		contentHashStr: string,
+		accessKeyId: string,
+		secretAccessKey: string,
 	) {
 		const dataDigest = sign.createCanonicalDataDigest(
 			method,
 			path,
 			query,
 			sortedSignedHeaders,
-			contentHash?.toString("hex") ?? sign.unsignedPayload,
+			contentHashStr,
 		);
 
 		const signingKey = this.#keyCache.computeIfAbsent(
@@ -739,27 +984,16 @@ export default class S3Client {
 	}
 }
 
-/**
- * @param {string} amzCredential
- * @param {import("./AmzDate.js").AmzDate} date
- * @param {number} expiresIn
- * @param {string} headerList
- * @param {StorageClass | null | undefined} storageClass
- * @param {string | null | undefined} sessionToken
- * @param {Acl | null | undefined} acl
- * @param {string | null | undefined} contentHashStr
- * @returns {string}
- */
 export function buildSearchParams(
-	amzCredential,
-	date,
-	expiresIn,
-	headerList,
-	contentHashStr,
-	storageClass,
-	sessionToken,
-	acl,
-) {
+	amzCredential: string,
+	date: amzDate.AmzDate,
+	expiresIn: number,
+	headerList: string,
+	contentHashStr: string | null | undefined,
+	storageClass: StorageClass | null | undefined,
+	sessionToken: string | null | undefined,
+	acl: Acl | null | undefined,
+): string {
 	// We tried to make these query params entirely lower-cased, just like the headers
 	// but Cloudflare R2 requires them to have this exact casing
 
@@ -795,4 +1029,70 @@ export function buildSearchParams(
 		res += `&X-Amz-Storage-Class=${storageClass}`;
 	}
 	return res;
+}
+
+async function getResponseError(
+	response: Dispatcher.ResponseData<unknown>,
+	path: string,
+): Promise<S3Error> {
+	let body = undefined;
+	try {
+		body = await response.body.text();
+	} catch (cause) {
+		return new S3Error("Unknown", path, {
+			message: "Could not read response body.",
+			cause,
+		});
+	}
+
+	if (response.headers["content-type"] === "application/xml") {
+		return parseAndGetXmlError(body, path);
+	}
+
+	return new S3Error("Unknown", path, {
+		message: "Unknown error during S3 request.",
+	});
+}
+
+function parseAndGetXmlError(body: string, path: string): S3Error {
+	let error = undefined;
+	try {
+		error = xmlParser.parse(body);
+	} catch (cause) {
+		return new S3Error("Unknown", path, {
+			message: "Could not parse XML error response.",
+			cause,
+		});
+	}
+
+	if (error.Error) {
+		const e = error.Error;
+		return new S3Error(e.Code || "Unknown", path, {
+			message: e.Message || undefined, // Message might be "",
+		});
+	}
+
+	return new S3Error(error.Code || "Unknown", path, {
+		message: error.Message || undefined, // Message might be "",
+	});
+}
+
+function ensureValidBucketName(name: string): asserts name is string {
+	if (name.length < 3 || name.length > 63) {
+		throw new Error("`name` must be between 3 and 63 characters long.");
+	}
+
+	if (name.startsWith(".") || name.endsWith(".")) {
+		throw new Error("`name` must not start or end with a period (.)");
+	}
+
+	if (!/^[a-z0-9.-]+$/.test(name)) {
+		throw new Error(
+			"`name` can only contain lowercase letters, numbers, periods (.), and hyphens (-).",
+		);
+	}
+
+	if (name.includes("..")) {
+		throw new Error("`name` must not contain two adjacent periods (..)");
+	}
 }

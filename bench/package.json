@@ -10,11 +10,11 @@
   "license": "MIT",
   "type": "module",
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.787.0",
-    "@aws-sdk/s3-request-presigner": "^3.787.0",
-    "@testcontainers/localstack": "^10.24.2",
+    "@aws-sdk/client-s3": "^3.826.0",
+    "@aws-sdk/s3-request-presigner": "^3.826.0",
+    "@testcontainers/localstack": "^11.0.2",
     "aws4fetch": "^1.0.20",
-    "bun": "^1.2.10",
+    "bun": "^1.2.15",
     "minio": "^8.0.5",
     "mitata": "^1.0.34"
   }

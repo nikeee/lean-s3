@@ -1,15 +1,16 @@
-import { createHmac, createHash } from "node:crypto";
+import { createHmac, createHash, type BinaryLike } from "node:crypto";
+
+import type { AmzDate } from "./AmzDate.ts";
+import type { HttpMethod, PresignableHttpMethod } from "./index.ts";
 
 // Spec:
 // https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
 
-/**
- * @param {string} date
- * @param {string} region
- * @param {string} secretAccessKey
- * @returns {Buffer}
- */
-export function deriveSigningKey(date, region, secretAccessKey) {
+export function deriveSigningKey(
+	date: string,
+	region: string,
+	secretAccessKey: string,
+): Buffer {
 	const key = `AWS4${secretAccessKey}`;
 
 	const signedDate = createHmac("sha256", key).update(date).digest();
@@ -27,19 +28,12 @@ export function deriveSigningKey(date, region, secretAccessKey) {
 		.digest();
 }
 
-/**
- * @param {Buffer} signinKey
- * @param {string} canonicalDataHash
- * @param {import("./AmzDate.js").AmzDate} date
- * @param {string} region
- * @returns {string}
- */
 export function signCanonicalDataHash(
-	signinKey,
-	canonicalDataHash,
-	date,
-	region,
-) {
+	signinKey: Buffer,
+	canonicalDataHash: string,
+	date: AmzDate,
+	region: string,
+): string {
 	// it is actually faster to pass a single large string instead of doing multiple .update() chains with the parameters
 	// see `benchmark-operations.js`
 	return createHmac("sha256", signinKey)
@@ -52,19 +46,17 @@ export function signCanonicalDataHash(
 export const unsignedPayload = "UNSIGNED-PAYLOAD";
 
 /**
- *
  * Same as {@see createCanonicalDataDigest}, but only sets the `host` header and the content hash to `UNSIGNED-PAYLOAD`.
  *
  * Used for pre-signing only. Pre-signed URLs [cannot contain content hashes](https://github.com/aws/aws-sdk-js/blob/966fa6c316dbb11ca9277564ff7120e6b16467f4/lib/signers/v4.js#L182-L183)
  * and the only header that is signed is `host`. So we can use an optimized version for that.
- *
- * @param {import("./index.js").PresignableHttpMethod} method
- * @param {string} path
- * @param {string} query
- * @param {string} host
- * @returns
  */
-export function createCanonicalDataDigestHostOnly(method, path, query, host) {
+export function createCanonicalDataDigestHostOnly(
+	method: PresignableHttpMethod,
+	path: string,
+	query: string,
+	host: string,
+): string {
 	// it is actually faster to pass a single large string instead of doing multiple .update() chains with the parameters
 	// see `benchmark-operations.js`
 
@@ -75,21 +67,13 @@ export function createCanonicalDataDigestHostOnly(method, path, query, host) {
 		.digest("hex");
 }
 
-/**
- * @param {import("./index.js").HttpMethod} method
- * @param {string} path
- * @param {string} query
- * @param {Record<string, string>} sortedHeaders
- * @param {string} contentHashStr
- * @returns
- */
 export function createCanonicalDataDigest(
-	method,
-	path,
-	query,
-	sortedHeaders,
-	contentHashStr,
-) {
+	method: HttpMethod,
+	path: string,
+	query: string,
+	sortedHeaders: Record<string, string>,
+	contentHashStr: string,
+): string {
 	// Use this for debugging
 	/*
 	const xHash = {
@@ -109,32 +93,29 @@ export function createCanonicalDataDigest(
 
 	const sortedHeaderNames = Object.keys(sortedHeaders);
 	// it is actually faster to pass a single large string instead of doing multiple .update() chains with the parameters
-	// TODO: Maybe actually create a large string here
 	// see `benchmark-operations.js`
 
-	const hash = createHash("sha256").update(`${method}\n${path}\n${query}\n`);
-
+	let canonData = `${method}\n${path}\n${query}\n`;
 	for (const header of sortedHeaderNames) {
-		hash.update(`${header}:${sortedHeaders[header]}\n`);
+		canonData += `${header}:${sortedHeaders[header]}\n`;
 	}
+	canonData += "\n";
 
-	hash.update("\n");
-
-	for (let i = 0; i < sortedHeaderNames.length; ++i) {
-		if (i < sortedHeaderNames.length - 1) {
-			hash.update(`${sortedHeaderNames[i]};`);
-		} else {
-			hash.update(sortedHeaderNames[i]);
-		}
+	// emit the first header without ";", so we can avoid branching inside the loop for the other headers
+	// this is just a version of `sortedHeaderList.join(";")` that seems about 2x faster (see `benchmark-operations.js`)
+	canonData += sortedHeaderNames.length > 0 ? sortedHeaderNames[0] : "";
+	for (let i = 1; i < sortedHeaderNames.length; ++i) {
+		canonData += `;${sortedHeaderNames[i]}`;
 	}
+	canonData += `\n${contentHashStr}`;
 
-	return hash.update(`\n${contentHashStr}`).digest("hex");
+	return createHash("sha256").update(canonData).digest("hex");
 }
 
-/**
- * @param {import("node:crypto").BinaryLike} data
- * @returns {Buffer}
- */
-export function sha256(data) {
+export function sha256(data: BinaryLike): Buffer {
 	return createHash("sha256").update(data).digest();
+}
+
+export function md5Base64(data: BinaryLike): string {
+	return createHash("md5").update(data).digest("base64");
 }

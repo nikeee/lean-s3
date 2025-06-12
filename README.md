@@ -121,6 +121,18 @@ We try to keep this library small. If you happen to need something that is not s
 
 See [DESIGN_DECISIONS.md](./DESIGN_DECISIONS.md) to read about why this library is the way it is.
 
+## Supported Operations
+
+### Bucket Operations
+- TODO
+
+### Object Operations
+- ✅ [`ListObjectsV2`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html) via `.list`/`.listIterating`
+- ✅ [`DeleteObjects`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html) via `.deleteObjects`
+- ✅ [`DeleteObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html) via `S3File.delete`
+- ✅ [`PutObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html) via `S3File.write`
+- ✅ [`HeadObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html) via `S3File.exists`/`S3File.stat`
+
 ## Example Configurations
 ### Hetzner Object Storage
 ```js

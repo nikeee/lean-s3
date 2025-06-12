@@ -6,8 +6,10 @@
  * @returns {URL}
  */
 export function buildRequestUrl(endpoint, bucket, region, path) {
+	const normalizedBucket = normalizePath(bucket);
+
 	const [endpointWithBucketAndRegion, replacedBucket] =
-		replaceDomainPlaceholders(endpoint, bucket, region);
+		replaceDomainPlaceholders(endpoint, normalizedBucket, region);
 
 	const result = new URL(endpointWithBucketAndRegion);
 
@@ -17,7 +19,7 @@ export function buildRequestUrl(endpoint, bucket, region, path) {
 
 	const pathSuffix = replacedBucket
 		? normalizePath(path)
-		: `${normalizePath(bucket)}/${normalizePath(path)}`;
+		: `${normalizedBucket}/${normalizePath(path)}`;
 
 	result.pathname = pathPrefix + pathSuffix;
 

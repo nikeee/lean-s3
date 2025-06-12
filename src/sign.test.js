@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import { expect } from "expect";
 
 import * as sign from "./sign.js";
-import { getAmzDate } from "./AmzDate.js";
+import { getAmzDate } from "./AmzDate.ts";
 
 describe("deriveSigningKey", () => {
 	test("snapshot", () => {

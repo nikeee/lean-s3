@@ -1,6 +1,6 @@
 import * as sign from "./sign.js";
 
-/**@typedef {import("./AmzDate.js").AmzDate} AmzDate */
+/**@typedef {import("./AmzDate.ts").AmzDate} AmzDate */
 
 export default class KeyCache {
 	/** @type {number} */

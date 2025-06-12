@@ -12,6 +12,7 @@ export default class S3Error extends Error {
 	/**
 	 * @type {string}
 	 * @readonly
+	 * @override
 	 */
 	message;
 	/**

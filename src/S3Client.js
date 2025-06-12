@@ -5,7 +5,7 @@ import S3File from "./S3File.js";
 import S3Error from "./S3Error.js";
 import S3BucketEntry from "./S3BucketEntry.js";
 import KeyCache from "./KeyCache.js";
-import * as amzDate from "./AmzDate.js";
+import * as amzDate from "./AmzDate.ts";
 import * as sign from "./sign.js";
 import {
 	buildRequestUrl,
@@ -743,7 +743,7 @@ export default class S3Client {
 
 /**
  * @param {string} amzCredential
- * @param {import("./AmzDate.js").AmzDate} date
+ * @param {import("./AmzDate.ts").AmzDate} date
  * @param {number} expiresIn
  * @param {string} headerList
  * @param {StorageClass | null | undefined} storageClass

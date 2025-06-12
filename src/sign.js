@@ -30,7 +30,7 @@ export function deriveSigningKey(date, region, secretAccessKey) {
 /**
  * @param {Buffer} signinKey
  * @param {string} canonicalDataHash
- * @param {import("./AmzDate.js").AmzDate} date
+ * @param {import("./AmzDate.ts").AmzDate} date
  * @param {string} region
  * @returns {string}
  */

@@ -21,7 +21,7 @@
   "scripts": {
     "build": "tsc",
     "clean": "rimraf dist",
-    "test": "tsc --noEmit && node --test src/*.test.js",
+    "test": "tsc && node --test dist/*.test.js",
     "test:integration": "node --test integration/*.test.js",
     "ci": "biome ci ./src",
     "docs": "typedoc",

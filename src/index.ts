@@ -1,8 +1,20 @@
 import type { Readable } from "node:stream";
 
-export { default as S3File } from "./S3File.ts";
-export { default as S3Client } from "./S3Client.ts";
-export { default as S3Error } from "./S3Error.ts";
+export {
+	default as S3File,
+	type S3FileDeleteOptions,
+	type S3FileExistsOptions,
+	type S3StatOptions,
+} from "./S3File.ts";
+export {
+	default as S3Client,
+	type ListObjectsResponse,
+	type CreateFileInstanceOptions,
+	type OverridableS3ClientOptions,
+	type S3ClientOptions,
+	type S3FilePresignOptions,
+} from "./S3Client.ts";
+export { default as S3Error, type S3ErrorOptions } from "./S3Error.ts";
 export { default as S3Stat } from "./S3Stat.ts";
 export { default as S3BucketEntry } from "./S3BucketEntry.ts";
 

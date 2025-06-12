@@ -59,6 +59,20 @@ export interface S3FilePresignOptions {
 	acl: Acl;
 }
 
+export type ListObjectsOptions = {
+	prefix?: string;
+	maxKeys?: number;
+	startAfter?: string;
+	continuationToken?: string;
+	signal?: AbortSignal;
+};
+export type ListObjectsIteratingOptions = {
+	prefix?: string;
+	startAfter?: string;
+	signal?: AbortSignal;
+	internalPageSize?: number;
+};
+
 export type ListObjectsResponse = {
 	name: string;
 	prefix: string | undefined;
@@ -380,12 +394,9 @@ export default class S3Client {
 	/**
 	 * Uses [`ListObjectsV2`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html) to iterate over all keys. Pagination and continuation is handled internally.
 	 */
-	async *listIterating(options: {
-		prefix?: string;
-		startAfter?: string;
-		signal?: AbortSignal;
-		internalPageSize?: number;
-	}): AsyncGenerator<S3BucketEntry> {
+	async *listIterating(
+		options: ListObjectsIteratingOptions,
+	): AsyncGenerator<S3BucketEntry> {
 		// only used to get smaller pages, so we can test this properly
 		const maxKeys = options?.internalPageSize ?? undefined;
 
@@ -411,15 +422,7 @@ export default class S3Client {
 	/**
 	 * Implements [`ListObjectsV2`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html) to iterate over all keys.
 	 */
-	async list(
-		options: {
-			prefix?: string;
-			maxKeys?: number;
-			startAfter?: string;
-			continuationToken?: string;
-			signal?: AbortSignal;
-		} = {},
-	): Promise<ListObjectsResponse> {
+	async list(options: ListObjectsOptions = {}): Promise<ListObjectsResponse> {
 		// See `benchmark-operations.js` on why we don't use URLSearchParams but string concat
 		// tldr: This is faster and we know the params exactly, so we can focus our encoding
 

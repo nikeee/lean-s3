@@ -22,7 +22,7 @@
     "build": "tsc",
     "clean": "rimraf dist",
     "test": "tsc && node --test dist/*.test.js",
-    "test:integration": "node --test integration/*.test.js",
+    "test:integration": "tsc && node --test dist/test.integration.js",
     "ci": "biome ci ./src",
     "docs": "typedoc",
     "lint": "biome lint ./src",

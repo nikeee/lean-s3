@@ -15,6 +15,8 @@ export {
 	type OverridableS3ClientOptions,
 	type S3ClientOptions,
 	type S3FilePresignOptions,
+	type BucketCreationOptions,
+	type DeleteObjectsOptions,
 } from "./S3Client.ts";
 export { default as S3Error, type S3ErrorOptions } from "./S3Error.ts";
 export { default as S3Stat } from "./S3Stat.ts";
@@ -67,3 +69,19 @@ export type ByteSource = UndiciBodyInit | Blob;
 // | Response
 // | S3File
 // | ReadableStream<Uint8Array>
+
+/**
+ * Implements [LocationInfo](https://docs.aws.amazon.com/AmazonS3/latest/API/API_LocationInfo.html)
+ */
+export type BucketLocationInfo = {
+	name?: string;
+	type?: string;
+};
+
+/**
+ * Implements [BucketInfo](https://docs.aws.amazon.com/AmazonS3/latest/API/API_BucketInfo.html)
+ */
+export type BucketInfo = {
+	dataRedundancy?: string;
+	type?: string;
+};

@@ -1,13 +1,10 @@
 import { after, before, describe } from "node:test";
-import {
-	S3Client as AwsS3Client,
-	CreateBucketCommand,
-} from "@aws-sdk/client-s3";
 import { MinioContainer } from "@testcontainers/minio";
 import { LocalstackContainer } from "@testcontainers/localstack";
 import { expect } from "expect";
 
 import { runTests } from "./test-common.ts";
+import { S3Client } from "./index.ts";
 
 describe("minio", async () => {
 	const container = new MinioContainer(
@@ -16,23 +13,15 @@ describe("minio", async () => {
 	const s3 = await container.start();
 	after(async () => await s3.stop());
 	before(async () => {
-		// TODO: replace this with lean-s3
-		const aws = new AwsS3Client({
+		const client = new S3Client({
 			endpoint: s3.getConnectionUrl(),
-			forcePathStyle: true,
-			credentials: {
-				accessKeyId: "minioadmin",
-				secretAccessKey: "minioadmin",
-			},
+			accessKeyId: "minioadmin",
+			secretAccessKey: "minioadmin",
 			region: "us-east-1",
+			bucket: "none",
 		});
-
-		const res = await aws.send(
-			new CreateBucketCommand({
-				Bucket: "test-bucket",
-			}),
-		);
-		expect(res.$metadata.httpStatusCode).toEqual(200);
+		const res = await client.createBucket("test-bucket");
+		expect(res).toBeUndefined();
 	});
 
 	runTests(
@@ -51,23 +40,15 @@ describe("localstack", async () => {
 	const s3 = await container.start();
 	after(async () => await s3.stop());
 	before(async () => {
-		// TODO: replace this with lean-s3
-		const aws = new AwsS3Client({
+		const client = new S3Client({
 			endpoint: s3.getConnectionUri(),
-			forcePathStyle: true,
-			credentials: {
-				accessKeyId: "test",
-				secretAccessKey: "test",
-			},
+			accessKeyId: "test",
+			secretAccessKey: "test",
 			region: "us-east-1",
+			bucket: "none",
 		});
-
-		const res = await aws.send(
-			new CreateBucketCommand({
-				Bucket: "test-bucket",
-			}),
-		);
-		expect(res.$metadata.httpStatusCode).toEqual(200);
+		const res = await client.createBucket("test-bucket");
+		expect(res).toBeUndefined();
 	});
 
 	runTests(

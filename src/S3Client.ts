@@ -14,6 +14,8 @@ import {
 } from "./url.ts";
 import type {
 	Acl,
+	BucketInfo,
+	BucketLocationInfo,
 	HttpMethod,
 	PresignableHttpMethod,
 	StorageClass,
@@ -24,7 +26,10 @@ export const write = Symbol("write");
 export const stream = Symbol("stream");
 
 const xmlParser = new XMLParser();
-const xmlBuilder = new XMLBuilder();
+const xmlBuilder = new XMLBuilder({
+	attributeNamePrefix: "$",
+	ignoreAttributes: false,
+});
 
 export interface S3ClientOptions {
 	bucket: string;
@@ -79,6 +84,13 @@ export type ListObjectsResponse = {
 	keyCount: number;
 	nextContinuationToken: string | undefined;
 	contents: readonly S3BucketEntry[];
+};
+
+export type BucketCreationOptions = {
+	locationConstraint?: string;
+	location?: BucketLocationInfo;
+	info?: BucketInfo;
+	signal?: AbortSignal;
 };
 
 /**
@@ -286,6 +298,7 @@ export default class S3Client {
 			},
 			undefined,
 			undefined,
+			this.#options.bucket,
 			options.signal,
 		);
 
@@ -324,11 +337,87 @@ export default class S3Client {
 			throw await getResponseError(response, "");
 		}
 
-		// undici docs state that we shoul dump the body if not used
-		response.body.dump();
+		response.body.dump(); // undici docs state that we should dump the body if not used
 		throw new Error(
 			`Response code not implemented yet: ${response.statusCode}`,
 		);
+	}
+
+	/**
+	 * Creates a new bucket on the S3 server.
+	 *
+	 * @param name The name of the bucket to create. AWS the name according to [some rules](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html). The most important ones are:
+	 * - Bucket names must be between `3` (min) and `63` (max) characters long.
+	 * - Bucket names can consist only of lowercase letters, numbers, periods (`.`), and hyphens (`-`).
+	 * - Bucket names must begin and end with a letter or number.
+	 * - Bucket names must not contain two adjacent periods.
+	 * - Bucket names must not be formatted as an IP address (for example, `192.168.5.4`).
+	 *
+	 * @throws {Error} If the bucket name is invalid.
+	 * @remarks Uses [`CreateBucket`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html)
+	 */
+	async createBucket(name: string, options?: BucketCreationOptions) {
+		if (name.length < 3 || name.length > 63) {
+			throw new Error("`name` must be between 3 and 63 characters long.");
+		}
+
+		let body = undefined;
+		if (options) {
+			const location =
+				options.location && (options.location.name || options.location.type)
+					? {
+							Name: options.location.name ?? undefined,
+							Type: options.location.type ?? undefined,
+						}
+					: undefined;
+			const bucket =
+				options.info && (options.info.dataRedundancy || options.info.type)
+					? {
+							DataRedundancy: options.info.dataRedundancy ?? undefined,
+							Type: options.info.type ?? undefined,
+						}
+					: undefined;
+
+			body =
+				location || bucket || options.locationConstraint
+					? xmlBuilder.build({
+							CreateBucketConfiguration: {
+								$xmlns: "http://s3.amazonaws.com/doc/2006-03-01/",
+								LocationConstraint: options.locationConstraint ?? undefined,
+								Location: location,
+								Bucket: bucket,
+							},
+						})
+					: undefined;
+		}
+
+		const additionalSignedHeaders = body
+			? { "content-md5": sign.md5Base64(body) }
+			: undefined;
+
+		const response = await this.#signedRequest(
+			"PUT",
+			"",
+			undefined,
+			body,
+			additionalSignedHeaders,
+			undefined,
+			undefined,
+			name,
+			options?.signal,
+		);
+
+		if (response.statusCode === 200) {
+			response.body.dump(); // undici docs state that we should dump the body if not used
+			return;
+		}
+
+		if (400 <= response.statusCode && response.statusCode < 500) {
+			throw await getResponseError(response, "");
+		}
+
+		response.body.dump(); // undici docs state that we should dump the body if not used
+		throw new Error(`Response code not supported: ${response.statusCode}`);
 	}
 
 	//#region list
@@ -417,6 +506,7 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
+			this.#options.bucket,
 			options.signal,
 		);
 
@@ -460,8 +550,7 @@ export default class S3Client {
 			};
 		}
 
-		// undici docs state that we shoul dump the body if not used
-		response.body.dump();
+		response.body.dump(); // undici docs state that we should dump the body if not used
 		throw new Error(
 			`Response code not implemented yet: ${response.statusCode}`,
 		);
@@ -477,9 +566,9 @@ export default class S3Client {
 		additionalSignedHeaders: Record<string, string> | undefined,
 		additionalUnsignedHeaders: Record<string, string> | undefined,
 		contentHash: Buffer | undefined,
+		bucket: string,
 		signal: AbortSignal | undefined = undefined,
 	) {
-		const bucket = this.#options.bucket;
 		const endpoint = this.#options.endpoint;
 		const region = this.#options.region;
 

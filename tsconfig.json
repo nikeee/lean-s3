@@ -25,7 +25,7 @@
   ],
   "typedocOptions": {
     "entryPoints": [
-      "src/index.d.ts"
+      "src/index.ts"
     ],
     "excludePrivate": true,
     "out": "docs"

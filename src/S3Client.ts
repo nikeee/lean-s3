@@ -331,11 +331,11 @@ export default class S3Client {
 	 * Creates a new bucket on the S3 server.
 	 *
 	 * @param name The name of the bucket to create. AWS the name according to [some rules](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html). The most important ones are:
-	 * - Bucket names must be between 3 (min) and 63 (max) characters long.
-	 * - Bucket names can consist only of lowercase letters, numbers, periods (.), and hyphens (-).
+	 * - Bucket names must be between `3` (min) and `63` (max) characters long.
+	 * - Bucket names can consist only of lowercase letters, numbers, periods (`.`), and hyphens (`-`).
 	 * - Bucket names must begin and end with a letter or number.
 	 * - Bucket names must not contain two adjacent periods.
-	 * - Bucket names must not be formatted as an IP address (for example, 192.168.5.4).
+	 * - Bucket names must not be formatted as an IP address (for example, `192.168.5.4`).
 	 *
 	 * @remarks Uses [`CreateBucket`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html)
 	 */

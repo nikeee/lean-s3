@@ -10,16 +10,25 @@ describe("minio", async () => {
 	const s3 = await new MinioContainer(
 		"minio/minio:RELEASE.2025-04-08T15-41-24Z-cpuv1",
 	).start();
+	const runId = Date.now();
 	{
 		const client = new S3Client({
 			endpoint: s3.getConnectionUrl(),
 			accessKeyId: "minioadmin",
 			secretAccessKey: "minioadmin",
 			region: "us-east-1",
-			bucket: "none",
+			bucket: "none", // intentionally set to a non-existent one, so we catch cases where the bucket is not passed correctly
 		});
 		after(async () => {
-			client.deleteBucket("test-bucket");
+			// you can use this to debug leftover files:
+			// for await (const f of client.listIterating({
+			// 	prefix: runId.toString(),
+			// 	bucket: "test-bucket",
+			// })) {
+			// 	console.log(`Leftover: ${f.key}`);
+			// }
+
+			await client.deleteBucket("test-bucket");
 			await s3.stop();
 		});
 		before(async () => {
@@ -29,7 +38,7 @@ describe("minio", async () => {
 	}
 
 	runTests(
-		Date.now(),
+		runId,
 		s3.getConnectionUrl(),
 		true,
 		"minioadmin",
@@ -41,13 +50,14 @@ describe("minio", async () => {
 
 describe("localstack", async () => {
 	const s3 = await new LocalstackContainer("localstack/localstack:4").start();
+	const runId = Date.now();
 	{
 		const client = new S3Client({
 			endpoint: s3.getConnectionUri(),
 			accessKeyId: "test",
 			secretAccessKey: "test",
 			region: "us-east-1",
-			bucket: "none",
+			bucket: "none", // intentionally set to a non-existent one, so we catch cases where the bucket is not passed correctly
 		});
 
 		after(async () => {
@@ -61,7 +71,7 @@ describe("localstack", async () => {
 	}
 
 	runTests(
-		Date.now(),
+		runId,
 		s3.getConnectionUri(),
 		true,
 		"test",

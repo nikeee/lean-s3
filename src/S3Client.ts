@@ -84,13 +84,11 @@ export type ListObjectsResponse = {
  * ```
  */
 export default class S3Client {
-	/** @type {Readonly<S3ClientOptions>} */
-	#options;
+	#options: Readonly<S3ClientOptions>;
 	#keyCache = new KeyCache();
 
 	// TODO: pass options to this in client
-	/** @type {Dispatcher} */
-	#dispatcher = new Agent();
+	#dispatcher: Dispatcher = new Agent();
 
 	/**
 	 * Create a new instance of an S3 bucket so that credentials can be managed from a single instance instead of being passed to every method.
@@ -140,9 +138,7 @@ export default class S3Client {
 	/**
 	 * Creates an S3File instance for the given path.
 	 *
-	 * @param {string} path
 	 * @param {Partial<CreateFileInstanceOptions>} [options] TODO
-	 * @returns {S3File}
 	 * @example
 	 * ```js
 	 * const file = client.file("image.jpg");
@@ -154,7 +150,7 @@ export default class S3Client {
 	 * });
 	 * ```
 	 */
-	file(path: string, options?: Partial<CreateFileInstanceOptions>) {
+	file(path: string, options?: Partial<CreateFileInstanceOptions>): S3File {
 		return new S3File(this, path, undefined, undefined, undefined);
 	}
 
@@ -230,7 +226,7 @@ export default class S3Client {
 	}
 
 	/**
-	 * Uses `DeleteObjects` to delete multiple objects in a single request.
+	 * Uses [`DeleteObjects`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html) to delete multiple objects in a single request.
 	 */
 	async deleteObjects(
 		objects: readonly S3BucketEntry[] | readonly string[],
@@ -303,7 +299,7 @@ export default class S3Client {
 	//#region list
 
 	/**
-	 * Uses `ListObjectsV2` to iterate over all keys. Pagination and continuation is handled internally.
+	 * Uses [`ListObjectsV2`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html) to iterate over all keys. Pagination and continuation is handled internally.
 	 */
 	async *listIterating(options: {
 		prefix?: string;
@@ -333,6 +329,9 @@ export default class S3Client {
 		} while (continuationToken);
 	}
 
+	/**
+	 * Implements [`ListObjectsV2`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html) to iterate over all keys.
+	 */
 	async list(
 		options: {
 			prefix?: string;

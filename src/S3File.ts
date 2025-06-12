@@ -255,17 +255,14 @@ export default class S3File {
 
 	/*
 	// Future API?
-	/** @returns {WritableStream<ArrayBufferLike | ArrayBufferView>} *
-	writer() {
+	writer(): WritableStream<ArrayBufferLike | ArrayBufferView> {
 		throw new Error("Not implemented");
 	}
 	// Future API?
-	/** @returns {Promise<void>} *
-	setTags() {
+	setTags(): Promise<void> {
 		throw new Error("Not implemented");
 	}
-	/** @returns {Promise<unknown>} *
-	getTags() {
+	getTags(): Promise<unknown> {
 		throw new Error("Not implemented");
 	}
 	*/

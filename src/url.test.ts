@@ -1,7 +1,7 @@
 import { describe, test } from "node:test";
 import { expect } from "expect";
 
-import { buildRequestUrl } from "./url.js";
+import { buildRequestUrl } from "./url.ts";
 
 describe("buildRequestUrl", () => {
 	test("aws", () => {

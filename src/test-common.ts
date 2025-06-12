@@ -5,7 +5,7 @@
 import { test } from "node:test";
 import { expect } from "expect";
 
-import { S3Client } from "./index.js";
+import { S3Client } from "./index.ts";
 
 export function runTests(
 	runId: number,

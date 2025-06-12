@@ -1,4 +1,4 @@
-import * as sign from "./sign.js";
+import * as sign from "./sign.ts";
 import type { AmzDate } from "./AmzDate.ts";
 
 export default class KeyCache {

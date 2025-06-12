@@ -11,14 +11,14 @@ import {
 	buildRequestUrl,
 	getRangeHeader,
 	prepareHeadersForSigning,
-} from "./url.js";
+} from "./url.ts";
 import type {
 	Acl,
 	HttpMethod,
 	PresignableHttpMethod,
 	StorageClass,
 	UndiciBodyInit,
-} from "./index.js";
+} from "./index.ts";
 
 export const write = Symbol("write");
 export const stream = Symbol("stream");

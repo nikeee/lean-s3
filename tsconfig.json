@@ -6,6 +6,14 @@
     "lib": [
       "es2024"
     ],
+
+    "moduleDetection": "force",
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "noImplicitOverride": true,
+
     "allowJs": true,
     "checkJs": true,
     "strict": true,

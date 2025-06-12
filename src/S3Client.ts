@@ -89,6 +89,7 @@ export type BucketCreationOptions = {
 	locationConstraint?: string;
 	location?: BucketLocationInfo;
 	info?: BucketInfo;
+	signal?: AbortSignal;
 };
 
 /**
@@ -386,7 +387,22 @@ export default class S3Client {
 			});
 		}
 
+		const additionalSignedHeaders = body
+			? { "content-md5": sign.md5Base64(body) }
+			: undefined;
+
+		const response = await this.#signedRequest(
+			"PUT",
+			"",
+			undefined,
+			body,
+			additionalSignedHeaders,
+			undefined,
+			undefined,
+			options.signal,
+		);
 		console.log(name, body);
+		console.log(response);
 	}
 
 	//#region list

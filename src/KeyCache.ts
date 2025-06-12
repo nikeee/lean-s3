@@ -1,21 +1,16 @@
 import * as sign from "./sign.js";
-
-/**@typedef {import("./AmzDate.ts").AmzDate} AmzDate */
+import type { AmzDate } from "./AmzDate.ts";
 
 export default class KeyCache {
-	/** @type {number} */
 	#lastNumericDay = -1;
-	/** @type {Map<string, Buffer>} */
-	#keys = new Map();
+	#keys: Map<string, Buffer> = new Map();
 
-	/**
-	 * @param {AmzDate} date
-	 * @param {string} region
-	 * @param {string} accessKeyId
-	 * @param {string} secretAccessKey
-	 * @returns {Buffer}
-	 */
-	computeIfAbsent(date, region, accessKeyId, secretAccessKey) {
+	computeIfAbsent(
+		date: AmzDate,
+		region: string,
+		accessKeyId: string,
+		secretAccessKey: string,
+	): Buffer {
 		if (date.numericDayStart !== this.#lastNumericDay) {
 			this.#keys.clear();
 			this.#lastNumericDay = date.numericDayStart;

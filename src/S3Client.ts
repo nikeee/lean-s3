@@ -409,16 +409,16 @@ export default class S3Client {
 			options?.signal,
 		);
 
-		if (response.statusCode === 200) {
-			response.body.dump(); // undici docs state that we should dump the body if not used
-			return;
-		}
-
 		if (400 <= response.statusCode && response.statusCode < 500) {
 			throw await getResponseError(response, "");
 		}
 
-		response.body.dump(); // undici docs state that we should dump the body if not used
+		await response.body.dump(); // undici docs state that we should dump the body if not used
+
+		if (response.statusCode === 200) {
+			return;
+		}
+
 		throw new Error(`Response code not supported: ${response.statusCode}`);
 	}
 
@@ -443,16 +443,15 @@ export default class S3Client {
 			options?.signal,
 		);
 
-		if (response.statusCode === 204) {
-			response.body.dump(); // undici docs state that we should dump the body if not used
-			return;
-		}
-
 		if (400 <= response.statusCode && response.statusCode < 500) {
 			throw await getResponseError(response, "");
 		}
 
-		response.body.dump(); // undici docs state that we should dump the body if not used
+		await response.body.dump(); // undici docs state that we should dump the body if not used
+
+		if (response.statusCode === 204) {
+			return;
+		}
 		throw new Error(`Response code not supported: ${response.statusCode}`);
 	}
 

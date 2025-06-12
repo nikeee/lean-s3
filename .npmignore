@@ -2,7 +2,7 @@
 /bench/
 /docs/
 /integration/
-/src/native/
+/src
 node_modules
 .gitignore
 .editorconfig

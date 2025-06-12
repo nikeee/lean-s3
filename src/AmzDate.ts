@@ -1,18 +1,12 @@
 const ONE_DAY = 1000 * 60 * 60 * 24;
 
-/**
- * @typedef {{
- *   numericDayStart: number;
- *   date: string;
- *   dateTime: string;
- * }} AmzDate
- */
+export type AmzDate = {
+	numericDayStart: number;
+	date: string;
+	dateTime: string;
+};
 
-/**
- * @param {Date} dateTime
- * @return {AmzDate}
- */
-export function getAmzDate(dateTime) {
+export function getAmzDate(dateTime: Date): AmzDate {
 	const date =
 		pad4(dateTime.getUTCFullYear()) +
 		pad2(dateTime.getUTCMonth() + 1) +
@@ -29,15 +23,12 @@ export function getAmzDate(dateTime) {
 		dateTime: `${date}T${time}Z`,
 	};
 }
-export function now() {
+
+export function now(): AmzDate {
 	return getAmzDate(new Date());
 }
 
-/**
- * @param {number} v
- * @returns {string}
- */
-function pad4(v) {
+function pad4(v: number): string {
 	return v < 10
 		? `000${v}`
 		: v < 100
@@ -47,10 +38,6 @@ function pad4(v) {
 				: v.toString();
 }
 
-/**
- * @param {number} v
- * @returns {string}
- */
-function pad2(v) {
+function pad2(v: number): string {
 	return v < 10 ? `0${v}` : v.toString();
 }

@@ -7,7 +7,7 @@ import {
 	CreateBucketCommand,
 } from "@aws-sdk/client-s3";
 import {Client as MinioClient} from "minio";
-import { S3Client as LeanS3Client } from "../src/index.js";
+import { S3Client as LeanS3Client } from "../dist/index.js";
 
 async function createContainer() {
 	const container = new LocalstackContainer("localstack/localstack:4");

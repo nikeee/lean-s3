@@ -6,17 +6,26 @@
     "lib": [
       "es2024"
     ],
-    "noEmit": true,
+
+    "moduleDetection": "force",
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "noImplicitOverride": true,
+
     "allowJs": true,
     "checkJs": true,
-    "strict": true
+    "strict": true,
+    "declaration": true,
+    "outDir": "./dist"
   },
   "include": [
     "./src"
   ],
   "typedocOptions": {
     "entryPoints": [
-      "src/index.d.ts"
+      "src/index.ts"
     ],
     "excludePrivate": true,
     "out": "docs"

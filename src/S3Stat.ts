@@ -1,43 +1,19 @@
-export default class S3Stat {
-	/**
-	 * @type {string}
-	 * @readonly
-	 */
-	etag;
-	/**
-	 * @type {Date}
-	 * @readonly
-	 */
-	lastModified;
-	/**
-	 * @type {number}
-	 * @readonly
-	 */
-	size;
-	/**
-	 * @type {string}
-	 * @readonly
-	 */
-	type;
+import type { Headers } from "undici-types";
 
-	/**
-	 * @param {string} etag
-	 * @param {Date} lastModified
-	 * @param {number} size
-	 * @param {string} type
-	 */
-	constructor(etag, lastModified, size, type) {
+export default class S3Stat {
+	readonly etag: string;
+	readonly lastModified: Date;
+	readonly size: number;
+	readonly type: string;
+
+	constructor(etag: string, lastModified: Date, size: number, type: string) {
 		this.etag = etag;
 		this.lastModified = lastModified;
 		this.size = size;
 		this.type = type;
 	}
 
-	/**
-	 * @param {Headers} headers
-	 * @returns {S3Stat | undefined}
-	 */
-	static tryParseFromHeaders(headers) {
+	static tryParseFromHeaders(headers: Headers): S3Stat | undefined {
 		const lm = headers.get("last-modified");
 		if (lm === null) {
 			return undefined;

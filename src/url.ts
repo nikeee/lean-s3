@@ -1,13 +1,13 @@
-/**
- * @param {string} endpoint
- * @param {string} bucket
- * @param {string} region
- * @param {string} path
- * @returns {URL}
- */
-export function buildRequestUrl(endpoint, bucket, region, path) {
+export function buildRequestUrl(
+	endpoint: string,
+	bucket: string,
+	region: string,
+	path: string,
+): URL {
+	const normalizedBucket = normalizePath(bucket);
+
 	const [endpointWithBucketAndRegion, replacedBucket] =
-		replaceDomainPlaceholders(endpoint, bucket, region);
+		replaceDomainPlaceholders(endpoint, normalizedBucket, region);
 
 	const result = new URL(endpointWithBucketAndRegion);
 
@@ -17,20 +17,18 @@ export function buildRequestUrl(endpoint, bucket, region, path) {
 
 	const pathSuffix = replacedBucket
 		? normalizePath(path)
-		: `${normalizePath(bucket)}/${normalizePath(path)}`;
+		: `${normalizedBucket}/${normalizePath(path)}`;
 
 	result.pathname = pathPrefix + pathSuffix;
 
 	return result;
 }
 
-/**
- * @param {string} endpoint
- * @param {string} bucket
- * @param {string} region
- * @returns {[endpoint: string, replacedBucket: boolean]}
- */
-function replaceDomainPlaceholders(endpoint, bucket, region) {
+function replaceDomainPlaceholders(
+	endpoint: string,
+	bucket: string,
+	region: string,
+): [endpoint: string, replacedBucket: boolean] {
 	const replacedBucket = endpoint.includes("{bucket}");
 	return [
 		endpoint.replaceAll("{bucket}", bucket).replaceAll("{region}", region),
@@ -39,11 +37,9 @@ function replaceDomainPlaceholders(endpoint, bucket, region) {
 }
 
 /**
- * Removes trailing and leading slashes.
- * @param {string} path
- * @returns {string}
+ * Removes trailing and leading slash.
  */
-function normalizePath(path) {
+function normalizePath(path: string): string {
 	const start = path[0] === "/" ? 1 : 0;
 	const end = path[path.length - 1] === "/" ? path.length - 1 : path.length;
 	return path.substring(start, end);
@@ -54,13 +50,11 @@ function normalizePath(path) {
  *
  * `http.request` doesn't allow passing `undefined` as header values (despite the types allowing it),
  * so we have to filter afterwards.
- *
- * @param {Record<string, string | undefined>} unfilteredHeadersUnsorted
- * @returns {Record<string, string>}
  */
-export function prepareHeadersForSigning(unfilteredHeadersUnsorted) {
-	/** @type {Record<string, string>} */
-	const result = {};
+export function prepareHeadersForSigning(
+	unfilteredHeadersUnsorted: Record<string, string | undefined>,
+): Record<string, string> {
+	const result: Record<string, string> = {};
 
 	// TODO: `Object.keys(headersUnsorted).sort()` is constant in our case,
 	// maybe we want to move this somewhere else to avoid sorting every time
@@ -74,12 +68,10 @@ export function prepareHeadersForSigning(unfilteredHeadersUnsorted) {
 	return result;
 }
 
-/**
- * @param {number | undefined} start
- * @param {number | undefined} endExclusive
- * @returns {string | undefined}
- */
-export function getRangeHeader(start, endExclusive) {
+export function getRangeHeader(
+	start: number | undefined,
+	endExclusive: number | undefined,
+): string | undefined {
 	return typeof start === "number" || typeof endExclusive === "number"
 		? // Http-ranges are end-inclusive, we are exclusiv ein our slice
 			`bytes=${start ?? 0}-${typeof endExclusive === "number" ? endExclusive - 1 : ""}`

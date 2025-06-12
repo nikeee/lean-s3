@@ -5,25 +5,16 @@
 import { test } from "node:test";
 import { expect } from "expect";
 
-import { S3Client } from "./index.js";
+import { S3Client } from "./index.ts";
 
-/**
- * @param {number} runId
- * @param {string} endpoint
- * @param {boolean} forcePathStyle
- * @param {string} accessKeyId
- * @param {string} secretAccessKey
- * @param {string} region
- * @param {string} bucket
- */
 export function runTests(
-	runId,
-	endpoint,
-	forcePathStyle,
-	accessKeyId,
-	secretAccessKey,
-	region,
-	bucket,
+	runId: number,
+	endpoint: string,
+	forcePathStyle: boolean,
+	accessKeyId: string,
+	secretAccessKey: string,
+	region: string,
+	bucket: string,
 ) {
 	const client = new S3Client({
 		endpoint,

@@ -137,8 +137,3 @@ By using undici's lower-level primitives directly, we can make our requests more
 That said, undici comes with some trade-offs. Although it powers Node.js's built-in `fetch`, it's not exposed as a core API - so we have to install it as a separate package, which adds about ~1MB.
 
 The AWS SDK uses the `Expect: 100-continue` header to early-return from requests that would otherwise fail. Undici doesn't support this header by design. Some S3 providers don't support it either, so even the AWS SDK includes a fallback mechanism for when it's not usable.
-
-## Checklist for new Features
-- Is it supported on most S3 providers?
-  - Common compat tables: [Hetzner](https://docs.hetzner.com/storage/object-storage/supported-actions), [Cloudflare R2](https://developers.cloudflare.com/r2/api/s3/api/)
-- Will >80% of the users of this library need it at some point or should they use it?

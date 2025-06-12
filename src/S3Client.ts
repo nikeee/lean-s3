@@ -61,6 +61,8 @@ export interface S3FilePresignOptions {
 }
 
 export type ListObjectsOptions = {
+	bucket?: string;
+
 	prefix?: string;
 	maxKeys?: number;
 	startAfter?: string;
@@ -68,6 +70,8 @@ export type ListObjectsOptions = {
 	signal?: AbortSignal;
 };
 export type ListObjectsIteratingOptions = {
+	bucket?: string;
+
 	prefix?: string;
 	startAfter?: string;
 	signal?: AbortSignal;
@@ -541,7 +545,7 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			this.#options.bucket,
+			options.bucket ?? this.#options.bucket,
 			options.signal,
 		);
 

@@ -116,6 +116,6 @@ export function sha256(data: BinaryLike): Buffer {
 	return createHash("sha256").update(data).digest();
 }
 
-export function md5Hex(data: BinaryLike): string {
-	return createHash("md5").update(data).digest("hex");
+export function md5Base64(data: BinaryLike): string {
+	return createHash("md5").update(data).digest("base64");
 }

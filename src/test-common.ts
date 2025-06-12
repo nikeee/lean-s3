@@ -292,4 +292,28 @@ export function runTests(
 			}),
 		);
 	});
+
+	test("deleteObjects", async () => {
+		const testId = crypto.randomUUID();
+		await client
+			.file(`${runId}/${testId}/test-a-0.txt`)
+			.write(crypto.randomUUID());
+		await client
+			.file(`${runId}/${testId}/test-a-1.txt`)
+			.write(crypto.randomUUID());
+		await client
+			.file(`${runId}/${testId}/test-b-2.txt`)
+			.write(crypto.randomUUID());
+		await client
+			.file(`${runId}/${testId}/test-b-3.txt`)
+			.write(crypto.randomUUID());
+
+		const res0 = await client.list({ prefix: `${runId}/${testId}` });
+		expect(res0.contents.length).toBe(4);
+
+		await client.deleteObjects(res0.contents);
+
+		const res1 = await client.list({ prefix: `${runId}/${testId}` });
+		expect(res1.contents.length).toBe(0);
+	});
 }

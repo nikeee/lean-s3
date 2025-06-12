@@ -28,6 +28,7 @@ export const stream = Symbol("stream");
 const xmlParser = new XMLParser();
 const xmlBuilder = new XMLBuilder({
 	attributeNamePrefix: "$",
+	ignoreAttributes: false,
 });
 
 export interface S3ClientOptions {
@@ -355,7 +356,7 @@ export default class S3Client {
 	 * @throws {Error} If the bucket name is invalid.
 	 * @remarks Uses [`CreateBucket`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html)
 	 */
-	async createBucket(name: string, options: BucketCreationOptions = {}) {
+	async createBucket(name: string, options?: BucketCreationOptions) {
 		if (name.length < 3 || name.length > 63) {
 			throw new Error("`name` must be between 3 and 63 characters long.");
 		}
@@ -377,14 +378,17 @@ export default class S3Client {
 						}
 					: undefined;
 
-			body = xmlBuilder.build({
-				CreateBucketConfiguration: {
-					$xmlns: "http://s3.amazonaws.com/doc/2006-03-01/",
-					LocationConstraint: options.locationConstraint ?? undefined,
-					Location: location,
-					Bucket: bucket,
-				},
-			});
+			body =
+				location || bucket || options.locationConstraint
+					? xmlBuilder.build({
+							CreateBucketConfiguration: {
+								$xmlns: "http://s3.amazonaws.com/doc/2006-03-01/",
+								LocationConstraint: options.locationConstraint ?? undefined,
+								Location: location,
+								Bucket: bucket,
+							},
+						})
+					: undefined;
 		}
 
 		const additionalSignedHeaders = body
@@ -399,7 +403,7 @@ export default class S3Client {
 			additionalSignedHeaders,
 			undefined,
 			undefined,
-			options.signal,
+			options?.signal,
 		);
 		console.log(name, body);
 		console.log(response);

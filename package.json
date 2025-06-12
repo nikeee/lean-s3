@@ -27,12 +27,12 @@
     "format": "biome format --write ./src && biome lint --write ./src && biome check --write ./src"
   },
   "devDependencies": {
-    "@aws-sdk/client-s3": "^3.821.0",
+    "@aws-sdk/client-s3": "^3.828.0",
     "@biomejs/biome": "^1.9.4",
-    "@testcontainers/localstack": "^11.0.0",
-    "@testcontainers/minio": "^11.0.0",
-    "@types/node": "^22.15.29",
-    "expect": "^29.7.0",
+    "@testcontainers/localstack": "^11.0.3",
+    "@testcontainers/minio": "^11.0.3",
+    "@types/node": "^24.0.1",
+    "expect": "^30.0.0",
     "lefthook": "^1.11.13",
     "typedoc": "^0.28.5"
   },
@@ -40,7 +40,7 @@
     "node": "^20.19.0 || ^22.14.0 || ^24.0.0"
   },
   "dependencies": {
-    "fast-xml-parser": "^5.2.3",
+    "fast-xml-parser": "^5.2.5",
     "undici": "^7.10.0"
   }
 }

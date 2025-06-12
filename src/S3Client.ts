@@ -298,6 +298,7 @@ export default class S3Client {
 			},
 			undefined,
 			undefined,
+			this.#options.bucket,
 			options.signal,
 		);
 
@@ -336,8 +337,7 @@ export default class S3Client {
 			throw await getResponseError(response, "");
 		}
 
-		// undici docs state that we should dump the body if not used
-		response.body.dump();
+		response.body.dump(); // undici docs state that we should dump the body if not used
 		throw new Error(
 			`Response code not implemented yet: ${response.statusCode}`,
 		);
@@ -403,14 +403,12 @@ export default class S3Client {
 			additionalSignedHeaders,
 			undefined,
 			undefined,
+			name,
 			options?.signal,
 		);
-		console.log(name, body);
-		console.log(response);
 
 		if (response.statusCode === 200) {
-			// undici docs state that we should dump the body if not used
-			response.body.dump();
+			response.body.dump(); // undici docs state that we should dump the body if not used
 			return;
 		}
 
@@ -418,8 +416,7 @@ export default class S3Client {
 			throw await getResponseError(response, "");
 		}
 
-		// undici docs state that we should dump the body if not used
-		response.body.dump();
+		response.body.dump(); // undici docs state that we should dump the body if not used
 		throw new Error(`Response code not supported: ${response.statusCode}`);
 	}
 
@@ -509,6 +506,7 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
+			this.#options.bucket,
 			options.signal,
 		);
 
@@ -552,8 +550,7 @@ export default class S3Client {
 			};
 		}
 
-		// undici docs state that we should dump the body if not used
-		response.body.dump();
+		response.body.dump(); // undici docs state that we should dump the body if not used
 		throw new Error(
 			`Response code not implemented yet: ${response.statusCode}`,
 		);
@@ -569,9 +566,9 @@ export default class S3Client {
 		additionalSignedHeaders: Record<string, string> | undefined,
 		additionalUnsignedHeaders: Record<string, string> | undefined,
 		contentHash: Buffer | undefined,
+		bucket: string,
 		signal: AbortSignal | undefined = undefined,
 	) {
-		const bucket = this.#options.bucket;
 		const endpoint = this.#options.endpoint;
 		const region = this.#options.region;
 

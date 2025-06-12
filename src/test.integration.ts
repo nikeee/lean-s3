@@ -22,14 +22,6 @@ for (const provider of ["hetzner", "aws", "cloudflare"]) {
 			throw new Error("Invalid config");
 		}
 
-		runTests(
-			runId,
-			endpoint,
-			false,
-			accessKeyId,
-			secretAccessKey,
-			region,
-			bucket,
-		);
+		runTests(runId, endpoint, accessKeyId, secretAccessKey, region, bucket);
 	});
 }

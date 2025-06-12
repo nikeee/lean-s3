@@ -10,7 +10,6 @@ import { S3Client } from "./index.ts";
 export function runTests(
 	runId: number,
 	endpoint: string,
-	forcePathStyle: boolean,
 	accessKeyId: string,
 	secretAccessKey: string,
 	region: string,

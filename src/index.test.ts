@@ -42,7 +42,6 @@ describe("minio", async () => {
 	runTests(
 		runId,
 		s3.getConnectionUrl(),
-		true,
 		"minioadmin",
 		"minioadmin",
 		"us-east-1",
@@ -77,7 +76,6 @@ describe("localstack", async () => {
 	runTests(
 		runId,
 		s3.getConnectionUri(),
-		true,
 		"test",
 		"test",
 		"us-east-1",

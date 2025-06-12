@@ -6,7 +6,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { AwsClient as AWSs4FetchClient } from "aws4fetch";
 import { Client as MinioClient } from "minio";
 
-import { S3Client as LeanS3Client } from "../src/index.js";
+import { S3Client as LeanS3Client } from "../dist/index.js";
 
 let bun;
 try {

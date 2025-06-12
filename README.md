@@ -159,4 +159,4 @@ const client = new S3Client({
 Popular S3 provider missing? Open an issue or file a PR!
 
 [^1]: Benchmark ran on a `13th Gen Intel(R) Core(TM) i7-1370P` using Node.js `23.11.0`. See `bench/` directory for the used benchmark.
-[^2]: `git clone git@github.com:nikeee/lean-s3.git && cd lean-s3 && npm ci && cd bench && npm ci && npm start`
+[^2]: `git clone git@github.com:nikeee/lean-s3.git && cd lean-s3 && npm ci && npm run build && cd bench && npm ci && npm start`

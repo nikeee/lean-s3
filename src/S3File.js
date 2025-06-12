@@ -1,5 +1,5 @@
 import S3Error from "./S3Error.js";
-import S3Stat from "./S3Stat.js";
+import S3Stat from "./S3Stat.ts";
 import { write, stream } from "./S3Client.js";
 import { sha256 } from "./sign.js";
 import { Readable } from "node:stream";

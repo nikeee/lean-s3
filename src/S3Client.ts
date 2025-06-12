@@ -87,7 +87,7 @@ export default class S3Client {
 	#options: Readonly<S3ClientOptions>;
 	#keyCache = new KeyCache();
 
-	// TODO: pass options to this in client
+	// TODO: pass options to this in client? Do we want to expose tjhe internal use of undici?
 	#dispatcher: Dispatcher = new Agent();
 
 	/**
@@ -774,17 +774,6 @@ export default class S3Client {
 	}
 }
 
-/**
- * @param {string} amzCredential
- * @param {import("./AmzDate.ts").AmzDate} date
- * @param {number} expiresIn
- * @param {string} headerList
- * @param {StorageClass | null | undefined} storageClass
- * @param {string | null | undefined} sessionToken
- * @param {Acl | null | undefined} acl
- * @param {string | null | undefined} contentHashStr
- * @returns {string}
- */
 export function buildSearchParams(
 	amzCredential: string,
 	date: amzDate.AmzDate,
@@ -794,7 +783,7 @@ export function buildSearchParams(
 	storageClass: StorageClass | null | undefined,
 	sessionToken: string | null | undefined,
 	acl: Acl | null | undefined,
-) {
+): string {
 	// We tried to make these query params entirely lower-cased, just like the headers
 	// but Cloudflare R2 requires them to have this exact casing
 

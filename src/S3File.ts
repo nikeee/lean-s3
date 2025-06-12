@@ -66,9 +66,8 @@ export default class S3File {
 	/**
 	 *  Get the stat of a file in the bucket. Uses `HEAD` request to check existence.
 	 *
+	 * @remarks Uses [`HeadObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html).
 	 * @throws {Error} If the file does not exist.
-	 * @param {Partial<S3StatOptions>} [options]
-	 * @returns {Promise<S3Stat>}
 	 */
 	async stat({ signal }: Partial<S3StatOptions> = {}): Promise<S3Stat> {
 		// TODO: Support all options
@@ -96,8 +95,8 @@ export default class S3File {
 	}
 	/**
 	 * Check if a file exists in the bucket. Uses `HEAD` request to check existence.
-	 * @param {Partial<S3FileExistsOptions>} [options]
-	 * @returns {Promise<boolean>}
+	 *
+	 * @remarks Uses [`HeadObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html).
 	 */
 	async exists({
 		signal,
@@ -112,8 +111,10 @@ export default class S3File {
 
 	/**
 	 * Delete a file from the bucket.
+	 *
+	 * @remarks Uses [`DeleteObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html).
+	 *
 	 * @param {Partial<S3FileDeleteOptions>} [options]
-	 * @returns {Promise<void>}
 	 *
 	 * @example
 	 * ```js
@@ -181,14 +182,6 @@ export default class S3File {
 		return this.#client[stream](this.#path, undefined, this.#start, this.#end);
 	}
 
-	/**
-	 * @param {ByteSource} data
-	 * @returns {Promise<[
-	 *   buffer: import("./index.d.ts").UndiciBodyInit,
-	 *   size: number | undefined,
-	 *   hash: Buffer | undefined,
-	 * ]>}
-	 */
 	async #transformData(
 		data: ByteSource,
 	): Promise<
@@ -278,10 +271,6 @@ export default class S3File {
 	*/
 }
 
-/**
- * @param {never} v
- * @returns {never}
- */
 function assertNever(v: never): never {
 	throw new TypeError(`Expected value not to have type ${typeof v}`);
 }

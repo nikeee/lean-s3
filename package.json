@@ -2,7 +2,7 @@
   "name": "lean-s3",
   "author": "Niklas Mollenhauer",
   "license": "MIT",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "description": "A server-side S3 API for the regular user.",
   "keywords": [
     "s3",
@@ -13,34 +13,39 @@
     "url": "https://github.com/nikeee/lean-s3"
   },
   "exports": {
-    "types": "./src/index.d.ts",
-    "default": "./src/index.js"
+    "types": "./dist/index.d.ts",
+    "default": "./dist/index.js"
   },
-  "types": "./src/index.d.ts",
+  "types": "./dist/index.d.ts",
   "type": "module",
   "scripts": {
-    "test": "node --test src/*.test.js",
-    "test:integration": "node --test integration/*.test.js",
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "test": "tsc && node --test dist/*.test.js",
+    "test:integration": "tsc && node --test dist/test.integration.js",
     "ci": "biome ci ./src",
     "docs": "typedoc",
     "lint": "biome lint ./src",
-    "format": "biome format --write ./src && biome lint --write ./src && biome check --write ./src"
+    "format": "biome format --write ./src && biome lint --write ./src && biome check --write ./src",
+    "prepublishOnly": "npm run clean && npm run build"
   },
   "devDependencies": {
-    "@aws-sdk/client-s3": "^3.821.0",
+    "@aws-sdk/client-s3": "^3.828.0",
     "@biomejs/biome": "^1.9.4",
-    "@testcontainers/localstack": "^11.0.0",
-    "@testcontainers/minio": "^11.0.0",
-    "@types/node": "^22.15.29",
-    "expect": "^29.7.0",
+    "@testcontainers/localstack": "^11.0.3",
+    "@testcontainers/minio": "^11.0.3",
+    "@types/node": "^24.0.1",
+    "expect": "^30.0.0",
     "lefthook": "^1.11.13",
-    "typedoc": "^0.28.5"
+    "rimraf": "^6.0.1",
+    "typedoc": "^0.28.5",
+    "typescript": "^5.8.3"
   },
   "engines": {
     "node": "^20.19.0 || ^22.14.0 || ^24.0.0"
   },
   "dependencies": {
-    "fast-xml-parser": "^5.2.3",
+    "fast-xml-parser": "^5.2.5",
     "undici": "^7.10.0"
   }
 }

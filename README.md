@@ -77,7 +77,7 @@ $ du -sh node_modules
 `lean-s3` is _so_ lean that it is ~1.8MB just to do a couple of HTTP requests <img src="https://cdn.frankerfacez.com/emoticon/480839/1" width="20" height="20">
 BUT...
 
-Due to its scalability, portability and AWS integrations, pre-signing URLs is `async` and performs poorly in high-performance scenarios. By taking different trade-offs, lean-s3 can presign URLs much faster. I promise! This is the reason you cannot use lean-s3 in the browser.
+Due to the scalability, portability and AWS integrations of @aws-sdk/client-s3, pre-signing URLs is `async` and performs poorly in high-performance scenarios. By taking different trade-offs, lean-s3 can presign URLs much faster. I promise! This is the reason you cannot use lean-s3 in the browser.
 
 lean-s3 is currently about 30x faster than AWS SDK when it comes to pre-signing URLs[^1]:
 ```
@@ -121,6 +121,18 @@ We try to keep this library small. If you happen to need something that is not s
 
 See [DESIGN_DECISIONS.md](./DESIGN_DECISIONS.md) to read about why this library is the way it is.
 
+## Supported Operations
+
+### Bucket Operations
+- TODO
+
+### Object Operations
+- ✅ [`ListObjectsV2`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html) via `.list`/`.listIterating`
+- ✅ [`DeleteObjects`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html) via `.deleteObjects`
+- ✅ [`DeleteObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html) via `S3File.delete`
+- ✅ [`PutObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html) via `S3File.write`
+- ✅ [`HeadObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html) via `S3File.exists`/`S3File.stat`
+
 ## Example Configurations
 ### Hetzner Object Storage
 ```js
@@ -159,4 +171,4 @@ const client = new S3Client({
 Popular S3 provider missing? Open an issue or file a PR!
 
 [^1]: Benchmark ran on a `13th Gen Intel(R) Core(TM) i7-1370P` using Node.js `23.11.0`. See `bench/` directory for the used benchmark.
-[^2]: `git clone git@github.com:nikeee/lean-s3.git && cd lean-s3 && npm ci && cd bench && npm ci && npm start`
+[^2]: `git clone git@github.com:nikeee/lean-s3.git && cd lean-s3 && npm ci && npm run build && cd bench && npm ci && npm start`

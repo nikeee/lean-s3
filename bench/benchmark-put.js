@@ -2,7 +2,7 @@ import * as nodeProcess from "node:process";
 import * as mitata from "mitata";
 
 import { S3Client as AWSS3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import { S3Client as LeanS3Client } from "../src/index.js";
+import { S3Client as LeanS3Client } from "../dist/index.js";
 
 if (typeof nodeProcess.loadEnvFile === "function") {
 	nodeProcess.loadEnvFile()

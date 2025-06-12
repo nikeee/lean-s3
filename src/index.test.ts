@@ -7,7 +7,7 @@ import { MinioContainer } from "@testcontainers/minio";
 import { LocalstackContainer } from "@testcontainers/localstack";
 import { expect } from "expect";
 
-import { runTests } from "./test-common.js";
+import { runTests } from "./test-common.ts";
 
 describe("minio", async () => {
 	const container = new MinioContainer(

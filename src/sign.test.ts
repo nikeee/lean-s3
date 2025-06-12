@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import { expect } from "expect";
 
 import * as sign from "./sign.js";
-import { getAmzDate } from "./AmzDate.js";
+import { getAmzDate } from "./AmzDate.ts";
 
 describe("deriveSigningKey", () => {
 	test("snapshot", () => {
@@ -120,18 +120,18 @@ describe("signCanonicalDataHash", () => {
 	});
 
 	/**
-	 *  URL created using bun:
-	 *  ```js
-	 *  import { S3Client } from "bun";
-	 *  const s3 = new S3Client({
-	 *      region: "auto",
-	 *      accessKeyId: "sample-key-id",
-	 *      secretAccessKey: "sample-secret-key",
-	 *      bucket: "test-bucket",
-	 *      endpoint: "http://localhost:9000",
-	 *  });
-	 *  console.log(s3.presign("test.json"));
-	 *  ```
+	 * URL created using bun:
+	 * ```js
+	 * import { S3Client } from "bun";
+	 * const s3 = new S3Client({
+	 *     region: "auto",
+	 *     accessKeyId: "sample-key-id",
+	 *     secretAccessKey: "sample-secret-key",
+	 *     bucket: "test-bucket",
+	 *     endpoint: "http://localhost:9000",
+	 * });
+	 * console.log(s3.presign("test.json"));
+	 * ```
 	 */
 	test("ref by `bun`", () => {
 		const ref = new URL(

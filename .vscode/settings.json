@@ -4,6 +4,7 @@
         "tsconfig.json": "tsconfig.*.json",
         "package.json": "package-lock.json, .npmrc",
         "*.js": "$(capture).test.js, $(capture).d.ts",
+        "*.ts": "$(capture).test.ts",
         "*.c": "$(capture).h"
     },
     "editor.formatOnSaveMode": "modificationsIfAvailable",

@@ -1,7 +1,8 @@
 // @ts-check
 
 import { describe } from "node:test";
-import { runTests } from "../src/test-common.js";
+
+import { runTests } from "./test-common.ts";
 
 const env = process.env;
 

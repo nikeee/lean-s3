@@ -335,7 +335,7 @@ export default class S3Client {
 			throw await getResponseError(response, "");
 		}
 
-		// undici docs state that we shoul dump the body if not used
+		// undici docs state that we should dump the body if not used
 		response.body.dump();
 		throw new Error(
 			`Response code not implemented yet: ${response.statusCode}`,
@@ -403,6 +403,18 @@ export default class S3Client {
 		);
 		console.log(name, body);
 		console.log(response);
+
+		if (response.statusCode === 200) {
+			return;
+		}
+
+		if (400 <= response.statusCode && response.statusCode < 500) {
+			throw await getResponseError(response, "");
+		}
+
+		// undici docs state that we should dump the body if not used
+		response.body.dump();
+		throw new Error(`Response code not supported: ${response.statusCode}`);
 	}
 
 	//#region list
@@ -534,7 +546,7 @@ export default class S3Client {
 			};
 		}
 
-		// undici docs state that we shoul dump the body if not used
+		// undici docs state that we should dump the body if not used
 		response.body.dump();
 		throw new Error(
 			`Response code not implemented yet: ${response.statusCode}`,

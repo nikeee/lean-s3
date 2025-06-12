@@ -138,6 +138,26 @@ export default class S3Client {
 	/**
 	 * Creates an S3File instance for the given path.
 	 *
+	 * @param {string} path The path to the object in the bucket. ALso known as [object key](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html).
+	 * We recommend not using the following characters in a key name because of significant special character handling, which isn't consistent across all applications (see [AWS docs](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html)):
+	 * - Backslash (`\\`)
+	 * - Left brace (`{`)
+	 * - Non-printable ASCII characters (128–255 decimal characters)
+	 * - Caret or circumflex (`^`)
+	 * - Right brace (`}`)
+	 * - Percent character (`%`)
+	 * - Grave accent or backtick (`\``)
+	 * - Right bracket (`]`)
+	 * - Quotation mark (`"`)
+	 * - Greater than sign (`>`)
+	 * - Left bracket (`[`)
+	 * - Tilde (`~`)
+	 * - Less than sign (`<`)
+	 * - Pound sign (`#`)
+	 * - Vertical bar or pipe (`|`)
+	 *
+	 * lean-s3 does not enforce these restrictions.
+	 *
 	 * @param {Partial<CreateFileInstanceOptions>} [options] TODO
 	 * @example
 	 * ```js
@@ -151,6 +171,7 @@ export default class S3Client {
 	 * ```
 	 */
 	file(path: string, options?: Partial<CreateFileInstanceOptions>): S3File {
+		// TODO: Check max path length in bytes
 		return new S3File(this, path, undefined, undefined, undefined);
 	}
 

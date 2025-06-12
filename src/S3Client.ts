@@ -337,9 +337,14 @@ export default class S3Client {
 	 * - Bucket names must not contain two adjacent periods.
 	 * - Bucket names must not be formatted as an IP address (for example, `192.168.5.4`).
 	 *
+	 * @throws {Error} If the bucket name is invalid.
 	 * @remarks Uses [`CreateBucket`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html)
 	 */
 	async createBucket(name: string, options: BucketCreationOptions = {}) {
+		if (name.length < 3 || name.length > 63) {
+			throw new Error("`name` must be between 3 and 63 characters long.");
+		}
+
 		let body = undefined;
 		if (options) {
 			const location =

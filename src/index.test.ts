@@ -21,8 +21,7 @@ describe("minio", async () => {
 			bucket: "none",
 		});
 		const res = await client.createBucket("test-bucket");
-		expect(res).not.toBeUndefined();
-		expect(res).not.toBeNull();
+		expect(res).toBeUndefined();
 	});
 
 	runTests(
@@ -49,8 +48,7 @@ describe("localstack", async () => {
 			bucket: "none",
 		});
 		const res = await client.createBucket("test-bucket");
-		expect(res).not.toBeUndefined();
-		expect(res).not.toBeNull();
+		expect(res).toBeUndefined();
 	});
 
 	runTests(

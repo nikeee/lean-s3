@@ -1,19 +1,11 @@
-import S3Error from "./S3Error.js";
-import S3Stat from "./S3Stat.ts";
-import { write, stream } from "./S3Client.js";
-import { sha256 } from "./sign.js";
 import { Readable } from "node:stream";
 
-/** @typedef {import("./S3Client.js").default} S3Client */
-/** @typedef {import("./index.d.ts").S3ClientOptions} S3ClientOptions */
-/** @typedef {import("./index.d.ts").PresignableHttpMethod} PresignableHttpMethod */
-/** @typedef {import("./index.d.ts").StorageClass} StorageClass */
-/** @typedef {import("./index.d.ts").Acl} Acl */
-/** @typedef {import("./index.d.ts").S3FilePresignOptions} S3FilePresignOptions */
-/** @typedef {import("./index.d.ts").S3StatOptions} S3StatOptions */
-/** @typedef {import("./index.d.ts").S3FileExistsOptions} S3FileExistsOptions */
-/** @typedef {import("./index.d.ts").S3FileDeleteOptions} S3FileDeleteOptions */
-/** @typedef {import("./index.d.ts").ByteSource} ByteSource */
+import S3Error from "./S3Error.ts";
+import S3Stat from "./S3Stat.ts";
+import type S3Client from "./S3Client.ts";
+import { write, stream, type OverridableS3ClientOptions } from "./S3Client.ts";
+import { sha256 } from "./sign.ts";
+import type { ByteSource } from "./index.ts";
 
 // TODO: If we want to hack around, we can use this to access the private implementation of the "get stream" algorithm used by Node.js's blob internally
 // We probably have to do this some day if the fetch implementation is moved to internals.
@@ -23,26 +15,22 @@ import { Readable } from "node:stream";
 // We now resort back into overriding text/bytes/etc. But as soon as another internal Node.js API uses this functionality, this would probably also use `[kHandle]` and bypass our data.
 // const kHandle = Object.getOwnPropertySymbols(new Blob).find(s => s.toString() === 'Symbol(kHandle)');
 export default class S3File {
-	/** @type {S3Client} */
-	#client;
-	/** @type {string} */
-	#path;
-	/** @type {number | undefined} */
-	#start;
-	/** @type {number | undefined} */
-	#end;
-	/** @type {string} */
-	#contentType;
+	#client: S3Client;
+	#path: string;
+	#start: number | undefined;
+	#end: number | undefined;
+	#contentType: string;
 
 	/**
 	 * @internal
-	 * @param {S3Client} client
-	 * @param {string} path
-	 * @param {number | undefined} start
-	 * @param {number | undefined} end
-	 * @param {string | undefined} contentType
 	 */
-	constructor(client, path, start, end, contentType) {
+	constructor(
+		client: S3Client,
+		path: string,
+		start: number | undefined,
+		end: number | undefined,
+		contentType: string | undefined,
+	) {
 		if (typeof start === "number" && start < 0) {
 			throw new Error("Invalid slice `start`.");
 		}
@@ -61,13 +49,11 @@ export default class S3File {
 	}
 
 	// TODO: slice overloads
-	/**
-	 * @param {number | undefined} [start]
-	 * @param {number | undefined} [end]
-	 * @param {string | undefined} [contentType]
-	 * @returns {S3File}
-	 */
-	slice(start, end, contentType) {
+	slice(
+		start?: number | undefined,
+		end?: number | undefined,
+		contentType?: string | undefined,
+	): S3File {
 		return new S3File(
 			this.#client,
 			this.#path,
@@ -84,7 +70,7 @@ export default class S3File {
 	 * @param {Partial<S3StatOptions>} [options]
 	 * @returns {Promise<S3Stat>}
 	 */
-	async stat({ signal } = {}) {
+	async stat({ signal }: Partial<S3StatOptions> = {}): Promise<S3Stat> {
 		// TODO: Support all options
 
 		// TODO: Don't use presign here
@@ -113,7 +99,9 @@ export default class S3File {
 	 * @param {Partial<S3FileExistsOptions>} [options]
 	 * @returns {Promise<boolean>}
 	 */
-	async exists({ signal } = {}) {
+	async exists({
+		signal,
+	}: Partial<S3FileExistsOptions> = {}): Promise<boolean> {
 		// TODO: Support all options
 
 		// TODO: Don't use presign here
@@ -141,7 +129,7 @@ export default class S3File {
 	 * }
 	 * ```
 	 */
-	async delete({ signal } = {}) {
+	async delete({ signal }: Partial<S3FileDeleteOptions> = {}): Promise<void> {
 		// TODO: Support all options
 
 		// TODO: Don't use presign here
@@ -164,7 +152,7 @@ export default class S3File {
 	}
 
 	/** @returns {Promise<unknown>} */
-	json() {
+	json(): Promise<unknown> {
 		// Not using JSON.parse(await this.text()), so the env can parse json while loading
 		// Also, see TODO note above this class
 		return new Response(this.stream()).json();
@@ -175,20 +163,20 @@ export default class S3File {
 	// 	return new Response(this.stream()).bytes(); // TODO: Does this exist?
 	// }
 	/** @returns {Promise<ArrayBuffer>} */
-	arrayBuffer() {
+	arrayBuffer(): Promise<ArrayBuffer> {
 		return new Response(this.stream()).arrayBuffer();
 	}
 	/** @returns {Promise<string>} */
-	text() {
+	text(): Promise<string> {
 		return new Response(this.stream()).text();
 	}
 	/** @returns {Promise<Blob>} */
-	blob() {
+	blob(): Promise<Blob> {
 		return new Response(this.stream()).blob();
 	}
 
 	/** @returns {ReadableStream<Uint8Array>} */
-	stream() {
+	stream(): ReadableStream<Uint8Array> {
 		// This function is called for every operation on the blob
 		return this.#client[stream](this.#path, undefined, this.#start, this.#end);
 	}
@@ -201,7 +189,15 @@ export default class S3File {
 	 *   hash: Buffer | undefined,
 	 * ]>}
 	 */
-	async #transformData(data) {
+	async #transformData(
+		data: ByteSource,
+	): Promise<
+		[
+			buffer: import("./index.d.ts").UndiciBodyInit,
+			size: number | undefined,
+			hash: Buffer | undefined,
+		]
+	> {
 		if (typeof data === "string") {
 			const binary = new TextEncoder();
 			const bytes = binary.encode(data);
@@ -245,9 +241,9 @@ export default class S3File {
 	 * @param {ByteSource} data
 	 * @returns {Promise<void>}
 	 */
-	async write(data) {
+	async write(data: ByteSource): Promise<void> {
 		/** @type {AbortSignal | undefined} */
-		const signal = undefined; // TODO: Take this as param
+		const signal: AbortSignal | undefined = undefined; // TODO: Take this as param
 
 		// TODO: Support S3File as input and maybe use CopyObject
 		// TODO: Support Request and Response as input?
@@ -286,6 +282,17 @@ export default class S3File {
  * @param {never} v
  * @returns {never}
  */
-function assertNever(v) {
+function assertNever(v: never): never {
 	throw new TypeError(`Expected value not to have type ${typeof v}`);
+}
+
+export interface S3FileDeleteOptions extends OverridableS3ClientOptions {
+	signal: AbortSignal;
+}
+
+export interface S3StatOptions extends OverridableS3ClientOptions {
+	signal: AbortSignal;
+}
+export interface S3FileExistsOptions extends OverridableS3ClientOptions {
+	signal: AbortSignal;
 }

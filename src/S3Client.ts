@@ -1,17 +1,24 @@
-import { request, Dispatcher, Agent } from "undici";
+import { request, Agent } from "undici";
 import { XMLParser, XMLBuilder } from "fast-xml-parser";
 
-import S3File from "./S3File.js";
-import S3Error from "./S3Error.js";
-import S3BucketEntry from "./S3BucketEntry.js";
-import KeyCache from "./KeyCache.js";
+import S3File from "./S3File.ts";
+import S3Error from "./S3Error.ts";
+import S3BucketEntry from "./S3BucketEntry.ts";
+import KeyCache from "./KeyCache.ts";
 import * as amzDate from "./AmzDate.ts";
-import * as sign from "./sign.js";
+import * as sign from "./sign.ts";
 import {
 	buildRequestUrl,
 	getRangeHeader,
 	prepareHeadersForSigning,
 } from "./url.js";
+import type {
+	Acl,
+	HttpMethod,
+	PresignableHttpMethod,
+	StorageClass,
+	UndiciBodyInit,
+} from "./index.js";
 
 export const write = Symbol("write");
 export const stream = Symbol("stream");
@@ -19,16 +26,42 @@ export const stream = Symbol("stream");
 const xmlParser = new XMLParser();
 const xmlBuilder = new XMLBuilder();
 
-/**
- * @typedef {import("./index.d.ts").S3ClientOptions} S3ClientOptions
- * @typedef {import("./index.d.ts").PresignableHttpMethod} PresignableHttpMethod
- * @typedef {import("./index.d.ts").StorageClass} StorageClass
- * @typedef {import("./index.d.ts").Acl} Acl
- * @typedef {import("./index.d.ts").S3FilePresignOptions} S3FilePresignOptions
- * @typedef {import("./index.d.ts").OverridableS3ClientOptions} OverridableS3ClientOptions
- * @typedef {import("./index.d.ts").CreateFileInstanceOptions} CreateFileInstanceOptions
- * @typedef {import("./index.d.ts").ListObjectsResponse} ListObjectsResponse
- */
+export interface S3ClientOptions {
+	bucket: string;
+	region: string;
+	endpoint: string;
+	accessKeyId: string;
+	secretAccessKey: string;
+	sessionToken?: string;
+}
+export type OverridableS3ClientOptions = Pick<
+	S3ClientOptions,
+	"region" | "bucket" | "endpoint"
+>;
+
+// biome-ignore lint/complexity/noBannedTypes: TODO
+export type CreateFileInstanceOptions = {}; // TODO
+
+export interface S3FilePresignOptions {
+	contentHash: Buffer;
+	/** Seconds. */
+	expiresIn: number; // TODO: Maybe support Temporal.Duration once major support arrives
+	method: PresignableHttpMethod;
+	storageClass: StorageClass;
+	acl: Acl;
+}
+
+export type ListObjectsResponse = {
+	name: string;
+	prefix: string | undefined;
+	startAfter: string | undefined;
+	isTruncated: boolean;
+	continuationToken: string | undefined;
+	maxKeys: number;
+	keyCount: number;
+	nextContinuationToken: string | undefined;
+	contents: readonly S3BucketEntry[];
+};
 
 /**
  * A configured S3 bucket instance for managing files.
@@ -58,9 +91,9 @@ export default class S3Client {
 	/**
 	 * Create a new instance of an S3 bucket so that credentials can be managed from a single instance instead of being passed to every method.
 	 *
-	 * @param {S3ClientOptions} options The default options to use for the S3 client.
+	 * @param  options The default options to use for the S3 client.
 	 */
-	constructor(options) {
+	constructor(options: S3ClientOptions) {
 		if (!options) {
 			throw new Error("`options` is required.");
 		}
@@ -104,7 +137,7 @@ export default class S3Client {
 	 * Creates an S3File instance for the given path.
 	 *
 	 * @param {string} path
-	 * @param {Partial<CreateFileInstanceOptions> | undefined} [options] TODO
+	 * @param {Partial<CreateFileInstanceOptions>} [options] TODO
 	 * @returns {S3File}
 	 * @example
 	 * ```js
@@ -117,16 +150,14 @@ export default class S3Client {
 	 * });
 	 * ```
 	 */
-	file(path, options) {
+	file(path: string, options?: Partial<CreateFileInstanceOptions>) {
 		return new S3File(this, path, undefined, undefined, undefined);
 	}
 
 	/**
 	 * Generate a presigned URL for temporary access to a file.
 	 * Useful for generating upload/download URLs without exposing credentials.
-	 * @param {string} path
-	 * @param {Partial<S3FilePresignOptions & OverridableS3ClientOptions>} [signOptions]
-	 * @returns {string} The operation on {@link S3Client#presign.path} as a pre-signed URL.
+	 * @returns The operation on {@link S3Client#presign.path} as a pre-signed URL.
 	 *
 	 * @example
 	 * ```js
@@ -136,7 +167,7 @@ export default class S3Client {
 	 * ```
 	 */
 	presign(
-		path,
+		path: string,
 		{
 			method = "GET",
 			expiresIn = 3600, // TODO: Maybe rename this to expiresInSeconds
@@ -145,8 +176,8 @@ export default class S3Client {
 			region: regionOverride,
 			bucket: bucketOverride,
 			endpoint: endpointOverride,
-		} = {},
-	) {
+		}: Partial<S3FilePresignOptions & OverridableS3ClientOptions> = {},
+	): string {
 		const now = new Date();
 		const date = amzDate.getAmzDate(now);
 		const options = this.#options;
@@ -194,12 +225,10 @@ export default class S3Client {
 		return res.toString();
 	}
 
-	/**
-	 *
-	 * @param {readonly S3BucketEntry[] | readonly string[]} objects
-	 * @param {*} options
-	 */
-	async deleteObjects(objects, options) {
+	async deleteObjects(
+		objects: readonly S3BucketEntry[] | readonly string[],
+		options: unknown,
+	) {
 		throw new Error("Not implemented");
 	}
 
@@ -207,16 +236,13 @@ export default class S3Client {
 
 	/**
 	 * Uses `ListObjectsV2` to iterate over all keys. Pagination and continuation is handled internally.
-
-	* @param {{
-	 *   prefix?: string;
-	 *   startAfter?: string;
-	 *   signal?: AbortSignal;
-	 *   internalPageSize?: number;
-	 * }} [options]
-	 * @returns {AsyncGenerator<S3BucketEntry>}
 	 */
-	async *listIterating(options) {
+	async *listIterating(options: {
+		prefix?: string;
+		startAfter?: string;
+		signal?: AbortSignal;
+		internalPageSize?: number;
+	}): AsyncGenerator<S3BucketEntry> {
 		// only used to get smaller pages, so we can test this properly
 		const maxKeys = options?.internalPageSize ?? undefined;
 
@@ -239,18 +265,15 @@ export default class S3Client {
 		} while (continuationToken);
 	}
 
-	/**
-	 *
-	 * @param {{
-	 *   prefix?: string;
-	 *   maxKeys?: number;
-	 *   startAfter?: string;
-	 *   continuationToken?: string;
-	 *   signal?: AbortSignal;
-	 * }} [options]
-	 * @returns {Promise<ListObjectsResponse>}
-	 */
-	async list(options = {}) {
+	async list(
+		options: {
+			prefix?: string;
+			maxKeys?: number;
+			startAfter?: string;
+			continuationToken?: string;
+			signal?: AbortSignal;
+		} = {},
+	): Promise<ListObjectsResponse> {
 		// See `benchmark-operations.js` on why we don't use URLSearchParams but string concat
 		// tldr: This is faster and we know the params exactly, so we can focus our encoding
 
@@ -355,25 +378,15 @@ export default class S3Client {
 
 	//#endregion
 
-	/**
-	 * @param {import("./index.js").HttpMethod} method
-	 * @param {string} pathWithoutBucket
-	 * @param {string | undefined} query
-	 * @param {import("./index.d.ts").UndiciBodyInit | undefined} body
-	 * @param {Record<string, string>| undefined} additionalSignedHeaders
-	 * @param {Record<string, string> | undefined} additionalUnsignedHeaders
-	 * @param {Buffer | undefined} contentHash
-	 * @param {AbortSignal | undefined} signal
-	 */
 	async #signedRequest(
-		method,
-		pathWithoutBucket,
-		query,
-		body,
-		additionalSignedHeaders,
-		additionalUnsignedHeaders,
-		contentHash,
-		signal,
+		method: HttpMethod,
+		pathWithoutBucket: string,
+		query: string | undefined,
+		body: UndiciBodyInit | undefined,
+		additionalSignedHeaders: Record<string, string> | undefined,
+		additionalUnsignedHeaders: Record<string, string> | undefined,
+		contentHash: Buffer | undefined,
+		signal: AbortSignal | undefined = undefined,
 	) {
 		const bucket = this.#options.bucket;
 		const endpoint = this.#options.endpoint;
@@ -431,26 +444,18 @@ export default class S3Client {
 
 	/**
 	 * @internal
-	 * @param {string} path
 	 * @param {import("./index.d.ts").UndiciBodyInit} data TODO
-	 * @param {string} contentType
-	 * @param {number | undefined} contentLength
-	 * @param {Buffer | undefined} contentHash
-	 * @param {number | undefined} rageStart
-	 * @param {number | undefined} rangeEndExclusive
-	 * @param {AbortSignal | undefined} signal
-	 * @returns {Promise<void>}
 	 */
 	async [write](
-		path,
-		data,
-		contentType,
-		contentLength,
-		contentHash,
-		rageStart,
-		rangeEndExclusive,
-		signal,
-	) {
+		path: string,
+		data: UndiciBodyInit,
+		contentType: string,
+		contentLength: number | undefined,
+		contentHash: Buffer | undefined,
+		rageStart: number | undefined,
+		rangeEndExclusive: number | undefined,
+		signal: AbortSignal | undefined = undefined,
+	): Promise<void> {
 		const bucket = this.#options.bucket;
 		const endpoint = this.#options.endpoint;
 		const region = this.#options.region;
@@ -545,13 +550,13 @@ export default class S3Client {
 
 	/**
 	 * @internal
-	 * @param {string} path
-	 * @param {Buffer | undefined} contentHash
-	 * @param {number | undefined} rageStart
-	 * @param {number | undefined} rangeEndExclusive
-	 * @returns
 	 */
-	[stream](path, contentHash, rageStart, rangeEndExclusive) {
+	[stream](
+		path: string,
+		contentHash: Buffer | undefined,
+		rageStart: number | undefined,
+		rangeEndExclusive: number | undefined,
+	) {
 		const bucket = this.#options.bucket;
 		const endpoint = this.#options.endpoint;
 		const region = this.#options.region;
@@ -577,7 +582,7 @@ export default class S3Client {
 		return new ReadableStream({
 			type: "bytes",
 			start: controller => {
-				const onNetworkError = (/** @type {unknown} */ cause) => {
+				const onNetworkError = (cause: unknown) => {
 					controller.error(
 						new S3Error("Unknown", path, {
 							message: undefined,
@@ -690,27 +695,16 @@ export default class S3Client {
 		});
 	}
 
-	/**
-	 * @param {import("./index.js").HttpMethod} method
-	 * @param {string} path
-	 * @param {string} query
-	 * @param {amzDate.AmzDate} date
-	 * @param {Record<string, string>} sortedSignedHeaders
-	 * @param {string} region
-	 * @param {string} contentHashStr
-	 * @param {string} accessKeyId
-	 * @param {string} secretAccessKey
-	 */
 	#getAuthorizationHeader(
-		method,
-		path,
-		query,
-		date,
-		sortedSignedHeaders,
-		region,
-		contentHashStr,
-		accessKeyId,
-		secretAccessKey,
+		method: HttpMethod,
+		path: string,
+		query: string,
+		date: amzDate.AmzDate,
+		sortedSignedHeaders: Record<string, string>,
+		region: string,
+		contentHashStr: string,
+		accessKeyId: string,
+		secretAccessKey: string,
 	) {
 		const dataDigest = sign.createCanonicalDataDigest(
 			method,
@@ -753,14 +747,14 @@ export default class S3Client {
  * @returns {string}
  */
 export function buildSearchParams(
-	amzCredential,
-	date,
-	expiresIn,
-	headerList,
-	contentHashStr,
-	storageClass,
-	sessionToken,
-	acl,
+	amzCredential: string,
+	date: amzDate.AmzDate,
+	expiresIn: number,
+	headerList: string,
+	contentHashStr: string | null | undefined,
+	storageClass: StorageClass | null | undefined,
+	sessionToken: string | null | undefined,
+	acl: Acl | null | undefined,
 ) {
 	// We tried to make these query params entirely lower-cased, just like the headers
 	// but Cloudflare R2 requires them to have this exact casing

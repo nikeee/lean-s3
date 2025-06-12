@@ -125,6 +125,8 @@ See [DESIGN_DECISIONS.md](./DESIGN_DECISIONS.md) to read about why this library 
 
 ### Bucket Operations
 - ✅ [`CreateBucket`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html) via `.createBucket`
+- ✅ [`DeleteBucket`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucket.html) via `.deleteBucket`
+- ✅ [`HeadBucket`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadBucket.html) via `.bucketExists`
 
 ### Object Operations
 - ✅ [`ListObjectsV2`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html) via `.list`/`.listIterating`

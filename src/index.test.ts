@@ -7,25 +7,40 @@ import { runTests } from "./test-common.ts";
 import { S3Client } from "./index.ts";
 
 describe("minio", async () => {
-	const container = new MinioContainer(
+	const s3 = await new MinioContainer(
 		"minio/minio:RELEASE.2025-04-08T15-41-24Z-cpuv1",
-	);
-	const s3 = await container.start();
-	after(async () => await s3.stop());
-	before(async () => {
+	).start();
+	const runId = Date.now();
+	{
 		const client = new S3Client({
 			endpoint: s3.getConnectionUrl(),
 			accessKeyId: "minioadmin",
 			secretAccessKey: "minioadmin",
 			region: "us-east-1",
-			bucket: "none",
+			bucket: "none", // intentionally set to a non-existent one, so we catch cases where the bucket is not passed correctly
 		});
-		const res = await client.createBucket("test-bucket");
-		expect(res).toBeUndefined();
-	});
+		after(async () => {
+			// you can use this to debug leftover files:
+			// for await (const f of client.listIterating({
+			// 	prefix: runId.toString(),
+			// 	bucket: "test-bucket",
+			// })) {
+			// 	console.log(`Leftover: ${f.key}`);
+			// }
+
+			expect(await client.bucketExists("test-bucket")).toBe(true);
+			await client.deleteBucket("test-bucket");
+			expect(await client.bucketExists("test-bucket")).toBe(false);
+			await s3.stop();
+		});
+		before(async () => {
+			const res = await client.createBucket("test-bucket");
+			expect(res).toBeUndefined();
+		});
+	}
 
 	runTests(
-		Date.now(),
+		runId,
 		s3.getConnectionUrl(),
 		true,
 		"minioadmin",
@@ -36,23 +51,31 @@ describe("minio", async () => {
 });
 
 describe("localstack", async () => {
-	const container = new LocalstackContainer("localstack/localstack:4");
-	const s3 = await container.start();
-	after(async () => await s3.stop());
-	before(async () => {
+	const s3 = await new LocalstackContainer("localstack/localstack:4").start();
+	const runId = Date.now();
+	{
 		const client = new S3Client({
 			endpoint: s3.getConnectionUri(),
 			accessKeyId: "test",
 			secretAccessKey: "test",
 			region: "us-east-1",
-			bucket: "none",
+			bucket: "none", // intentionally set to a non-existent one, so we catch cases where the bucket is not passed correctly
 		});
-		const res = await client.createBucket("test-bucket");
-		expect(res).toBeUndefined();
-	});
+
+		after(async () => {
+			expect(await client.bucketExists("test-bucket")).toBe(true);
+			await client.deleteBucket("test-bucket");
+			expect(await client.bucketExists("test-bucket")).toBe(false);
+			await s3.stop();
+		});
+		before(async () => {
+			const res = await client.createBucket("test-bucket");
+			expect(res).toBeUndefined();
+		});
+	}
 
 	runTests(
-		Date.now(),
+		runId,
 		s3.getConnectionUri(),
 		true,
 		"test",

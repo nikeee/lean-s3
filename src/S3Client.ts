@@ -357,9 +357,7 @@ export default class S3Client {
 	 * @remarks Uses [`CreateBucket`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html)
 	 */
 	async createBucket(name: string, options?: BucketCreationOptions) {
-		if (name.length < 3 || name.length > 63) {
-			throw new Error("`name` must be between 3 and 63 characters long.");
-		}
+		ensureValidBucketName(name);
 
 		let body = undefined;
 		if (options) {
@@ -421,11 +419,14 @@ export default class S3Client {
 	}
 
 	/**
-	 *
-	 * @param name The name of the bucket to delete.
+	 * Deletes a bucket from the S3 server.
+	 * @param name The name of the bucket to delete. Same restrictions as in {@link S3Client#createBucket}.
+	 * @throws {Error} If the bucket name is invalid.
 	 * @remarks Uses [`DeleteBucket`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucket.html).
 	 */
 	async deleteBucket(name: string) {
+		ensureValidBucketName(name);
+
 		throw new Error("`deleteBucket` is not implemented yet.");
 	}
 
@@ -987,4 +988,24 @@ function parseAndGetXmlError(body: string, path: string): S3Error {
 	return new S3Error(error.Code || "Unknown", path, {
 		message: error.Message || undefined, // Message might be "",
 	});
+}
+
+function ensureValidBucketName(name: string): asserts name is string {
+	if (name.length < 3 || name.length > 63) {
+		throw new Error("`name` must be between 3 and 63 characters long.");
+	}
+
+	if (name.startsWith(".") || name.endsWith(".")) {
+		throw new Error("`name` must not start or end with a period (.)");
+	}
+
+	if (!/^[a-z0-9.-]+$/.test(name)) {
+		throw new Error(
+			"`name` can only contain lowercase letters, numbers, periods (.), and hyphens (-).",
+		);
+	}
+
+	if (name.includes("..")) {
+		throw new Error("`name` must not contain two adjacent periods (..)");
+	}
 }

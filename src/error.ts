@@ -28,6 +28,25 @@ export async function getResponseError(
 	});
 }
 
+export function fromStatusCode(
+	code: number,
+	path: string,
+): S3Error | undefined {
+	switch (code) {
+		case 404:
+			return new S3Error("NoSuchKey", path, {
+				message: "The specified key does not exist.",
+			});
+		case 403:
+			return new S3Error("AccessDenied", path, {
+				message: "Access denied to the file.",
+			});
+		// TODO: Add more status codes as needed
+		default:
+			return undefined;
+	}
+}
+
 function parseAndGetXmlError(body: string, path: string): S3Error {
 	let error = undefined;
 	try {

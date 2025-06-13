@@ -6,7 +6,7 @@ import S3Error from "./S3Error.ts";
 import S3Stat from "./S3Stat.ts";
 import { write, stream, type OverridableS3ClientOptions } from "./S3Client.ts";
 import { sha256 } from "./sign.ts";
-import { getResponseError } from "./error.ts";
+import { fromStatusCode, getResponseError } from "./error.ts";
 
 // TODO: If we want to hack around, we can use this to access the private implementation of the "get stream" algorithm used by Node.js's blob internally
 // We probably have to do this some day if the fetch implementation is moved to internals.
@@ -68,32 +68,45 @@ export default class S3File {
 	 *  Get the stat of a file in the bucket. Uses `HEAD` request to check existence.
 	 *
 	 * @remarks Uses [`HeadObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html).
-	 * @throws {Error} If the file does not exist.
+	 * @throws {S3Error} If the file does not exist or the server has some other issues.
+	 * @throws {Error} If the server returns an invalid response.
 	 */
 	async stat({ signal }: Partial<S3StatOptions> = {}): Promise<S3Stat> {
 		// TODO: Support all options
 
-		// TODO: Don't use presign here
-		const url = this.#client.presign(this.#path, { method: "HEAD" });
-		const response = await fetch(url, { method: "HEAD", signal }); // TODO: Use undici
+		const response = await this.#client._signedRequest(
+			"HEAD",
+			this.#path,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			signal,
+		);
 
-		if (!response.ok) {
-			switch (response.status) {
-				case 404:
-					// TODO: Process response body
-					throw new S3Error("NoSuchKey", this.#path);
-				default:
-					// TODO: Process response body
-					throw new S3Error("Unknown", this.#path);
+		// Heads don't have a body, but we still need to consume it to avoid leaks
+		await response.body.dump();
+
+		if (200 <= response.statusCode && response.statusCode < 300) {
+			const result = S3Stat.tryParseFromHeaders(response.headers);
+			if (!result) {
+				throw new Error(
+					"S3 server returned an invalid response for `HeadObject`",
+				);
 			}
+			return result;
 		}
 
-		const result = S3Stat.tryParseFromHeaders(response.headers);
-		if (!result) {
-			throw new Error("S3 server returned an invalid response for HEAD");
-		}
-		return result;
+		throw (
+			fromStatusCode(response.statusCode, this.#path) ??
+			new Error(
+				`S3 server returned an unsupported status code for \`HeadObject\`: ${response.statusCode}`,
+			)
+		);
 	}
+
 	/**
 	 * Check if a file exists in the bucket. Uses `HEAD` request to check existence.
 	 *
@@ -116,17 +129,23 @@ export default class S3File {
 			signal,
 		);
 
+		// Heads don't have a body, but we still need to consume it to avoid leaks
+		await response.body.dump();
+
 		if (200 <= response.statusCode && response.statusCode < 300) {
-			await response.body.dump(); // Consume the body to avoid leaks
 			return true;
 		}
 
 		if (response.statusCode === 404) {
-			await response.body.dump(); // Consume the body to avoid leaks
 			return false;
 		}
 
-		throw await getResponseError(response, this.#path);
+		throw (
+			fromStatusCode(response.statusCode, this.#path) ??
+			new Error(
+				`S3 server returned an unsupported status code for \`HeadObject\`: ${response.statusCode}`,
+			)
+		);
 	}
 
 	/**

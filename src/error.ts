@@ -39,7 +39,7 @@ export function fromStatusCode(
 			});
 		case 403:
 			return new S3Error("AccessDenied", path, {
-				message: "Access denied to the file.",
+				message: "Access denied to the key.",
 			});
 		// TODO: Add more status codes as needed
 		default:

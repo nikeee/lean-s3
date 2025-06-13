@@ -1,5 +1,3 @@
-import type { Headers } from "undici-types";
-
 export default class S3Stat {
 	readonly etag: string;
 	readonly lastModified: Date;
@@ -13,18 +11,20 @@ export default class S3Stat {
 		this.type = type;
 	}
 
-	static tryParseFromHeaders(headers: Headers): S3Stat | undefined {
-		const lm = headers.get("last-modified");
-		if (lm === null) {
+	static tryParseFromHeaders(
+		headers: Record<string, string | string[] | undefined>,
+	): S3Stat | undefined {
+		const lm = headers["last-modified"];
+		if (lm === null || typeof lm !== "string") {
 			return undefined;
 		}
 
-		const etag = headers.get("etag");
-		if (etag === null) {
+		const etag = headers.etag;
+		if (etag === null || typeof etag !== "string") {
 			return undefined;
 		}
 
-		const cl = headers.get("content-length");
+		const cl = headers["content-length"];
 		if (cl === null) {
 			return undefined;
 		}
@@ -34,8 +34,8 @@ export default class S3Stat {
 			return undefined;
 		}
 
-		const ct = headers.get("content-type");
-		if (ct === null) {
+		const ct = headers["content-type"];
+		if (ct === null || typeof ct !== "string") {
 			return undefined;
 		}
 

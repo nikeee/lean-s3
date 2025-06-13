@@ -1,5 +1,5 @@
 {
-    "typescript.experimental.useTsgo": true,
+    "typescript.experimental.useTsgo": false,
     "explorer.fileNesting.enabled": true,
     "explorer.fileNesting.patterns": {
         "tsconfig.json": "tsconfig.*.json",

@@ -350,4 +350,28 @@ export function runTests(
 			expect(res1.contents.length).toBe(0);
 		});
 	});
+
+	describe("S3File", () => {
+		test(".exists()", async () => {
+			const testId = crypto.randomUUID();
+
+			const f = client.file(`${runId}/${testId}/test-a-0.txt`);
+			await f.write(crypto.randomUUID());
+			try {
+				expect(await f.exists()).toBe(true);
+
+				// ensure a new instance works as well
+				expect(
+					await client.file(`${runId}/${testId}/test-a-0.txt`).exists(),
+				).toBe(true);
+
+				const notExistentFile = client.file(
+					`${runId}/${testId}/not-existent.txt`,
+				);
+				expect(await notExistentFile.exists()).toBe(false);
+			} finally {
+				await f.delete();
+			}
+		});
+	});
 }

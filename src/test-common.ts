@@ -5,7 +5,7 @@
 import { describe, test } from "node:test";
 import { expect } from "expect";
 
-import { S3Client, S3Stat } from "./index.ts";
+import { S3Client, S3Error, S3Stat } from "./index.ts";
 
 export function runTests(
 	runId: number,
@@ -410,10 +410,14 @@ export function runTests(
 			const testId = crypto.randomUUID();
 
 			const f = client.file(`${runId}/${testId}/test-a-0.txt`);
-			expect(() => f.stat()).rejects.toStrictEqual({
-				code: "NoSuchKey",
-				path: `${runId}/${testId}/test-a-0.txt`,
-			});
+			const promise = f.stat();
+			await expect(promise).rejects.toStrictEqual(
+				expect.objectContaining({
+					code: "NoSuchKey",
+					path: `${runId}/${testId}/test-a-0.txt`,
+				}),
+			);
+			await expect(promise).rejects.toBeInstanceOf(S3Error);
 		});
 	});
 }

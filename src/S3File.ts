@@ -104,10 +104,29 @@ export default class S3File {
 	}: Partial<S3FileExistsOptions> = {}): Promise<boolean> {
 		// TODO: Support all options
 
-		// TODO: Don't use presign here
-		const url = this.#client.presign(this.#path, { method: "HEAD" });
-		const res = await fetch(url, { method: "HEAD", signal }); // TODO: Use undici
-		return res.ok;
+		const response = await this.#client._signedRequest(
+			"HEAD",
+			this.#path,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			signal,
+		);
+
+		if (200 <= response.statusCode && response.statusCode < 300) {
+			await response.body.dump(); // Consume the body to avoid leaks
+			return true;
+		}
+
+		if (response.statusCode === 404) {
+			await response.body.dump(); // Consume the body to avoid leaks
+			return false;
+		}
+
+		throw await getResponseError(response, this.#path);
 	}
 
 	/**

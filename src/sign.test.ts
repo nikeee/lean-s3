@@ -196,7 +196,7 @@ describe("signCanonicalDataHash", () => {
 });
 
 describe("createCanonicalData", () => {
-	test("equvalence of secpialized", () => {
+	test("equivalence of specialized", () => {
 		const general = sign.createCanonicalDataDigest(
 			"GET",
 			"/test.json",

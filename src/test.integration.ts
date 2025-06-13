@@ -36,9 +36,21 @@ for (const provider of ["hetzner", "aws", "cloudflare"]) {
 
 			before(async () => {
 				expect(await client.bucketExists(bucket)).toBe(true);
+				const objects = (await client.list({ prefix: `${runId}/` })).contents;
+				expect(objects.length).toBe(0);
 			});
 			after(async () => {
 				expect(await client.bucketExists(bucket)).toBe(true);
+
+				const objects = (
+					await client.list({ prefix: `${runId}/`, maxKeys: 1000 })
+				).contents;
+
+				// clean up after all tests, but we want to fail because there are still objects
+				if (objects.length > 0) {
+					await client.deleteObjects(objects);
+				}
+				expect(objects.length).toBe(0);
 			});
 		}
 

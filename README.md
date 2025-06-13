@@ -1,6 +1,6 @@
 # lean-s3 [![npm badge](https://img.shields.io/npm/v/lean-s3)](https://www.npmjs.com/package/lean-s3)
 
-A server-side S3 API for the regular user. lean-s3 tries to provide the 80% of S3 that most people use. It is heavily inspired by [Bun's S3 API](https://bun.sh/docs/api/s3). Requires a Node.js version that supports `fetch`.
+A server-side S3 API for the regular user. lean-s3 tries to provide the 80% of S3 that most people use. It is heavily inspired by [Bun's S3 API](https://bun.sh/docs/api/s3). Requires a supported Node.js version.
 
 ## Elevator Pitch
 ```js

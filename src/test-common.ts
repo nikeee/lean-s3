@@ -5,7 +5,7 @@
 import { describe, test } from "node:test";
 import { expect } from "expect";
 
-import { S3Client } from "./index.ts";
+import { S3Client, S3Stat } from "./index.ts";
 
 export function runTests(
 	runId: number,
@@ -372,6 +372,48 @@ export function runTests(
 			} finally {
 				await f.delete();
 			}
+		});
+
+		test(".stat()", async () => {
+			const testId = crypto.randomUUID();
+
+			const f = client.file(`${runId}/${testId}/test-a-0.txt`);
+			await f.write("some content");
+
+			try {
+				const stat = await f.stat();
+				expect(stat).not.toBeNull();
+				expect(stat).not.toBeUndefined();
+				expect(stat).toBeInstanceOf(S3Stat);
+				expect(stat.etag).toBeDefined();
+				expect(stat.lastModified).toBeInstanceOf(Date);
+				expect(stat.size).toBe("some content".length);
+				expect(stat.type).toBe("application/octet-stream");
+
+				// ensure a new instance works as well
+				const stat2 = await client
+					.file(`${runId}/${testId}/test-a-0.txt`)
+					.stat();
+				expect(stat2).not.toBeNull();
+				expect(stat2).not.toBeUndefined();
+				expect(stat2).toBeInstanceOf(S3Stat);
+				expect(stat2.etag).toBeDefined();
+				expect(stat2.lastModified).toBeInstanceOf(Date);
+				expect(stat2.size).toBe("some content".length);
+				expect(stat2.type).toBe("application/octet-stream");
+			} finally {
+				await f.delete();
+			}
+		});
+
+		test(".stat() throws on non-existent", async () => {
+			const testId = crypto.randomUUID();
+
+			const f = client.file(`${runId}/${testId}/test-a-0.txt`);
+			expect(() => f.stat()).rejects.toStrictEqual({
+				code: "NoSuchKey",
+				path: `${runId}/${testId}/test-a-0.txt`,
+			});
 		});
 	});
 }

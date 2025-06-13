@@ -2,7 +2,7 @@
  * @module Used by integration tests and unit tests.
  */
 
-import { test } from "node:test";
+import { describe, test } from "node:test";
 import { expect } from "expect";
 
 import { S3Client } from "./index.ts";
@@ -334,18 +334,20 @@ export function runTests(
 		expect(res1.contents.length).toBe(0);
 	});
 
-	test("deleteObject", async () => {
-		const testId = crypto.randomUUID();
-		await client
-			.file(`${runId}/${testId}/test-a-0.txt`)
-			.write(crypto.randomUUID());
+	describe("deletObject", () => {
+		test("deleteObject works", async () => {
+			const testId = crypto.randomUUID();
+			await client
+				.file(`${runId}/${testId}/test-a-0.txt`)
+				.write(crypto.randomUUID());
 
-		const res0 = await client.list({ prefix: `${runId}/${testId}` });
-		expect(res0.contents.length).toBe(1);
+			const res0 = await client.list({ prefix: `${runId}/${testId}` });
+			expect(res0.contents.length).toBe(1);
 
-		await client.file(`${runId}/${testId}/test-a-0.txt`).delete();
+			await client.file(`${runId}/${testId}/test-a-0.txt`).delete();
 
-		const res1 = await client.list({ prefix: `${runId}/${testId}` });
-		expect(res1.contents.length).toBe(0);
+			const res1 = await client.list({ prefix: `${runId}/${testId}` });
+			expect(res1.contents.length).toBe(0);
+		});
 	});
 }

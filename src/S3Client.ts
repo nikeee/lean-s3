@@ -646,6 +646,7 @@ export default class S3Client {
 
 	/**
 	 * Do not use this. This is an internal method.
+	 * TODO: Maybe move this into a separate free function?
 	 * @internal
 	 */
 	async _signedRequest(
@@ -656,13 +657,19 @@ export default class S3Client {
 		additionalSignedHeaders: Record<string, string> | undefined,
 		additionalUnsignedHeaders: Record<string, string> | undefined,
 		contentHash: Buffer | undefined,
-		bucket: string,
+		bucket: string | undefined,
 		signal: AbortSignal | undefined = undefined,
 	) {
 		const endpoint = this.#options.endpoint;
 		const region = this.#options.region;
+		const effectiveBucket = bucket ?? this.#options.bucket;
 
-		const url = buildRequestUrl(endpoint, bucket, region, pathWithoutBucket);
+		const url = buildRequestUrl(
+			endpoint,
+			effectiveBucket,
+			region,
+			pathWithoutBucket,
+		);
 		if (query) {
 			url.search = query;
 		}

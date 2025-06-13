@@ -135,19 +135,24 @@ export default class S3File {
 	async delete({ signal }: Partial<S3FileDeleteOptions> = {}): Promise<void> {
 		// TODO: Support all options
 
-		// TODO: Don't use presign here
-		const url = this.#client.presign(this.#path, { method: "DELETE" });
-		const response = await fetch(url, { method: "DELETE", signal }); // TODO: Use undici
-		if (!response.ok) {
-			switch (response.status) {
-				case 404:
-					// TODO: Process response body
-					throw new S3Error("NoSuchKey", this.#path);
-				default:
-					// TODO: Process response body
-					throw new S3Error("Unknown", this.#path);
-			}
+		const response = await this.#client._signedRequest(
+			"DELETE",
+			this.#path,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			signal,
+		);
+
+		if (response.statusCode === 204) {
+			await response.body.dump(); // Consume the body to avoid leaks
+			return;
 		}
+
+		throw await getResponseError(response, this.#path);
 	}
 
 	toString() {

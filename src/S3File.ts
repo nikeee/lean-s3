@@ -1,11 +1,12 @@
 import { Readable } from "node:stream";
 
+import type S3Client from "./S3Client.ts";
+import type { ByteSource } from "./index.ts";
 import S3Error from "./S3Error.ts";
 import S3Stat from "./S3Stat.ts";
-import type S3Client from "./S3Client.ts";
 import { write, stream, type OverridableS3ClientOptions } from "./S3Client.ts";
 import { sha256 } from "./sign.ts";
-import type { ByteSource } from "./index.ts";
+import { getResponseError } from "./error.ts";
 
 // TODO: If we want to hack around, we can use this to access the private implementation of the "get stream" algorithm used by Node.js's blob internally
 // We probably have to do this some day if the fetch implementation is moved to internals.
@@ -113,6 +114,7 @@ export default class S3File {
 	 * Delete a file from the bucket.
 	 *
 	 * @remarks Uses [`DeleteObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html).
+	 * @remarks `versionId` not supported.
 	 *
 	 * @param {Partial<S3FileDeleteOptions>} [options]
 	 *

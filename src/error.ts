@@ -1,0 +1,52 @@
+import type { Dispatcher } from "undici";
+import { XMLParser } from "fast-xml-parser";
+
+import S3Error from "./S3Error.ts";
+
+const xmlParser = new XMLParser();
+
+export async function getResponseError(
+	response: Dispatcher.ResponseData<unknown>,
+	path: string,
+): Promise<S3Error> {
+	let body = undefined;
+	try {
+		body = await response.body.text();
+	} catch (cause) {
+		return new S3Error("Unknown", path, {
+			message: "Could not read response body.",
+			cause,
+		});
+	}
+
+	if (response.headers["content-type"] === "application/xml") {
+		return parseAndGetXmlError(body, path);
+	}
+
+	return new S3Error("Unknown", path, {
+		message: "Unknown error during S3 request.",
+	});
+}
+
+function parseAndGetXmlError(body: string, path: string): S3Error {
+	let error = undefined;
+	try {
+		error = xmlParser.parse(body);
+	} catch (cause) {
+		return new S3Error("Unknown", path, {
+			message: "Could not parse XML error response.",
+			cause,
+		});
+	}
+
+	if (error.Error) {
+		const e = error.Error;
+		return new S3Error(e.Code || "Unknown", path, {
+			message: e.Message || undefined, // Message might be "",
+		});
+	}
+
+	return new S3Error(error.Code || "Unknown", path, {
+		message: error.Message || undefined, // Message might be "",
+	});
+}

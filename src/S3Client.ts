@@ -298,7 +298,7 @@ export default class S3Client {
 			},
 		});
 
-		const response = await this.#signedRequest(
+		const response = await this._signedRequest(
 			"POST",
 			"",
 			"delete=", // "=" is needed by minio for some reason
@@ -404,7 +404,7 @@ export default class S3Client {
 			? { "content-md5": sign.md5Base64(body) }
 			: undefined;
 
-		const response = await this.#signedRequest(
+		const response = await this._signedRequest(
 			"PUT",
 			"",
 			undefined,
@@ -438,7 +438,7 @@ export default class S3Client {
 	 */
 	async deleteBucket(name: string, options?: BucketDeletionOptions) {
 		ensureValidBucketName(name);
-		const response = await this.#signedRequest(
+		const response = await this._signedRequest(
 			"DELETE",
 			"",
 			undefined,
@@ -474,7 +474,7 @@ export default class S3Client {
 	): Promise<boolean> {
 		ensureValidBucketName(name);
 
-		const response = await this.#signedRequest(
+		const response = await this._signedRequest(
 			"HEAD",
 			"",
 			undefined,
@@ -583,7 +583,7 @@ export default class S3Client {
 			query += `&start-after=${encodeURIComponent(options.startAfter)}`;
 		}
 
-		const response = await this.#signedRequest(
+		const response = await this._signedRequest(
 			"GET",
 			"",
 			query,
@@ -643,7 +643,11 @@ export default class S3Client {
 
 	//#endregion
 
-	async #signedRequest(
+	/**
+	 * Do not use this. This is an internal method.
+	 * @internal
+	 */
+	async _signedRequest(
 		method: HttpMethod,
 		pathWithoutBucket: string,
 		query: string | undefined,

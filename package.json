@@ -19,15 +19,14 @@
   "types": "./dist/index.d.ts",
   "type": "module",
   "scripts": {
-    "build": "tsgo",
-    "clean": "rimraf dist",
+    "build": "tsup",
     "test": "tsgo && node --test dist/*.test.js",
     "test:integration": "tsgo && node --test dist/test.integration.js",
     "ci": "biome ci ./src",
     "docs": "typedoc",
     "lint": "biome lint ./src",
     "format": "biome format --write ./src && biome lint --write ./src && biome check --write ./src",
-    "prepublishOnly": "npm run clean && npm run build"
+    "prepublishOnly": "npm run build"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
@@ -37,9 +36,8 @@
     "@typescript/native-preview": "^7.0.0-dev.20250613.1",
     "expect": "^30.0.0",
     "lefthook": "^1.11.13",
-    "rimraf": "^6.0.1",
-    "typedoc": "^0.28.5",
-    "typescript": "^5.8.3"
+    "tsup": "^8.5.0",
+    "typedoc": "^0.28.5"
   },
   "engines": {
     "node": "^20.19.0 || ^22.14.0 || ^24.0.0"

@@ -151,8 +151,8 @@ export default class S3File {
 	/**
 	 * Delete a file from the bucket.
 	 *
-	 * @remarks Uses [`DeleteObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html).
-	 * @remarks `versionId` not supported.
+	 * @remarks - Uses [`DeleteObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html).
+	 *          - `versionId` not supported.
 	 *
 	 * @param {Partial<S3FileDeleteOptions>} [options]
 	 *

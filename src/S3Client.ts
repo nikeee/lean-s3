@@ -175,7 +175,7 @@ export default class S3Client {
 	/**
 	 * Creates an S3File instance for the given path.
 	 *
-	 * @param {string} path The path to the object in the bucket. ALso known as [object key](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html).
+	 * @param {string} path The path to the object in the bucket. Also known as [object key](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html).
 	 * We recommend not using the following characters in a key name because of significant special character handling, which isn't consistent across all applications (see [AWS docs](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html)):
 	 * - Backslash (`\\`)
 	 * - Left brace (`{`)

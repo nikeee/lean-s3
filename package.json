@@ -6,7 +6,21 @@
   "description": "A server-side S3 API for the regular user.",
   "keywords": [
     "s3",
-    "client"
+    "client",
+    "s3 client",
+    "s3 sdk",
+    "b2",
+    "b2 client",
+    "r2",
+    "r2 client",
+    "cloudflare",
+    "cloudflare r2",
+    "AWS S3",
+    "Azure Blob Storage",
+    "Google Cloud Storage",
+    "Ceph",
+    "mibion",
+    "backblaze"
   ],
   "repository": {
     "type": "git",

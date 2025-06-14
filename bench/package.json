@@ -12,10 +12,13 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.828.0",
     "@aws-sdk/s3-request-presigner": "^3.828.0",
-    "@testcontainers/localstack": "^11.0.3",
+    "@monstermann/tinybench-pretty-printer": "^0.1.0",
+    "@testcontainers/minio": "^11.0.3",
     "aws4fetch": "^1.0.20",
     "bun": "^1.2.16",
     "minio": "^8.0.5",
-    "mitata": "^1.0.34"
+    "mitata": "^1.0.34",
+    "s3mini": "^0.2.0",
+    "tinybench": "^4.0.1"
   }
 }

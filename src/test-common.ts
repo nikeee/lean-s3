@@ -352,6 +352,21 @@ export function runTests(
 	});
 
 	describe("S3File", () => {
+		test(".write()", async () => {
+			const testId = crypto.randomUUID();
+			const f = client.file(`${runId}/${testId}/test-a-0.txt`);
+			const content = crypto.randomUUID();
+			await f.write(content);
+			try {
+				// ensure a new instance works as well
+				const f2 = client.file(`${runId}/${testId}/test-a-0.txt`);
+				expect(await f2.text()).toBe(await f.text());
+				expect(content).toBe(await f.text());
+			} finally {
+				await f.delete();
+			}
+		});
+
 		test(".exists()", async () => {
 			const testId = crypto.randomUUID();
 

@@ -48,6 +48,33 @@ export function runTests(
 		}
 	});
 
+	test("presign-put with weird key", async () => {
+		const testId = crypto.randomUUID();
+		const expected = {
+			hello: testId,
+		};
+
+		const key = `${runId}/${testId}/Sun Jun 15 2025 00:57:03 GMT+0200 (test)`;
+
+		const url = client.presign(key, { method: "PUT" });
+		const res = await fetch(url, {
+			method: "PUT",
+			body: JSON.stringify(expected),
+			headers: {
+				accept: "application/json",
+			},
+		});
+		expect(res.ok).toBe(true);
+
+		const f = client.file(key);
+		try {
+			const actual = await f.json();
+			expect(actual).toStrictEqual(expected);
+		} finally {
+			await f.delete();
+		}
+	});
+
 	test("roundtrip", async () => {
 		const testId = crypto.randomUUID();
 		const f = client.file(`${runId}/roundtrip.txt`);
@@ -362,6 +389,21 @@ export function runTests(
 				const f2 = client.file(`${runId}/${testId}/test-a-0.txt`);
 				expect(await f2.text()).toBe(await f.text());
 				expect(content).toBe(await f.text());
+			} finally {
+				await f.delete();
+			}
+		});
+
+		test(".write() with weird keys", async () => {
+			const testId = crypto.randomUUID();
+
+			const key = "Sun Jun 15 2025 00:57:03 GMT+0200 (test)";
+			const f = client.file(`${runId}/${testId}/${key}`);
+			const content = crypto.randomUUID();
+			await f.write(content);
+			try {
+				expect(await f.exists()).toBe(true);
+				expect(await f.text()).toBe(content);
 			} finally {
 				await f.delete();
 			}

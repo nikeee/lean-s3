@@ -1,6 +1,6 @@
 # lean-s3 performance benchmarks
 
-Don't trust these tests as they were done on a local machine and a local MinIO instance. You can run them on your machine:
+Don't trust these tests as they were done on a local machine and a local MinIO instance. Results depend on network conditions, hardware, and magic and _will_ be different on your machine. You can run the benchmarks on your machine:
 ```sh
 git clone git@github.com:nikeee/lean-s3.git
 cd lean-s3

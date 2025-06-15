@@ -1,5 +1,5 @@
-// @ts-check
 import { randomBytes } from "node:crypto";
+import type { Readable } from "node:stream";
 import { MinioContainer } from "@testcontainers/minio";
 import * as mitata from "mitata";
 
@@ -59,19 +59,6 @@ const s3 = await createContainer([
 	"test-bun",
 ]);
 
-let buns3 = undefined;
-try {
-	buns3 = new (await import("bun")).S3Client({
-		region: region,
-		endpoint: s3.getConnectionUrl(),
-		accessKeyId: accessKeyId,
-		secretAccessKey,
-		bucket: "test-bun",
-	});
-} catch {
-	// Not executed in bun
-}
-
 const awsS3 = new AWSS3Client({
 	region,
 	endpoint: s3.getConnectionUrl(),
@@ -106,7 +93,21 @@ const minio = new MinioClient({
 	secretKey: secretAccessKey,
 });
 
-const clients = [
+type ClientWrapper = {
+	baseline: boolean;
+	name: string;
+	bucket: string;
+	put: (
+		bucket: string,
+		key: string,
+		value: string | Buffer,
+	) => Promise<void>;
+	getBuffer: (bucket: string, key: string) => Promise<Uint8Array | ArrayBuffer>;
+	list: (bucket: string) => Promise<void>;
+	delete: (bucket: string, key: string) => Promise<void>;
+};
+
+const clients: ClientWrapper[] = [
 	{
 		baseline: false,
 		name: "@aws-sdk/client-s3",
@@ -127,12 +128,13 @@ const clients = [
 					Key: key,
 				}),
 			);
-			await res.Body?.transformToByteArray();
+			// biome-ignore lint/style/noNonNullAssertion: :shrug:
+			return await res.Body?.transformToByteArray()!;
 		},
-		list: bucket => {
+		list: async bucket => {
 			/* TODO */
 		},
-		delete: (bucket, key) => {
+		delete: async (bucket, key) => {
 			/* TODO */
 		},
 	},
@@ -145,12 +147,12 @@ const clients = [
 		},
 		getBuffer: async (bucket, key) => {
 			const stream = await minio.getObject(bucket, key);
-			await streamToBuffer(stream);
+			return await streamToBuffer(stream);
 		},
-		list: bucket => {
+		list: async bucket => {
 			/* TODO */
 		},
-		delete: (bucket, key) => {
+		delete: async (bucket, key) => {
 			/* TODO */
 		},
 	},
@@ -161,8 +163,8 @@ const clients = [
 		put: async (_bucket, key, value) => {
 			await leanS3.file(key).write(value);
 		},
-		getBuffer: (_bucket, key) => leanS3.file(key).arrayBuffer(),
-		list: bucket => {
+		getBuffer: async (_bucket, key) => await leanS3.file(key).arrayBuffer(),
+		list: async bucket => {
 			/* TODO */
 		},
 		delete: (bucket, key) => leanS3.file(key).delete(),
@@ -174,17 +176,25 @@ const clients = [
 		put: async (_bucket, key, value) => {
 			await s3mini.putObject(key, value);
 		},
-		getBuffer: (_bucket, key) => s3mini.getObjectArrayBuffer(key),
-		list: bucket => {
+		// biome-ignore lint/style/noNonNullAssertion: :shrug:
+		getBuffer: async (_bucket, key) => (await s3mini.getObjectArrayBuffer(key))!,
+		list: async bucket => {
 			/* TODO */
 		},
-		delete: (bucket, key) => {
+		delete: async (bucket, key) => {
 			/* TODO */
 		},
 	},
 ];
 
-if (buns3) {
+try {
+	const buns3 = new (await import("bun")).S3Client({
+		region: region,
+		endpoint: s3.getConnectionUrl(),
+		accessKeyId: accessKeyId,
+		secretAccessKey,
+		bucket: "test-bun",
+	});
 	clients.push({
 		baseline: false,
 		name: "bun",
@@ -193,11 +203,13 @@ if (buns3) {
 			await buns3.file(key).write(value);
 		},
 		getBuffer: async (_bucket, key) => buns3.file(key).arrayBuffer(),
-		list: bucket => {
+		list: async bucket => {
 			/* TODO */
 		},
 		delete: (bucket, key) => buns3.file("perf/perf.txt").delete(),
 	});
+} catch {
+	// Not executed in bun
 }
 
 const prefix = `${Date.now()}/`;
@@ -285,10 +297,10 @@ mitata.summary(() => {
 await mitata.run();
 
 /** needed for minio */
-function streamToBuffer(stream) {
+function streamToBuffer(stream: Readable): Promise<Buffer> {
 	return new Promise((resolve, reject) => {
-		const chunks = [];
-		stream.on("data", chunk => chunks.push(chunk));
+		const chunks: Buffer[] = [];
+		stream.on("data", (chunk: Buffer) => chunks.push(chunk));
 		stream.on("end", () => resolve(Buffer.concat(chunks)));
 		stream.on("error", reject);
 	});

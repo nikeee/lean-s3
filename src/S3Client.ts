@@ -569,7 +569,7 @@ export default class S3Client {
 
 		// TODO: delimiter?
 
-		// plan `if(a)` check, so empty strings will also not go into this branch, omitting the parameter
+		// plain `if(a)` check, so empty strings will also not go into this branch, omitting the parameter
 		if (options.prefix) {
 			if (typeof options.prefix !== "string") {
 				throw new TypeError("`prefix` should be a `string`.");
@@ -598,50 +598,50 @@ export default class S3Client {
 			options.signal,
 		);
 
-		if (response.statusCode === 200) {
-			const text = await response.body.text();
-
-			let res = undefined;
-			try {
-				res = xmlParser.parse(text)?.ListBucketResult;
-			} catch (cause) {
-				// Possible according to AWS docs
-				throw new S3Error("Unknown", "", {
-					message: "S3 service responded with invalid XML.",
-					cause,
-				});
-			}
-
-			if (!res) {
-				throw new S3Error("Unknown", "", {
-					message: "Could not read bucket contents.",
-				});
-			}
-
-			// S3 is weird and doesn't return an array if there is only one item
-			const contents = Array.isArray(res.Contents)
-				? (res.Contents?.map(S3BucketEntry.parse) ?? [])
-				: res.Contents
-					? [res.Contents]
-					: [];
-
-			return {
-				name: res.Name,
-				prefix: res.Prefix,
-				startAfter: res.StartAfter,
-				isTruncated: res.IsTruncated,
-				continuationToken: res.ContinuationToken,
-				maxKeys: res.MaxKeys,
-				keyCount: res.KeyCount,
-				nextContinuationToken: res.NextContinuationToken,
-				contents,
-			};
+		if (response.statusCode !== 200) {
+			response.body.dump(); // undici docs state that we should dump the body if not used
+			throw new Error(
+				`Response code not implemented yet: ${response.statusCode}`,
+			);
 		}
 
-		response.body.dump(); // undici docs state that we should dump the body if not used
-		throw new Error(
-			`Response code not implemented yet: ${response.statusCode}`,
-		);
+		const text = await response.body.text();
+
+		let res = undefined;
+		try {
+			res = xmlParser.parse(text)?.ListBucketResult;
+		} catch (cause) {
+			// Possible according to AWS docs
+			throw new S3Error("Unknown", "", {
+				message: "S3 service responded with invalid XML.",
+				cause,
+			});
+		}
+
+		if (!res) {
+			throw new S3Error("Unknown", "", {
+				message: "Could not read bucket contents.",
+			});
+		}
+
+		// S3 is weird and doesn't return an array if there is only one item
+		const contents = Array.isArray(res.Contents)
+			? (res.Contents?.map(S3BucketEntry.parse) ?? [])
+			: res.Contents
+				? [res.Contents]
+				: [];
+
+		return {
+			name: res.Name,
+			prefix: res.Prefix,
+			startAfter: res.StartAfter,
+			isTruncated: res.IsTruncated,
+			continuationToken: res.ContinuationToken,
+			maxKeys: res.MaxKeys,
+			keyCount: res.KeyCount,
+			nextContinuationToken: res.NextContinuationToken,
+			contents,
+		};
 	}
 
 	//#endregion

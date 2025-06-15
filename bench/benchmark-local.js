@@ -1,8 +1,7 @@
 // @ts-check
 import { randomBytes } from "node:crypto";
 import { MinioContainer } from "@testcontainers/minio";
-import { Bench } from "tinybench";
-import { tinybenchPrinter } from "@monstermann/tinybench-pretty-printer";
+import * as mitata from "mitata";
 
 import {
 	S3Client as AWSS3Client,
@@ -109,6 +108,7 @@ const minio = new MinioClient({
 
 const clients = [
 	{
+		baseline: false,
 		name: "@aws-sdk/client-s3",
 		bucket: "test-aws",
 		put: async (bucket, key, value) => {
@@ -137,6 +137,7 @@ const clients = [
 		},
 	},
 	{
+		baseline: false,
 		name: "minio",
 		bucket: "test-minio",
 		put: async (bucket, key, value) => {
@@ -154,6 +155,7 @@ const clients = [
 		},
 	},
 	{
+		baseline: true,
 		name: "lean-s3",
 		bucket: "test-lean-s3",
 		put: async (_bucket, key, value) => {
@@ -166,6 +168,7 @@ const clients = [
 		delete: (bucket, key) => leanS3.file(key).delete(),
 	},
 	{
+		baseline: false,
 		name: "s3mini",
 		bucket: "test-s3mini",
 		put: async (_bucket, key, value) => {
@@ -183,6 +186,7 @@ const clients = [
 
 if (buns3) {
 	clients.push({
+		baseline: false,
 		name: "bun",
 		bucket: "test-bun",
 		put: async (_bucket, key, value) => {
@@ -200,101 +204,85 @@ const prefix = `${Date.now()}/`;
 const KiB = 1024;
 const MiB = 1024 * KiB;
 
-{
-	const payload = randomBytes(20);
-	const putBench = new Bench({
-		name: "PutObject + GetObject (20 bytes)",
-		time: 5_000,
-	});
-	for (const c of clients) {
-		putBench.add(c.name, async () => {
-			const key = prefix + crypto.randomUUID();
-			await c.put(c.bucket, key, payload);
-			await c.getBuffer(c.bucket, key);
+mitata.summary(() => {
+	{
+		const payload = randomBytes(20);
+		mitata.group("PutObject + GetObject (20 bytes)", () => {
+			for (const c of clients) {
+				mitata
+					.bench(c.name, async () => {
+						const key = prefix + crypto.randomUUID();
+						await c.put(c.bucket, key, payload);
+						await c.getBuffer(c.bucket, key);
+					})
+					.baseline(c.baseline)
+					.gc("inner");
+			}
 		});
 	}
-	await putBench.run();
-
-	console.log(`=== ${putBench.name} ===`);
-	console.log(tinybenchPrinter.toCli(putBench));
-	console.log();
-}
-{
-	const payload = randomBytes(20 * KiB);
-	const putBench = new Bench({
-		name: "PutObject + GetObject (20 KiB)",
-		time: 5_000,
-	});
-	for (const c of clients) {
-		putBench.add(c.name, async () => {
-			const key = prefix + crypto.randomUUID();
-			await c.put(c.bucket, key, payload);
-			await c.getBuffer(c.bucket, key);
+	{
+		const payload = randomBytes(20 * KiB);
+		mitata.group("PutObject + GetObject (20 KiB)", () => {
+			for (const c of clients) {
+				mitata
+					.bench(c.name, async () => {
+						const key = prefix + crypto.randomUUID();
+						await c.put(c.bucket, key, payload);
+						await c.getBuffer(c.bucket, key);
+					})
+					.baseline(c.baseline)
+					.gc("inner");
+			}
 		});
 	}
-	await putBench.run();
-
-	console.log(`=== ${putBench.name} ===`);
-	console.log(tinybenchPrinter.toCli(putBench));
-	console.log();
-}
-{
-	const payload = randomBytes(1 * MiB);
-	const putBench = new Bench({
-		name: "PutObject + GetObject (1MiB)",
-		time: 5_000,
-	});
-	for (const c of clients) {
-		putBench.add(c.name, async () => {
-			const key = prefix + crypto.randomUUID();
-			await c.put(c.bucket, key, payload);
-			await c.getBuffer(c.bucket, key);
+	{
+		const payload = randomBytes(1 * MiB);
+		mitata.group("PutObject + GetObject (1 MiB)", () => {
+			for (const c of clients) {
+				mitata
+					.bench(c.name, async () => {
+						const key = prefix + crypto.randomUUID();
+						await c.put(c.bucket, key, payload);
+						await c.getBuffer(c.bucket, key);
+					})
+					.baseline(c.baseline)
+					.gc("inner");
+			}
 		});
 	}
-	await putBench.run();
-
-	console.log(`=== ${putBench.name} ===`);
-	console.log(tinybenchPrinter.toCli(putBench));
-	console.log();
-}
-{
-	const payload = randomBytes(20 * MiB);
-	const putBench = new Bench({
-		name: "PutObject + GetObject (20MiB)",
-		time: 5_000,
-	});
-	for (const c of clients) {
-		putBench.add(c.name, async () => {
-			const key = prefix + crypto.randomUUID();
-			await c.put(c.bucket, key, payload);
-			await c.getBuffer(c.bucket, key);
+	{
+		const payload = randomBytes(20 * MiB);
+		mitata.group("PutObject + GetObject (20 MiB)", () => {
+			for (const c of clients) {
+				mitata
+					.bench(c.name, async () => {
+						const key = prefix + crypto.randomUUID();
+						await c.put(c.bucket, key, payload);
+						await c.getBuffer(c.bucket, key);
+					})
+					.baseline(c.baseline)
+					.gc("inner");
+			}
 		});
 	}
-	await putBench.run();
-
-	console.log(`=== ${putBench.name} ===`);
-	console.log(tinybenchPrinter.toCli(putBench));
-	console.log();
-}
-{
-	const payload = randomBytes(100 * MiB);
-	const putBench = new Bench({
-		name: "PutObject + GetObject (100MiB)",
-		time: 5_000,
-	});
-	for (const c of clients) {
-		putBench.add(c.name, async () => {
-			const key = prefix + crypto.randomUUID();
-			await c.put(c.bucket, key, payload);
-			await c.getBuffer(c.bucket, key);
+	{
+		const payload = randomBytes(100 * MiB);
+		mitata.group("PutObject + GetObject (100 MiB)", () => {
+			for (const c of clients) {
+				mitata
+					.bench(c.name, async () => {
+						const key = prefix + crypto.randomUUID();
+						await c.put(c.bucket, key, payload);
+						await c.getBuffer(c.bucket, key);
+					})
+					.baseline(c.baseline)
+					.gc("inner");
+			}
 		});
 	}
-	await putBench.run();
+});
 
-	console.log(`=== ${putBench.name} ===`);
-	console.log(tinybenchPrinter.toCli(putBench));
-	console.log();
-}
+await mitata.run();
 
 /** needed for minio */
 function streamToBuffer(stream) {

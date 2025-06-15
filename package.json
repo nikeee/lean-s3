@@ -34,8 +34,8 @@
   "type": "module",
   "scripts": {
     "build": "tsup",
-    "test": "tsgo && node --experimental-strip-types --test src/*.test.ts",
-    "test:integration": "tsgo && node --experimental-strip-types --test src/test.integration.ts",
+    "test": "tsgo && tsx --test src/*.test.ts",
+    "test:integration": "tsgo && tsx --test src/test.integration.ts",
     "ci": "biome ci ./src",
     "docs": "typedoc",
     "lint": "biome lint ./src",
@@ -55,6 +55,7 @@
     "expect": "^30.0.0",
     "lefthook": "^1.11.13",
     "tsup": "^8.5.0",
+    "tsx": "^4.20.3",
     "typedoc": "^0.28.5"
   },
   "engines": {

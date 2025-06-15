@@ -16,3 +16,6 @@ npm run bench:crud
 ```
 
 You can use `npm run bench:presign:bun` to run the presign benchmarks using Bun. The CRUD benchmarks don't work using Bun due to some bug that prevents the MinIO testcontainer from starting.
+
+## Presign
+![image](https://github.com/user-attachments/assets/711c0338-e67f-4c9e-a127-d15e82032050)

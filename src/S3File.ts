@@ -4,7 +4,12 @@ import type S3Client from "./S3Client.ts";
 import type { ByteSource } from "./index.ts";
 import S3Error from "./S3Error.ts";
 import S3Stat from "./S3Stat.ts";
-import { write, stream, type OverridableS3ClientOptions } from "./S3Client.ts";
+import {
+	write,
+	stream,
+	type OverridableS3ClientOptions,
+	signedRequest,
+} from "./S3Client.ts";
 import { sha256 } from "./sign.ts";
 import { fromStatusCode, getResponseError } from "./error.ts";
 
@@ -74,7 +79,7 @@ export default class S3File {
 	async stat({ signal }: Partial<S3StatOptions> = {}): Promise<S3Stat> {
 		// TODO: Support all options
 
-		const response = await this.#client._signedRequest(
+		const response = await this.#client[signedRequest](
 			"HEAD",
 			this.#path,
 			undefined,
@@ -117,7 +122,7 @@ export default class S3File {
 	}: Partial<S3FileExistsOptions> = {}): Promise<boolean> {
 		// TODO: Support all options
 
-		const response = await this.#client._signedRequest(
+		const response = await this.#client[signedRequest](
 			"HEAD",
 			this.#path,
 			undefined,
@@ -173,7 +178,7 @@ export default class S3File {
 	async delete({ signal }: Partial<S3FileDeleteOptions> = {}): Promise<void> {
 		// TODO: Support all options
 
-		const response = await this.#client._signedRequest(
+		const response = await this.#client[signedRequest](
 			"DELETE",
 			this.#path,
 			undefined,

@@ -26,6 +26,7 @@ import { getAuthorizationHeader } from "./request.ts";
 
 export const write = Symbol("write");
 export const stream = Symbol("stream");
+export const signedRequest = Symbol("signedRequest");
 
 const xmlParser = new XMLParser();
 const xmlBuilder = new XMLBuilder({
@@ -300,7 +301,7 @@ export default class S3Client {
 			},
 		});
 
-		const response = await this._signedRequest(
+		const response = await this[signedRequest](
 			"POST",
 			"",
 			"delete=", // "=" is needed by minio for some reason
@@ -406,7 +407,7 @@ export default class S3Client {
 			? { "content-md5": sign.md5Base64(body) }
 			: undefined;
 
-		const response = await this._signedRequest(
+		const response = await this[signedRequest](
 			"PUT",
 			"",
 			undefined,
@@ -440,7 +441,7 @@ export default class S3Client {
 	 */
 	async deleteBucket(name: string, options?: BucketDeletionOptions) {
 		ensureValidBucketName(name);
-		const response = await this._signedRequest(
+		const response = await this[signedRequest](
 			"DELETE",
 			"",
 			undefined,
@@ -476,7 +477,7 @@ export default class S3Client {
 	): Promise<boolean> {
 		ensureValidBucketName(name);
 
-		const response = await this._signedRequest(
+		const response = await this[signedRequest](
 			"HEAD",
 			"",
 			undefined,
@@ -585,7 +586,7 @@ export default class S3Client {
 			query += `&start-after=${encodeURIComponent(options.startAfter)}`;
 		}
 
-		const response = await this._signedRequest(
+		const response = await this[signedRequest](
 			"GET",
 			"",
 			query,
@@ -650,7 +651,7 @@ export default class S3Client {
 	 * TODO: Maybe move this into a separate free function?
 	 * @internal
 	 */
-	async _signedRequest(
+	async [signedRequest](
 		method: HttpMethod,
 		pathWithoutBucket: string,
 		query: string | undefined,

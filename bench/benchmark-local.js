@@ -201,14 +201,33 @@ const KiB = 1024;
 const MiB = 1024 * KiB;
 
 {
+	const payload = randomBytes(20);
 	const putBench = new Bench({
-		name: "PutObject + GetObject (small)",
-		time: 10_000,
+		name: "PutObject + GetObject (20 bytes)",
+		time: 5_000,
 	});
 	for (const c of clients) {
 		putBench.add(c.name, async () => {
 			const key = prefix + crypto.randomUUID();
-			await c.put(c.bucket, key, crypto.randomUUID());
+			await c.put(c.bucket, key, payload);
+			await c.getBuffer(c.bucket, key);
+		});
+	}
+	await putBench.run();
+
+	console.log(`=== ${putBench.name} ===`);
+	console.log(tinybenchPrinter.toCli(putBench));
+}
+{
+	const payload = randomBytes(20 * KiB);
+	const putBench = new Bench({
+		name: "PutObject + GetObject (1MiB)",
+		time: 5_000,
+	});
+	for (const c of clients) {
+		putBench.add(c.name, async () => {
+			const key = prefix + crypto.randomUUID();
+			await c.put(c.bucket, key, payload);
 			await c.getBuffer(c.bucket, key);
 		});
 	}
@@ -221,7 +240,7 @@ const MiB = 1024 * KiB;
 	const payload = randomBytes(1 * MiB);
 	const putBench = new Bench({
 		name: "PutObject + GetObject (1MiB)",
-		time: 10_000,
+		time: 5_000,
 	});
 	for (const c of clients) {
 		putBench.add(c.name, async () => {
@@ -236,10 +255,10 @@ const MiB = 1024 * KiB;
 	console.log(tinybenchPrinter.toCli(putBench));
 }
 {
-	const payload = randomBytes(50 * MiB);
+	const payload = randomBytes(20 * MiB);
 	const putBench = new Bench({
 		name: "PutObject + GetObject (50MiB)",
-		time: 10_000,
+		time: 5_000,
 	});
 	for (const c of clients) {
 		putBench.add(c.name, async () => {
@@ -254,10 +273,10 @@ const MiB = 1024 * KiB;
 	console.log(tinybenchPrinter.toCli(putBench));
 }
 {
-	const payload = randomBytes(800 * MiB);
+	const payload = randomBytes(100 * MiB);
 	const putBench = new Bench({
 		name: "PutObject + GetObject (800MiB)",
-		time: 10_000,
+		time: 5_000,
 	});
 	for (const c of clients) {
 		putBench.add(c.name, async () => {

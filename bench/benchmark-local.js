@@ -217,11 +217,12 @@ const MiB = 1024 * KiB;
 
 	console.log(`=== ${putBench.name} ===`);
 	console.log(tinybenchPrinter.toCli(putBench));
+	console.log();
 }
 {
 	const payload = randomBytes(20 * KiB);
 	const putBench = new Bench({
-		name: "PutObject + GetObject (1MiB)",
+		name: "PutObject + GetObject (20 KiB)",
 		time: 5_000,
 	});
 	for (const c of clients) {
@@ -235,6 +236,7 @@ const MiB = 1024 * KiB;
 
 	console.log(`=== ${putBench.name} ===`);
 	console.log(tinybenchPrinter.toCli(putBench));
+	console.log();
 }
 {
 	const payload = randomBytes(1 * MiB);
@@ -253,11 +255,12 @@ const MiB = 1024 * KiB;
 
 	console.log(`=== ${putBench.name} ===`);
 	console.log(tinybenchPrinter.toCli(putBench));
+	console.log();
 }
 {
 	const payload = randomBytes(20 * MiB);
 	const putBench = new Bench({
-		name: "PutObject + GetObject (50MiB)",
+		name: "PutObject + GetObject (20MiB)",
 		time: 5_000,
 	});
 	for (const c of clients) {
@@ -271,11 +274,12 @@ const MiB = 1024 * KiB;
 
 	console.log(`=== ${putBench.name} ===`);
 	console.log(tinybenchPrinter.toCli(putBench));
+	console.log();
 }
 {
 	const payload = randomBytes(100 * MiB);
 	const putBench = new Bench({
-		name: "PutObject + GetObject (800MiB)",
+		name: "PutObject + GetObject (100MiB)",
 		time: 5_000,
 	});
 	for (const c of clients) {
@@ -289,6 +293,7 @@ const MiB = 1024 * KiB;
 
 	console.log(`=== ${putBench.name} ===`);
 	console.log(tinybenchPrinter.toCli(putBench));
+	console.log();
 }
 
 /** needed for minio */

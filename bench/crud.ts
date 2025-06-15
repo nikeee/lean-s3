@@ -8,10 +8,16 @@ import {
 	PutObjectCommand,
 	CreateBucketCommand,
 	GetObjectCommand,
+	ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
-import { Client as MinioClient } from "minio";
+import { type BucketStream, Client as MinioClient } from "minio";
 import { s3mini as s3miniClient } from "s3mini";
 import { S3Client as LeanS3Client } from "../dist/index.js";
+import { finished } from "node:stream/promises";
+
+const prefix = `${Date.now()}/`;
+const KiB = 1024;
+const MiB = 1024 * KiB;
 
 async function createContainer(buckets) {
 	const s3 = await new MinioContainer(
@@ -43,6 +49,18 @@ async function createContainer(buckets) {
 				Body: crypto.randomUUID(),
 			}),
 		);
+
+		// static init for ListObjectsV2 benchmark, because if a client performs more PUT operations,
+		// the responses in ListObjectsV2 would be larger
+		for (let i = 0; i < 800; ++i) {
+			await aws.send(
+				new PutObjectCommand({
+					Bucket: bucket,
+					Key: `list-objects-${prefix}${crypto.randomUUID()}`,
+					Body: crypto.randomUUID(),
+				}),
+			);
+		}
 	}
 	return s3;
 }
@@ -100,13 +118,9 @@ type ClientWrapper = {
 	baseline: boolean;
 	name: string;
 	bucket: string;
-	put: (
-		bucket: string,
-		key: string,
-		value: string | Buffer,
-	) => Promise<void>;
+	put: (bucket: string, key: string, value: string | Buffer) => Promise<void>;
 	getBuffer: (bucket: string, key: string) => Promise<Uint8Array | ArrayBuffer>;
-	list: (bucket: string) => Promise<void>;
+	list: (bucket: string, prefix: string) => Promise<number>;
 	delete: (bucket: string, key: string) => Promise<void>;
 };
 
@@ -134,8 +148,12 @@ const clients: ClientWrapper[] = [
 			// biome-ignore lint/style/noNonNullAssertion: :shrug:
 			return await res.Body?.transformToByteArray()!;
 		},
-		list: async bucket => {
-			/* TODO */
+		list: async (bucket, prefix) => {
+			const r = await awsS3.send(
+				new ListObjectsV2Command({ Bucket: bucket, Prefix: prefix }),
+			);
+			// biome-ignore lint/style/noNonNullAssertion: :shrug:
+			return r.KeyCount!;
 		},
 		delete: async (bucket, key) => {
 			/* TODO */
@@ -150,10 +168,12 @@ const clients: ClientWrapper[] = [
 		},
 		getBuffer: async (bucket, key) => {
 			const stream = await minio.getObject(bucket, key);
-			return await streamToBuffer(stream);
+			return (await collectBufferStream(stream)) as Buffer;
 		},
-		list: async bucket => {
-			/* TODO */
+		list: async (bucket, prefix) => {
+			const stream = minio.listObjectsV2(bucket, prefix);
+			const r = await collectObjectStream(stream);
+			return r.length;
 		},
 		delete: async (bucket, key) => {
 			/* TODO */
@@ -167,8 +187,9 @@ const clients: ClientWrapper[] = [
 			await leanS3.file(key).write(value);
 		},
 		getBuffer: async (_bucket, key) => await leanS3.file(key).arrayBuffer(),
-		list: async bucket => {
-			/* TODO */
+		list: async (_, prefix) => {
+			const r = await leanS3.list({ prefix, maxKeys: 1000 });
+			return r.keyCount;
 		},
 		delete: (bucket, key) => leanS3.file(key).delete(),
 	},
@@ -179,10 +200,13 @@ const clients: ClientWrapper[] = [
 		put: async (_bucket, key, value) => {
 			await s3mini.putObject(key, value);
 		},
-		// biome-ignore lint/style/noNonNullAssertion: :shrug:
-		getBuffer: async (_bucket, key) => (await s3mini.getObjectArrayBuffer(key))!,
-		list: async bucket => {
-			/* TODO */
+		getBuffer: async (_bucket, key) =>
+			// biome-ignore lint/style/noNonNullAssertion: :shrug:
+			(await s3mini.getObjectArrayBuffer(key))!,
+		list: async (bucket, prefix) => {
+			const o = await s3mini.listObjects(undefined, prefix, 1000);
+			// biome-ignore lint/style/noNonNullAssertion: :shrug:
+			return o!.length;
 		},
 		delete: async (bucket, key) => {
 			/* TODO */
@@ -206,18 +230,16 @@ try {
 			await buns3.file(key).write(value);
 		},
 		getBuffer: async (_bucket, key) => buns3.file(key).arrayBuffer(),
-		list: async bucket => {
-			/* TODO */
+		list: async (bucket, prefix) => {
+			const r = await buns3.list({ prefix, maxKeys: 1000 });
+			// biome-ignore lint/style/noNonNullAssertion: :shrug:
+			return r.keyCount!;
 		},
 		delete: (bucket, key) => buns3.file("perf/perf.txt").delete(),
 	});
 } catch {
 	// Not executed in bun
 }
-
-const prefix = `${Date.now()}/`;
-const KiB = 1024;
-const MiB = 1024 * KiB;
 
 mitata.summary(() => {
 	mitata.barplot(() => {
@@ -280,6 +302,7 @@ mitata.summary(() => {
 			}
 		});
 	});
+	/*
 	mitata.barplot(() => {
 		const payload = randomBytes(100 * MiB);
 		mitata.group("PutObject + GetObject (100 MiB)", () => {
@@ -295,16 +318,45 @@ mitata.summary(() => {
 			}
 		});
 	});
+	*/
+	mitata.barplot(() => {
+		mitata.group("ListObjectsV2", () => {
+			const listPrefix = `list-objects-${prefix}`;
+			for (const c of clients) {
+				mitata
+					.bench(c.name, async () => {
+						const count = await c.list(c.bucket, listPrefix);
+						if (count !== 800) {
+							throw new Error(
+								`Client ${c.name} returned invalid value: ${count}`,
+							);
+						}
+					})
+					.baseline(c.baseline)
+					.gc("inner");
+			}
+		});
+	});
 });
 
 await mitata.run();
 
 /** needed for minio */
-function streamToBuffer(stream: Readable): Promise<Buffer> {
-	return new Promise((resolve, reject) => {
-		const chunks: Buffer[] = [];
-		stream.on("data", (chunk: Buffer) => chunks.push(chunk));
-		stream.on("end", () => resolve(Buffer.concat(chunks)));
-		stream.on("error", reject);
-	});
+async function collectBufferStream(stream: Readable): Promise<Buffer> {
+	const chunks: Buffer[] = [];
+	stream.on("data", (chunk: Buffer) => chunks.push(chunk));
+	await finished(stream, { cleanup: true });
+
+	return Buffer.concat(chunks);
+}
+
+async function collectObjectStream<T>(stream: BucketStream<T>): Promise<T[]> {
+	if (!stream.readableObjectMode) {
+		throw new Error("Stream is not in object mode");
+	}
+
+	const chunks: T[] = [];
+	stream.on("data", (chunk: T) => chunks.push(chunk));
+	await finished(stream, { cleanup: true });
+	return chunks;
 }

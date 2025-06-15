@@ -12,6 +12,7 @@ import {
 } from "./S3Client.ts";
 import { sha256 } from "./sign.ts";
 import { fromStatusCode, getResponseError } from "./error.ts";
+import assertNever from "./assertNever.ts";
 
 // TODO: If we want to hack around, we can use this to access the private implementation of the "get stream" algorithm used by Node.js's blob internally
 // We probably have to do this some day if the fetch implementation is moved to internals.
@@ -312,10 +313,6 @@ export default class S3File {
 		throw new Error("Not implemented");
 	}
 	*/
-}
-
-function assertNever(v: never): never {
-	throw new TypeError(`Expected value not to have type ${typeof v}`);
 }
 
 export interface S3FileDeleteOptions extends OverridableS3ClientOptions {

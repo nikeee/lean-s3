@@ -302,7 +302,6 @@ mitata.summary(() => {
 			}
 		});
 	});
-	/*
 	mitata.barplot(() => {
 		const payload = randomBytes(100 * MiB);
 		mitata.group("PutObject + GetObject (100 MiB)", () => {
@@ -318,7 +317,6 @@ mitata.summary(() => {
 			}
 		});
 	});
-	*/
 	mitata.barplot(() => {
 		mitata.group("ListObjectsV2", () => {
 			const listPrefix = `list-objects-${prefix}`;

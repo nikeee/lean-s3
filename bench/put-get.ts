@@ -51,6 +51,7 @@ const region = "us-east-1";
 const accessKeyId = "minioadmin";
 const secretAccessKey = "minioadmin";
 
+console.log("Starting local MinIO instance...");
 const s3 = await createContainer([
 	"test-aws",
 	"test-lean-s3",
@@ -58,6 +59,8 @@ const s3 = await createContainer([
 	"test-s3mini",
 	"test-bun",
 ]);
+console.log("Instance started, beginning tests.");
+console.log();
 
 const awsS3 = new AWSS3Client({
 	region,

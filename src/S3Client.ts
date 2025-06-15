@@ -564,7 +564,7 @@ export default class S3Client {
 				throw new TypeError("`maxKeys` should be a `number`.");
 			}
 
-			query += `&max-keys=${options.maxKeys}`; // no encoding needed, it's a number
+			query += `&max-keys=${Math.min(1000, options.maxKeys)}`; // no encoding needed, it's a number
 		}
 
 		// TODO: delimiter?

@@ -1,4 +1,5 @@
 // @ts-check
+import { randomBytes } from "node:crypto";
 import { MinioContainer } from "@testcontainers/minio";
 import { Bench } from "tinybench";
 import { tinybenchPrinter } from "@monstermann/tinybench-pretty-printer";
@@ -51,13 +52,6 @@ const region = "us-east-1";
 const accessKeyId = "minioadmin";
 const secretAccessKey = "minioadmin";
 
-let bun;
-try {
-	bun = await import("bun");
-} catch {
-	// Not executed in bun
-}
-
 const s3 = await createContainer([
 	"test-aws",
 	"test-lean-s3",
@@ -65,6 +59,19 @@ const s3 = await createContainer([
 	"test-s3mini",
 	"test-bun",
 ]);
+
+let buns3 = undefined;
+try {
+	buns3 = new (await import("bun")).S3Client({
+		region: region,
+		endpoint: s3.getConnectionUrl(),
+		accessKeyId: accessKeyId,
+		secretAccessKey,
+		bucket: "test-bun",
+	});
+} catch {
+	// Not executed in bun
+}
 
 const awsS3 = new AWSS3Client({
 	region,
@@ -100,74 +107,170 @@ const minio = new MinioClient({
 	secretKey: secretAccessKey,
 });
 
-const putBench = new Bench({ name: "PutObject", time: 10_000 });
-putBench
-	.add("@aws-sdk/client-s3 - PutObject", async () => {
-		await awsS3.send(
-			new PutObjectCommand({
-				Bucket: "test-aws",
-				Key: "perf/perf.txt",
-				Body: crypto.randomUUID(),
-			}),
-		);
-	})
-	.add("minio - PutObject", async () => {
-		await minio.putObject("test-minio", "perf/perf.txt", crypto.randomUUID());
-	})
-	.add("lean-s3 - PutObject", async () => {
-		await leanS3.file("perf/perf.txt").write(crypto.randomUUID());
-	})
-	.add("s3mini - PutObject", async () => {
-		await s3mini.putObject("perf/perf.txt", crypto.randomUUID());
-	});
+const clients = [
+	{
+		name: "@aws-sdk/client-s3",
+		bucket: "test-aws",
+		put: async (bucket, key, value) => {
+			await awsS3.send(
+				new PutObjectCommand({
+					Bucket: bucket,
+					Key: key,
+					Body: value,
+				}),
+			);
+		},
+		getBuffer: async (bucket, key) => {
+			const res = await awsS3.send(
+				new GetObjectCommand({
+					Bucket: bucket,
+					Key: key,
+				}),
+			);
+			await res.Body?.transformToByteArray();
+		},
+		list: bucket => {
+			/* TODO */
+		},
+		delete: (bucket, key) => {
+			/* TODO */
+		},
+	},
+	{
+		name: "minio",
+		bucket: "test-minio",
+		put: async (bucket, key, value) => {
+			await minio.putObject(bucket, key, value);
+		},
+		getBuffer: async (bucket, key) => {
+			const stream = await minio.getObject(bucket, key);
+			await streamToBuffer(stream);
+		},
+		list: bucket => {
+			/* TODO */
+		},
+		delete: (bucket, key) => {
+			/* TODO */
+		},
+	},
+	{
+		name: "lean-s3",
+		bucket: "test-lean-s3",
+		put: async (_bucket, key, value) => {
+			await leanS3.file(key).write(value);
+		},
+		getBuffer: (_bucket, key) => leanS3.file(key).arrayBuffer(),
+		list: bucket => {
+			/* TODO */
+		},
+		delete: (bucket, key) => leanS3.file(key).delete(),
+	},
+	{
+		name: "s3mini",
+		bucket: "test-s3mini",
+		put: async (_bucket, key, value) => {
+			await s3mini.putObject(key, value);
+		},
+		getBuffer: (_bucket, key) => s3mini.getObjectArrayBuffer(key),
+		list: bucket => {
+			/* TODO */
+		},
+		delete: (bucket, key) => {
+			/* TODO */
+		},
+	},
+];
 
-const getBench = new Bench({ name: "GetObject", time: 3_000 });
-getBench
-	.add("@aws-sdk/client-s3 - GetObject", async () => {
-		const res = await awsS3.send(
-			new GetObjectCommand({
-				Bucket: "test-aws",
-				Key: "perf/perf.txt",
-			}),
-		);
-		await res.Body?.transformToByteArray();
-	})
-	.add("minio - GetObject", async () => {
-		const stream = await minio.getObject("test-minio", "perf/perf.txt");
-		await streamToBuffer(stream);
-	})
-	.add("lean-s3 - GetObject", async () => {
-		const stream = await leanS3.file("perf/perf.txt").arrayBuffer();
-	})
-	.add("s3mini - GetObject", async () => {
-		const stream = await s3mini.getObject("perf/perf.txt");
-		await streamToBuffer(stream);
-	});
-
-if (bun) {
-	const buns3 = new bun.S3Client({
-		region: region,
-		endpoint: s3.getConnectionUrl(),
-		accessKeyId: accessKeyId,
-		secretAccessKey,
+if (buns3) {
+	clients.push({
+		name: "bun",
 		bucket: "test-bun",
-	});
-	getBench.add("bun - PutObject", async () => {
-		await buns3.file("perf/perf.txt").write(crypto.randomUUID());
-	});
-	putBench.add("bun - GetObject", async () => {
-		await buns3.file("perf/perf.txt").bytes();
+		put: async (_bucket, key, value) => {
+			await buns3.file(key).write(value);
+		},
+		getBuffer: async (_bucket, key) => buns3.file(key).arrayBuffer(),
+		list: bucket => {
+			/* TODO */
+		},
+		delete: (bucket, key) => buns3.file("perf/perf.txt").delete(),
 	});
 }
 
-await putBench.run();
-await getBench.run();
+const prefix = `${Date.now()}/`;
+const KiB = 1024;
+const MiB = 1024 * KiB;
 
-console.log("PutObject Benchmark Results:");
-console.log(tinybenchPrinter.toCli(putBench));
-console.log();
-console.log("GetObject Benchmark Results:");
-console.log(tinybenchPrinter.toCli(getBench));
+{
+	const putBench = new Bench({
+		name: "PutObject + GetObject (small)",
+		time: 10_000,
+	});
+	for (const c of clients) {
+		putBench.add(c.name, async () => {
+			const key = prefix + crypto.randomUUID();
+			await c.put(c.bucket, key, crypto.randomUUID());
+			await c.getBuffer(c.bucket, key);
+		});
+	}
+	await putBench.run();
+
+	console.log(`=== ${putBench.name} ===`);
+	console.log(tinybenchPrinter.toCli(putBench));
+}
+{
+	const payload = randomBytes(1 * MiB);
+	const putBench = new Bench({
+		name: "PutObject + GetObject (1MiB)",
+		time: 10_000,
+	});
+	for (const c of clients) {
+		putBench.add(c.name, async () => {
+			const key = prefix + crypto.randomUUID();
+			await c.put(c.bucket, key, payload);
+			await c.getBuffer(c.bucket, key);
+		});
+	}
+	await putBench.run();
+
+	console.log(`=== ${putBench.name} ===`);
+	console.log(tinybenchPrinter.toCli(putBench));
+}
+{
+	const payload = randomBytes(50 * MiB);
+	const putBench = new Bench({
+		name: "PutObject + GetObject (50MiB)",
+		time: 10_000,
+	});
+	for (const c of clients) {
+		putBench.add(c.name, async () => {
+			const key = prefix + crypto.randomUUID();
+			await c.put(c.bucket, key, payload);
+			await c.getBuffer(c.bucket, key);
+		});
+	}
+	await putBench.run();
+
+	console.log(`=== ${putBench.name} ===`);
+	console.log(tinybenchPrinter.toCli(putBench));
+}
+{
+	const payload = randomBytes(800 * MiB);
+	const putBench = new Bench({
+		name: "PutObject + GetObject (800MiB)",
+		time: 10_000,
+	});
+	for (const c of clients) {
+		putBench.add(c.name, async () => {
+			const key = prefix + crypto.randomUUID();
+			await c.put(c.bucket, key, payload);
+			await c.getBuffer(c.bucket, key);
+		});
+	}
+	await putBench.run();
+
+	console.log(`=== ${putBench.name} ===`);
+	console.log(tinybenchPrinter.toCli(putBench));
+}
 
 /** needed for minio */
 function streamToBuffer(stream) {

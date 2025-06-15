@@ -2,10 +2,10 @@
   "name": "lean-s3-benchmark",
   "private": true,
   "version": "1.0.0",
-  "main": "benchmark.js",
+  "main": "presign.ts",
   "scripts": {
-    "start": "node ./benchmark.js",
-    "start:bun": "bun run ./benchmark.js"
+    "start": "node ./presign.ts",
+    "start:bun": "bun run ./presign.ts"
   },
   "license": "MIT",
   "type": "module",

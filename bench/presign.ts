@@ -1,4 +1,3 @@
-//@ts-check
 import * as mitata from "mitata";
 
 import { S3Client as AWSS3Client, PutObjectCommand } from "@aws-sdk/client-s3";
@@ -8,14 +7,7 @@ import { Client as MinioClient } from "minio";
 
 import { S3Client as LeanS3Client } from "../dist/index.js";
 
-let bun;
-try {
-	bun = await import("bun");
-} catch {
-	// Not executed in bun
-}
-
-mitata.summary(() => {
+mitata.summary(async () => {
 	//#region aws sdk
 	{
 		const awsS3 = new AWSS3Client({
@@ -105,9 +97,8 @@ mitata.summary(() => {
 	}
 	//#endregion
 	//#region bun
-	if (bun) {
-		const { S3Client: BunS3 } = bun;
-		const buns3 = new BunS3({
+	try {
+		const buns3 = new (await import("bun")).S3Client({
 			region: "auto",
 			endpoint: "https://localhost:9000",
 			accessKeyId: "sample-key-id",
@@ -120,6 +111,8 @@ mitata.summary(() => {
 				buns3.presign("path.json");
 			})
 			.gc("once");
+	} catch {
+		// Not executed in bun
 	}
 	//#endregion
 });

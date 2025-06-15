@@ -205,7 +205,7 @@ const KiB = 1024;
 const MiB = 1024 * KiB;
 
 mitata.summary(() => {
-	{
+	mitata.barplot(() => {
 		const payload = randomBytes(20);
 		mitata.group("PutObject + GetObject (20 bytes)", () => {
 			for (const c of clients) {
@@ -219,8 +219,8 @@ mitata.summary(() => {
 					.gc("inner");
 			}
 		});
-	}
-	{
+	});
+	mitata.barplot(() => {
 		const payload = randomBytes(20 * KiB);
 		mitata.group("PutObject + GetObject (20 KiB)", () => {
 			for (const c of clients) {
@@ -234,8 +234,8 @@ mitata.summary(() => {
 					.gc("inner");
 			}
 		});
-	}
-	{
+	});
+	mitata.barplot(() => {
 		const payload = randomBytes(1 * MiB);
 		mitata.group("PutObject + GetObject (1 MiB)", () => {
 			for (const c of clients) {
@@ -249,8 +249,8 @@ mitata.summary(() => {
 					.gc("inner");
 			}
 		});
-	}
-	{
+	});
+	mitata.barplot(() => {
 		const payload = randomBytes(20 * MiB);
 		mitata.group("PutObject + GetObject (20 MiB)", () => {
 			for (const c of clients) {
@@ -264,8 +264,8 @@ mitata.summary(() => {
 					.gc("inner");
 			}
 		});
-	}
-	{
+	});
+	mitata.barplot(() => {
 		const payload = randomBytes(100 * MiB);
 		mitata.group("PutObject + GetObject (100 MiB)", () => {
 			for (const c of clients) {
@@ -279,7 +279,7 @@ mitata.summary(() => {
 					.gc("inner");
 			}
 		});
-	}
+	});
 });
 
 await mitata.run();

@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 
 import { expect } from "expect";
 
-import * as sign from "./sign.js";
+import * as sign from "./sign.ts";
 import { getAmzDate } from "./AmzDate.ts";
 
 describe("deriveSigningKey", () => {

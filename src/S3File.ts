@@ -202,26 +202,22 @@ export default class S3File {
 		return `S3File { path: "${this.#path}" }`;
 	}
 
-	/** @returns {Promise<unknown>} */
 	json(): Promise<unknown> {
 		// Not using JSON.parse(await this.text()), so the env can parse json while loading
 		// Also, see TODO note above this class
 		return new Response(this.stream()).json();
 	}
-	// TODO
-	// /** @returns {Promise<Uint8Array>} */
-	// bytes() {
-	// 	return new Response(this.stream()).bytes(); // TODO: Does this exist?
-	// }
-	/** @returns {Promise<ArrayBuffer>} */
+	bytes(): Promise<Uint8Array> {
+		return new Response(this.stream())
+			.arrayBuffer()
+			.then(ab => new Uint8Array(ab));
+	}
 	arrayBuffer(): Promise<ArrayBuffer> {
 		return new Response(this.stream()).arrayBuffer();
 	}
-	/** @returns {Promise<string>} */
 	text(): Promise<string> {
 		return new Response(this.stream()).text();
 	}
-	/** @returns {Promise<Blob>} */
 	blob(): Promise<Blob> {
 		return new Response(this.stream()).blob();
 	}

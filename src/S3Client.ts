@@ -22,6 +22,7 @@ import type {
 	UndiciBodyInit,
 } from "./index.ts";
 import { getResponseError } from "./error.ts";
+import { getAuthorizationHeader } from "./request.ts";
 
 export const write = Symbol("write");
 export const stream = Symbol("stream");
@@ -694,7 +695,8 @@ export default class S3Client {
 				dispatcher: this.#dispatcher,
 				headers: {
 					...headersToBeSigned,
-					authorization: this.#getAuthorizationHeader(
+					authorization: getAuthorizationHeader(
+						this.#keyCache,
 						method,
 						url.pathname,
 						query ?? "",
@@ -763,7 +765,8 @@ export default class S3Client {
 				dispatcher: this.#dispatcher,
 				headers: {
 					...headersToBeSigned,
-					authorization: this.#getAuthorizationHeader(
+					authorization: getAuthorizationHeader(
+						this.#keyCache,
 						"PUT",
 						url.pathname,
 						url.search,
@@ -846,7 +849,8 @@ export default class S3Client {
 					dispatcher: this.#dispatcher,
 					headers: {
 						...headersToBeSigned,
-						authorization: this.#getAuthorizationHeader(
+						authorization: getAuthorizationHeader(
+							this.#keyCache,
 							"GET",
 							url.pathname,
 							url.search,
@@ -942,45 +946,6 @@ export default class S3Client {
 				ac.abort(reason);
 			},
 		});
-	}
-
-	#getAuthorizationHeader(
-		method: HttpMethod,
-		path: string,
-		query: string,
-		date: amzDate.AmzDate,
-		sortedSignedHeaders: Record<string, string>,
-		region: string,
-		contentHashStr: string,
-		accessKeyId: string,
-		secretAccessKey: string,
-	) {
-		const dataDigest = sign.createCanonicalDataDigest(
-			method,
-			path,
-			query,
-			sortedSignedHeaders,
-			contentHashStr,
-		);
-
-		const signingKey = this.#keyCache.computeIfAbsent(
-			date,
-			region,
-			accessKeyId,
-			secretAccessKey,
-		);
-
-		const signature = sign.signCanonicalDataHash(
-			signingKey,
-			dataDigest,
-			date,
-			region,
-		);
-
-		// no encodeURIComponent because because we assume that all headers don't need escaping
-		const signedHeadersSpec = Object.keys(sortedSignedHeaders).join(";");
-		const credentialSpec = `${accessKeyId}/${date.date}/${region}/s3/aws4_request`;
-		return `AWS4-HMAC-SHA256 Credential=${credentialSpec}, SignedHeaders=${signedHeadersSpec}, Signature=${signature}`;
 	}
 }
 

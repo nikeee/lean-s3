@@ -7,7 +7,7 @@ on:
   pull_request:
 
 env:
-  NODE_OPTIONS: --experimental-strip-types --test-reporter=tap
+  NODE_OPTIONS: --test-reporter=tap
 
 jobs:
   test:

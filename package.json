@@ -34,8 +34,8 @@
   "type": "module",
   "scripts": {
     "build": "tsup",
-    "test": "tsgo && node --test src/*.test.ts",
-    "test:integration": "tsgo && node --test src/test.integration.ts",
+    "test": "tsgo && node --experimental-strip-types --test src/*.test.ts",
+    "test:integration": "tsgo && node --experimental-strip-types --test src/test.integration.ts",
     "ci": "biome ci ./src",
     "docs": "typedoc",
     "lint": "biome lint ./src",

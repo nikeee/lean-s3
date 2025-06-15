@@ -4,8 +4,9 @@
   "version": "1.0.0",
   "main": "presign.ts",
   "scripts": {
-    "start": "node ./presign.ts",
-    "start:bun": "bun run ./presign.ts"
+    "bench:crud": "node ./crud.ts",
+    "bench:presign": "node ./presign.ts",
+    "bench:presign:bun": "bun run ./presign.ts"
   },
   "license": "MIT",
   "type": "module",

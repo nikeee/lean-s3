@@ -16,6 +16,8 @@ import type {
 	Acl,
 	BucketInfo,
 	BucketLocationInfo,
+	ChecksumAlgorithm,
+	ChecksumType,
 	HttpMethod,
 	PresignableHttpMethod,
 	StorageClass,
@@ -33,6 +35,9 @@ const xmlBuilder = new XMLBuilder({
 	attributeNamePrefix: "$",
 	ignoreAttributes: false,
 });
+
+let listMultipartUploadsXmlParser: XMLParser | undefined = undefined;
+let listObjectsXmlParser: XMLParser | undefined = undefined;
 
 export interface S3ClientOptions {
 	bucket: string;
@@ -80,6 +85,50 @@ export type ListObjectsIteratingOptions = {
 	signal?: AbortSignal;
 	internalPageSize?: number;
 };
+
+//#region ListMultipartUploads
+export type ListMultipartUploadsOptions = {
+	bucket?: string;
+	delimiter?: string;
+	keyMarker?: string;
+	maxUploads?: number;
+	prefix?: string;
+	uploadIdMarker?: string;
+
+	signal?: AbortSignal;
+};
+export type ListMultipartUploadsResult = {
+	bucket?: string;
+	keyMarker?: string;
+	uploadIdMarker?: string;
+	nextKeyMarker?: string;
+	prefix?: string;
+	delimiter?: string;
+	nextUploadIdMarker?: string;
+	maxUploads?: number;
+	isTruncated?: boolean;
+
+	uploads: MultipartUpload[];
+};
+
+export type MultipartUpload = {
+	checksumAlgorithm?: ChecksumAlgorithm;
+	checksumType?: ChecksumType;
+	initiated?: Date;
+	// TODO: initiator
+	/**
+	 * Key of the object for which the multipart upload was initiated.
+	 * Length Constraints: Minimum length of 1.
+	 */
+	key?: string;
+	// TODO: owner
+	storageClass?: StorageClass;
+	/**
+	 * Upload ID identifying the multipart upload.
+	 */
+	uploadId?: string;
+};
+//#endregion
 
 export type ListObjectsResponse = {
 	name: string;
@@ -283,6 +332,115 @@ export default class S3Client {
 		// See `buildSearchParams` for casing on this parameter
 		res.search = `${query}&X-Amz-Signature=${signature}`;
 		return res.toString();
+	}
+
+	/**
+	 * @param options
+	 * @remarks Uses [`ListMultipartUploads`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html).
+	 * @throws {RangeError} If `options.maxKeys` is not between `1` and `1000`.
+	 */
+	async listMultipartUploads(
+		options: ListMultipartUploadsOptions = {},
+	): Promise<ListMultipartUploadsResult> {
+		const bucket = options.bucket ?? this.#options.bucket;
+		ensureValidBucketName(bucket);
+
+		// See `benchmark-operations.js` on why we don't use URLSearchParams but string concat
+		// tldr: This is faster and we know the params exactly, so we can focus our encoding
+
+		let query = "uploads="; // MinIO requires the = to be present
+
+		if (options.delimiter) {
+			if (typeof options.delimiter !== "string") {
+				throw new TypeError("`delimiter` should be a `string`.");
+			}
+
+			query += `&delimiter=${encodeURIComponent(options.delimiter)}`;
+		}
+
+		// we don't support encoding-type
+
+		if (options.keyMarker) {
+			if (typeof options.keyMarker !== "string") {
+				throw new TypeError("`keyMarker` should be a `string`.");
+			}
+
+			query += `&key-marker=${encodeURIComponent(options.keyMarker)}`;
+		}
+		if (typeof options.maxUploads !== "undefined") {
+			if (typeof options.maxUploads !== "number") {
+				throw new TypeError("`maxUploads` should be a `number`.");
+			}
+			if (options.maxUploads < 1 || options.maxUploads > 1000) {
+				throw new RangeError("`maxUploads` should be between 1 and 1000.");
+			}
+
+			query += `&max-uploads=${options.maxUploads}`; // no encoding needed, it's a number
+		}
+
+		if (options.prefix) {
+			if (typeof options.prefix !== "string") {
+				throw new TypeError("`prefix` should be a `string`.");
+			}
+
+			query += `&prefix=${encodeURIComponent(options.prefix)}`;
+		}
+
+		const response = await this[signedRequest](
+			"GET",
+			"",
+			query,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			bucket,
+			options.signal,
+		);
+
+		if (response.statusCode !== 200) {
+			throw await getResponseError(response, "");
+		}
+
+		const text = await response.body.text();
+		const parsed = ensureParsedXml(
+			// biome-ignore lint/suspicious/noAssignInExpressions: lazy-init
+			(listMultipartUploadsXmlParser ??= new XMLParser({
+				ignoreAttributes: true,
+				isArray: (_, jPath) => jPath === "ListMultipartUploadsResult.Upload",
+			})),
+			text,
+			// biome-ignore lint/suspicious/noExplicitAny: :shrug:
+		) as any;
+
+		const root = parsed.ListMultipartUploadsResult ?? {};
+
+		return {
+			bucket: root.Bucket || undefined,
+			delimiter: root.Delimiter || undefined,
+			prefix: root.Prefix || undefined,
+			keyMarker: root.KeyMarker || undefined,
+			uploadIdMarker: root.UploadIdMarker || undefined,
+			nextKeyMarker: root.NextKeyMarker || undefined,
+			nextUploadIdMarker: root.NextUploadIdMarker || undefined,
+			maxUploads: root.MaxUploads ?? 1000, // not using || to not override 0; caution: minio supports 10000(!)
+			isTruncated: root.IsTruncated === "true",
+			uploads:
+				root.Upload?.map(
+					// biome-ignore lint/suspicious/noExplicitAny: we're parsing here
+					(u: any) =>
+						({
+							key: u.Key || undefined,
+							uploadId: u.UploadId || undefined,
+							// TODO: Initiator
+							// TODO: Owner
+							storageClass: u.StorageClass || undefined,
+							checksumAlgorithm: u.ChecksumAlgorithm || undefined,
+							checksumType: u.ChecksumType || undefined,
+							initiated: u.Initiated ? new Date(u.Initiated) : undefined,
+						}) satisfies MultipartUpload,
+				) ?? [],
+		};
 	}
 
 	/**
@@ -540,6 +698,8 @@ export default class S3Client {
 
 	/**
 	 * Implements [`ListObjectsV2`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html) to iterate over all keys.
+	 *
+	 * @throws {RangeError} If `maxKeys` is not between `1` and `1000`.
 	 */
 	async list(options: ListObjectsOptions = {}): Promise<ListObjectsResponse> {
 		// See `benchmark-operations.js` on why we don't use URLSearchParams but string concat
@@ -564,7 +724,11 @@ export default class S3Client {
 				throw new TypeError("`maxKeys` should be a `number`.");
 			}
 
-			query += `&max-keys=${Math.min(1000, options.maxKeys)}`; // no encoding needed, it's a number
+			if (options.maxKeys < 1 || options.maxKeys > 1000) {
+				throw new RangeError("`maxKeys` should be between 1 and 1000.");
+			}
+
+			query += `&max-keys=${options.maxKeys}`; // no encoding needed, it's a number
 		}
 
 		// TODO: delimiter?
@@ -607,29 +771,23 @@ export default class S3Client {
 
 		const text = await response.body.text();
 
-		let res = undefined;
-		try {
-			res = xmlParser.parse(text)?.ListBucketResult;
-		} catch (cause) {
-			// Possible according to AWS docs
-			throw new S3Error("Unknown", "", {
-				message: "S3 service responded with invalid XML.",
-				cause,
-			});
-		}
+		const res = (
+			ensureParsedXml(
+				// biome-ignore lint/suspicious/noAssignInExpressions: lazy-init
+				(listObjectsXmlParser ??= new XMLParser({
+					ignoreAttributes: true,
+					isArray: (_, jPath) => jPath === "ListBucketResult.Contents",
+				})),
+				text,
+				// biome-ignore lint/suspicious/noExplicitAny: we're parsing here
+			) as any
+		).ListBucketResult;
 
 		if (!res) {
 			throw new S3Error("Unknown", "", {
 				message: "Could not read bucket contents.",
 			});
 		}
-
-		// S3 is weird and doesn't return an array if there is only one item
-		const contents = Array.isArray(res.Contents)
-			? (res.Contents?.map(S3BucketEntry.parse) ?? [])
-			: res.Contents
-				? [res.Contents]
-				: [];
 
 		return {
 			name: res.Name,
@@ -640,7 +798,7 @@ export default class S3Client {
 			maxKeys: res.MaxKeys,
 			keyCount: res.KeyCount,
 			nextContinuationToken: res.NextContinuationToken,
-			contents,
+			contents: res.Contents?.map(S3BucketEntry.parse) ?? [],
 		};
 	}
 
@@ -1014,5 +1172,23 @@ function ensureValidBucketName(name: string): asserts name is string {
 
 	if (name.includes("..")) {
 		throw new Error("`name` must not contain two adjacent periods (..)");
+	}
+}
+
+function ensureParsedXml(parser: XMLParser, text: string): unknown {
+	try {
+		const r = parser.parse(text);
+		if (!r) {
+			throw new S3Error("Unknown", "", {
+				message: "S3 service responded with empty XML.",
+			});
+		}
+		return r;
+	} catch (cause) {
+		// Possible according to AWS docs
+		throw new S3Error("Unknown", "", {
+			message: "S3 service responded with invalid XML.",
+			cause,
+		});
 	}
 }

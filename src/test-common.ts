@@ -143,198 +143,251 @@ export function runTests(
 		}
 	});
 
-	test("list", async () => {
-		const testId = crypto.randomUUID();
-		try {
-			await client
-				.file(`${runId}/${testId}/test-a-0.txt`)
-				.write(crypto.randomUUID());
-			await client
-				.file(`${runId}/${testId}/test-a-1.txt`)
-				.write(crypto.randomUUID());
-			await client
-				.file(`${runId}/${testId}/test-b-2.txt`)
-				.write(crypto.randomUUID());
-			await client
-				.file(`${runId}/${testId}/test-b-3.txt`)
-				.write(crypto.randomUUID());
+	describe("list", () => {
+		test("list multiple", async () => {
+			const testId = crypto.randomUUID();
+			try {
+				await client
+					.file(`${runId}/${testId}/test-a-0.txt`)
+					.write(crypto.randomUUID());
+				await client
+					.file(`${runId}/${testId}/test-a-1.txt`)
+					.write(crypto.randomUUID());
+				await client
+					.file(`${runId}/${testId}/test-b-2.txt`)
+					.write(crypto.randomUUID());
+				await client
+					.file(`${runId}/${testId}/test-b-3.txt`)
+					.write(crypto.randomUUID());
 
-			const all = await client.list({ prefix: `${runId}/${testId}` });
-			expect(all.contents.length).toEqual(4);
+				const all = await client.list({ prefix: `${runId}/${testId}` });
+				expect(all.contents.length).toEqual(4);
 
-			const result0 = await client.list({
-				prefix: `${runId}/${testId}`,
-			});
-			expect(result0).toStrictEqual(
-				expect.objectContaining({
-					isTruncated: false,
-					maxKeys: 1000,
-					keyCount: 4,
-					name: expect.any(String),
+				const result0 = await client.list({
 					prefix: `${runId}/${testId}`,
-					startAfter: undefined,
-					continuationToken: undefined,
-					nextContinuationToken: undefined,
-					contents: [
-						expect.objectContaining({
-							key: `${runId}/${testId}/test-a-0.txt`,
-							size: 36,
-							etag: expect.any(String),
-							lastModified: expect.any(Date),
-							storageClass: "STANDARD",
-							// checksumAlgorithm: minio returns something, localstack doesn't
-							// checksumType: minio returns something, localstack doesn't
-						}),
-						expect.objectContaining({
-							key: `${runId}/${testId}/test-a-1.txt`,
-							size: 36,
-							etag: expect.any(String),
-							lastModified: expect.any(Date),
-							storageClass: "STANDARD",
-							// checksumAlgorithm: minio returns something, localstack doesn't
-							// checksumType: minio returns something, localstack doesn't
-						}),
-						expect.objectContaining({
-							key: `${runId}/${testId}/test-b-2.txt`,
-							size: 36,
-							etag: expect.any(String),
-							lastModified: expect.any(Date),
-							storageClass: "STANDARD",
-							// checksumAlgorithm: minio returns something, localstack doesn't
-							// checksumType: minio returns something, localstack doesn't
-						}),
-						expect.objectContaining({
-							key: `${runId}/${testId}/test-b-3.txt`,
-							size: 36,
-							etag: expect.any(String),
-							lastModified: expect.any(Date),
-							storageClass: "STANDARD",
-							// checksumAlgorithm: minio returns something, localstack doesn't
-							// checksumType: minio returns something, localstack doesn't
-						}),
-					],
-				}),
-			);
+				});
+				expect(result0).toStrictEqual(
+					expect.objectContaining({
+						isTruncated: false,
+						maxKeys: 1000,
+						keyCount: 4,
+						name: expect.any(String),
+						prefix: `${runId}/${testId}`,
+						startAfter: undefined,
+						continuationToken: undefined,
+						nextContinuationToken: undefined,
+						contents: [
+							expect.objectContaining({
+								key: `${runId}/${testId}/test-a-0.txt`,
+								size: 36,
+								etag: expect.any(String),
+								lastModified: expect.any(Date),
+								storageClass: "STANDARD",
+								// checksumAlgorithm: minio returns something, localstack doesn't
+								// checksumType: minio returns something, localstack doesn't
+							}),
+							expect.objectContaining({
+								key: `${runId}/${testId}/test-a-1.txt`,
+								size: 36,
+								etag: expect.any(String),
+								lastModified: expect.any(Date),
+								storageClass: "STANDARD",
+								// checksumAlgorithm: minio returns something, localstack doesn't
+								// checksumType: minio returns something, localstack doesn't
+							}),
+							expect.objectContaining({
+								key: `${runId}/${testId}/test-b-2.txt`,
+								size: 36,
+								etag: expect.any(String),
+								lastModified: expect.any(Date),
+								storageClass: "STANDARD",
+								// checksumAlgorithm: minio returns something, localstack doesn't
+								// checksumType: minio returns something, localstack doesn't
+							}),
+							expect.objectContaining({
+								key: `${runId}/${testId}/test-b-3.txt`,
+								size: 36,
+								etag: expect.any(String),
+								lastModified: expect.any(Date),
+								storageClass: "STANDARD",
+								// checksumAlgorithm: minio returns something, localstack doesn't
+								// checksumType: minio returns something, localstack doesn't
+							}),
+						],
+					}),
+				);
 
-			const result1 = await client.list({
-				prefix: `${runId}/${testId}`,
-				maxKeys: 2,
-			});
-			expect(result1).toStrictEqual(
-				expect.objectContaining({
-					isTruncated: true,
+				const result1 = await client.list({
+					prefix: `${runId}/${testId}`,
 					maxKeys: 2,
-					keyCount: 2,
-					name: expect.any(String),
-					prefix: `${runId}/${testId}`,
-					startAfter: undefined,
-					continuationToken: undefined,
-					nextContinuationToken: expect.any(String),
-					contents: [
-						expect.objectContaining({
-							key: `${runId}/${testId}/test-a-0.txt`,
-							size: 36,
-							etag: expect.any(String),
-							lastModified: expect.any(Date),
-							storageClass: "STANDARD",
-							// checksumAlgorithm: minio returns something, localstack doesn't
-							// checksumType: minio returns something, localstack doesn't
-						}),
-						expect.objectContaining({
-							key: `${runId}/${testId}/test-a-1.txt`,
-							size: 36,
-							etag: expect.any(String),
-							lastModified: expect.any(Date),
-							storageClass: "STANDARD",
-							// checksumAlgorithm: minio returns something, localstack doesn't
-							// checksumType minio returns something, localstack doesn't
-						}),
-					],
-				}),
-			);
+				});
+				expect(result1).toStrictEqual(
+					expect.objectContaining({
+						isTruncated: true,
+						maxKeys: 2,
+						keyCount: 2,
+						name: expect.any(String),
+						prefix: `${runId}/${testId}`,
+						startAfter: undefined,
+						continuationToken: undefined,
+						nextContinuationToken: expect.any(String),
+						contents: [
+							expect.objectContaining({
+								key: `${runId}/${testId}/test-a-0.txt`,
+								size: 36,
+								etag: expect.any(String),
+								lastModified: expect.any(Date),
+								storageClass: "STANDARD",
+								// checksumAlgorithm: minio returns something, localstack doesn't
+								// checksumType: minio returns something, localstack doesn't
+							}),
+							expect.objectContaining({
+								key: `${runId}/${testId}/test-a-1.txt`,
+								size: 36,
+								etag: expect.any(String),
+								lastModified: expect.any(Date),
+								storageClass: "STANDARD",
+								// checksumAlgorithm: minio returns something, localstack doesn't
+								// checksumType minio returns something, localstack doesn't
+							}),
+						],
+					}),
+				);
 
-			const result2 = await client.list({
-				prefix: `${runId}/${testId}`,
-				maxKeys: 2,
-				continuationToken: result1.nextContinuationToken,
-			});
-			expect(result2).toStrictEqual(
-				expect.objectContaining({
-					isTruncated: false,
-					maxKeys: 2,
-					keyCount: 2,
-					name: expect.any(String),
+				const result2 = await client.list({
 					prefix: `${runId}/${testId}`,
-					startAfter: undefined,
+					maxKeys: 2,
 					continuationToken: result1.nextContinuationToken,
-					nextContinuationToken: undefined,
-					contents: [
-						expect.objectContaining({
-							key: `${runId}/${testId}/test-b-2.txt`,
-							size: 36,
-							etag: expect.any(String),
-							lastModified: expect.any(Date),
-							storageClass: "STANDARD",
-							// checksumAlgorithm: minio returns something, localstack doesn't
-							// checksumType: minio returns something, localstack doesn't
-						}),
-						expect.objectContaining({
-							key: `${runId}/${testId}/test-b-3.txt`,
-							size: 36,
-							etag: expect.any(String),
-							lastModified: expect.any(Date),
-							storageClass: "STANDARD",
-							// checksumAlgorithm: minio returns something, localstack doesn't
-							// checksumType: minio returns something, localstack doesn't
-						}),
-					],
-				}),
-			);
+				});
+				expect(result2).toStrictEqual(
+					expect.objectContaining({
+						isTruncated: false,
+						maxKeys: 2,
+						keyCount: 2,
+						name: expect.any(String),
+						prefix: `${runId}/${testId}`,
+						startAfter: undefined,
+						continuationToken: result1.nextContinuationToken,
+						nextContinuationToken: undefined,
+						contents: [
+							expect.objectContaining({
+								key: `${runId}/${testId}/test-b-2.txt`,
+								size: 36,
+								etag: expect.any(String),
+								lastModified: expect.any(Date),
+								storageClass: "STANDARD",
+								// checksumAlgorithm: minio returns something, localstack doesn't
+								// checksumType: minio returns something, localstack doesn't
+							}),
+							expect.objectContaining({
+								key: `${runId}/${testId}/test-b-3.txt`,
+								size: 36,
+								etag: expect.any(String),
+								lastModified: expect.any(Date),
+								storageClass: "STANDARD",
+								// checksumAlgorithm: minio returns something, localstack doesn't
+								// checksumType: minio returns something, localstack doesn't
+							}),
+						],
+					}),
+				);
 
-			const result3 = await client.list({
-				prefix: `${runId}/${testId}`,
-				startAfter: `${runId}/${testId}/test-a-1.txt`,
-			});
-			expect(result3).toStrictEqual(
-				expect.objectContaining({
-					isTruncated: false,
-					maxKeys: 1000,
-					keyCount: 2,
-					name: expect.any(String),
+				const result3 = await client.list({
 					prefix: `${runId}/${testId}`,
 					startAfter: `${runId}/${testId}/test-a-1.txt`,
+				});
+				expect(result3).toStrictEqual(
+					expect.objectContaining({
+						isTruncated: false,
+						maxKeys: 1000,
+						keyCount: 2,
+						name: expect.any(String),
+						prefix: `${runId}/${testId}`,
+						startAfter: `${runId}/${testId}/test-a-1.txt`,
+						continuationToken: undefined,
+						nextContinuationToken: undefined,
+						contents: [
+							expect.objectContaining({
+								key: `${runId}/${testId}/test-b-2.txt`,
+								size: 36,
+								etag: expect.any(String),
+								lastModified: expect.any(Date),
+								storageClass: "STANDARD",
+								// checksumAlgorithm: minio returns something, localstack doesn't
+								// checksumType: minio returns something, localstack doesn't
+							}),
+							expect.objectContaining({
+								key: `${runId}/${testId}/test-b-3.txt`,
+								size: 36,
+								etag: expect.any(String),
+								lastModified: expect.any(Date),
+								storageClass: "STANDARD",
+								// checksumAlgorithm: minio returns something, localstack doesn't
+								// checksumType: minio returns something, localstack doesn't
+							}),
+						],
+					}),
+				);
+			} finally {
+				await client.deleteObjects([
+					`${runId}/${testId}/test-a-0.txt`,
+					`${runId}/${testId}/test-a-1.txt`,
+					`${runId}/${testId}/test-b-2.txt`,
+					`${runId}/${testId}/test-b-3.txt`,
+				]);
+			}
+		});
+
+		test("list with no results", async () => {
+			const testId = crypto.randomUUID();
+			const result = await client.list({ prefix: `${runId}/${testId}` });
+			expect(result).toStrictEqual(
+				expect.objectContaining({
+					isTruncated: false,
+					maxKeys: 1000,
+					keyCount: 0,
+					name: expect.any(String),
+					prefix: `${runId}/${testId}`,
+					startAfter: undefined,
 					continuationToken: undefined,
 					nextContinuationToken: undefined,
-					contents: [
-						expect.objectContaining({
-							key: `${runId}/${testId}/test-b-2.txt`,
-							size: 36,
-							etag: expect.any(String),
-							lastModified: expect.any(Date),
-							storageClass: "STANDARD",
-							// checksumAlgorithm: minio returns something, localstack doesn't
-							// checksumType: minio returns something, localstack doesn't
-						}),
-						expect.objectContaining({
-							key: `${runId}/${testId}/test-b-3.txt`,
-							size: 36,
-							etag: expect.any(String),
-							lastModified: expect.any(Date),
-							storageClass: "STANDARD",
-							// checksumAlgorithm: minio returns something, localstack doesn't
-							// checksumType: minio returns something, localstack doesn't
-						}),
-					],
+					contents: [],
 				}),
 			);
-		} finally {
-			await client.deleteObjects([
-				`${runId}/${testId}/test-a-0.txt`,
-				`${runId}/${testId}/test-a-1.txt`,
-				`${runId}/${testId}/test-b-2.txt`,
-				`${runId}/${testId}/test-b-3.txt`,
-			]);
-		}
+		});
+
+		test("list with single result", async () => {
+			const testId = crypto.randomUUID();
+
+			const f = client.file(`${runId}/${testId}/test-a-0.txt`);
+			await f.write(crypto.randomUUID());
+			try {
+				const result = await client.list({ prefix: `${runId}/${testId}` });
+				expect(result).toStrictEqual(
+					expect.objectContaining({
+						isTruncated: false,
+						maxKeys: 1000,
+						keyCount: 1,
+						name: expect.any(String),
+						prefix: `${runId}/${testId}`,
+						startAfter: undefined,
+						continuationToken: undefined,
+						nextContinuationToken: undefined,
+						contents: [
+							expect.objectContaining({
+								key: `${runId}/${testId}/test-a-0.txt`,
+								size: expect.any(Number),
+								etag: expect.any(String),
+								lastModified: expect.any(Date),
+								storageClass: "STANDARD",
+							}),
+						],
+					}),
+				);
+			} finally {
+				await f.delete();
+			}
+		});
 	});
 
 	test("deleteObjects", async () => {
@@ -361,7 +414,7 @@ export function runTests(
 		expect(res1.contents.length).toBe(0);
 	});
 
-	describe("deletObject", () => {
+	describe("deleteObject", () => {
 		test("deleteObject works", async () => {
 			const testId = crypto.randomUUID();
 			await client
@@ -475,6 +528,24 @@ export function runTests(
 				}),
 			);
 			await expect(promise).rejects.toBeInstanceOf(S3Error);
+		});
+	});
+
+	describe("multipart uploads", () => {
+		test("listMultipartUploads", async () => {
+			const uploads = await client.listMultipartUploads();
+			expect(uploads).toStrictEqual({
+				bucket: "test-bucket",
+				delimiter: undefined,
+				prefix: undefined,
+				keyMarker: undefined,
+				uploadIdMarker: undefined,
+				nextKeyMarker: undefined,
+				nextUploadIdMarker: undefined,
+				maxUploads: expect.any(Number),
+				isTruncated: false,
+				uploads: [],
+			});
 		});
 	});
 }

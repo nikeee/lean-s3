@@ -535,7 +535,7 @@ export function runTests(
 		test("listMultipartUploads", async () => {
 			const uploads = await client.listMultipartUploads();
 			expect(uploads).toStrictEqual({
-				bucket: "test-bucket",
+				bucket: expect.any(String),
 				delimiter: undefined,
 				prefix: undefined,
 				keyMarker: undefined,

@@ -36,6 +36,8 @@ const xmlBuilder = new XMLBuilder({
 	ignoreAttributes: false,
 });
 
+let listMultipartUploadsXmlParser = undefined;
+
 export interface S3ClientOptions {
 	bucket: string;
 	region: string;
@@ -400,9 +402,16 @@ export default class S3Client {
 		}
 
 		const text = await response.body.text();
+		const parsed = ensureParsedXml(
+			// biome-ignore lint/suspicious/noAssignInExpressions: lazy-init
+			(listMultipartUploadsXmlParser ??= new XMLParser({
+				ignoreAttributes: true,
+				isArray: (_, jPath) => jPath === "ListMultipartUploadsResult.Upload",
+			})),
+			text,
+			// biome-ignore lint/suspicious/noExplicitAny: :shrug:
+		) as any;
 
-		// biome-ignore lint/suspicious/noExplicitAny: :shrug:
-		const parsed = ensureParsedXml(text) as any;
 		const root = parsed.ListMultipartUploadsResult ?? {};
 
 		return {
@@ -415,22 +424,21 @@ export default class S3Client {
 			nextUploadIdMarker: root.NextUploadIdMarker || undefined,
 			maxUploads: root.MaxUploads ?? 1000, // not using || to not override 0; caution: minio supports 10000(!)
 			isTruncated: root.IsTruncated === "true",
-			uploads: root.Upload
-				? (Array.isArray(root.Upload) ? root.Upload : [root.Upload]).map(
-						// biome-ignore lint/suspicious/noExplicitAny: we're parsing here
-						(u: any) =>
-							({
-								key: u.Key || undefined,
-								uploadId: u.UploadId || undefined,
-								// TODO: Initiator
-								// TODO: Owner
-								storageClass: u.StorageClass || undefined,
-								checksumAlgorithm: u.ChecksumAlgorithm || undefined,
-								checksumType: u.ChecksumType || undefined,
-								initiated: u.Initiated ? new Date(u.Initiated) : undefined,
-							}) satisfies MultipartUpload,
-					)
-				: [],
+			uploads:
+				root.Upload?.map(
+					// biome-ignore lint/suspicious/noExplicitAny: we're parsing here
+					(u: any) =>
+						({
+							key: u.Key || undefined,
+							uploadId: u.UploadId || undefined,
+							// TODO: Initiator
+							// TODO: Owner
+							storageClass: u.StorageClass || undefined,
+							checksumAlgorithm: u.ChecksumAlgorithm || undefined,
+							checksumType: u.ChecksumType || undefined,
+							initiated: u.Initiated ? new Date(u.Initiated) : undefined,
+						}) satisfies MultipartUpload,
+				) ?? [],
 		};
 	}
 
@@ -1172,9 +1180,9 @@ function ensureValidBucketName(name: string): asserts name is string {
 	}
 }
 
-function ensureParsedXml(text: string): unknown {
+function ensureParsedXml(parser: XMLParser, text: string): unknown {
 	try {
-		const r = xmlParser.parse(text);
+		const r = parser.parse(text);
 		if (!r) {
 			throw new S3Error("Unknown", "", {
 				message: "S3 service responded with empty XML.",

@@ -361,7 +361,7 @@ export function runTests(
 		expect(res1.contents.length).toBe(0);
 	});
 
-	describe("deletObject", () => {
+	describe("deleteObject", () => {
 		test("deleteObject works", async () => {
 			const testId = crypto.randomUUID();
 			await client
@@ -477,7 +477,8 @@ export function runTests(
 			await expect(promise).rejects.toBeInstanceOf(S3Error);
 		});
 	});
-	describe("Multipart Uploads", () => {
+
+	describe("multipart uploads", () => {
 		test("listMultipartUploads", async () => {
 			const uploads = await client.listMultipartUploads();
 			expect(uploads).toBeDefined();

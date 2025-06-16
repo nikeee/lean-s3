@@ -342,8 +342,9 @@ export default class S3Client {
 	async listMultipartUploads(
 		options: ListMultipartUploadsOptions = {},
 	): Promise<ListMultipartUploadsResult> {
-		const bucket = options.bucket ?? this.#options.bucket;
-		ensureValidBucketName(bucket);
+		const bucket = ensureValidBucketName(
+			options.bucket ?? this.#options.bucket,
+		);
 
 		// See `benchmark-operations.js` on why we don't use URLSearchParams but string concat
 		// tldr: This is faster and we know the params exactly, so we can focus our encoding
@@ -529,8 +530,6 @@ export default class S3Client {
 	 * @remarks Uses [`CreateBucket`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html)
 	 */
 	async createBucket(name: string, options?: BucketCreationOptions) {
-		ensureValidBucketName(name);
-
 		let body = undefined;
 		if (options) {
 			const location =
@@ -573,7 +572,7 @@ export default class S3Client {
 			additionalSignedHeaders,
 			undefined,
 			undefined,
-			name,
+			ensureValidBucketName(name),
 			options?.signal,
 		);
 
@@ -598,7 +597,6 @@ export default class S3Client {
 	 * @remarks Uses [`DeleteBucket`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucket.html).
 	 */
 	async deleteBucket(name: string, options?: BucketDeletionOptions) {
-		ensureValidBucketName(name);
 		const response = await this[signedRequest](
 			"DELETE",
 			"",
@@ -607,7 +605,7 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			name,
+			ensureValidBucketName(name),
 			options?.signal,
 		);
 
@@ -633,8 +631,6 @@ export default class S3Client {
 		name: string,
 		options?: BucketExistsOptions,
 	): Promise<boolean> {
-		ensureValidBucketName(name);
-
 		const response = await this[signedRequest](
 			"HEAD",
 			"",
@@ -643,7 +639,7 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			name,
+			ensureValidBucketName(name),
 			options?.signal,
 		);
 
@@ -1155,7 +1151,8 @@ export function buildSearchParams(
 	return res;
 }
 
-function ensureValidBucketName(name: string): asserts name is string {
+/** TODO: Create a branded type, so we can ensure that we always check bucket names */
+function ensureValidBucketName(name: string) {
 	if (name.length < 3 || name.length > 63) {
 		throw new Error("`name` must be between 3 and 63 characters long.");
 	}
@@ -1173,6 +1170,7 @@ function ensureValidBucketName(name: string): asserts name is string {
 	if (name.includes("..")) {
 		throw new Error("`name` must not contain two adjacent periods (..)");
 	}
+	return name;
 }
 
 function ensureParsedXml(parser: XMLParser, text: string): unknown {

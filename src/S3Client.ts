@@ -415,7 +415,22 @@ export default class S3Client {
 			nextUploadIdMarker: root.NextUploadIdMarker || undefined,
 			maxUploads: root.MaxUploads ?? 1000, // not using || to not override 0; caution: minio supports 10000(!)
 			isTruncated: root.IsTruncated === "true",
-			uploads: [], // TODO
+			uploads: root.Upload
+				? (Array.isArray(root.Upload) ? root.Upload : [root.Upload]).map(
+						// biome-ignore lint/suspicious/noExplicitAny: we're parsing here
+						(u: any) =>
+							({
+								key: u.Key || undefined,
+								uploadId: u.UploadId || undefined,
+								// TODO: Initiator
+								// TODO: Owner
+								storageClass: u.StorageClass || undefined,
+								checksumAlgorithm: u.ChecksumAlgorithm || undefined,
+								checksumType: u.ChecksumType || undefined,
+								initiated: u.Initiated ? new Date(u.Initiated) : undefined,
+							}) satisfies MultipartUpload,
+					)
+				: [],
 		};
 	}
 

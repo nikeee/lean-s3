@@ -477,4 +477,10 @@ export function runTests(
 			await expect(promise).rejects.toBeInstanceOf(S3Error);
 		});
 	});
+	describe("Multipart Uploads", () => {
+		test("listMultipartUploads", async () => {
+			const uploads = await client.listMultipartUploads();
+			expect(uploads).toBeDefined();
+		});
+	});
 }

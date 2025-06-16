@@ -1139,3 +1139,21 @@ function ensureValidBucketName(name: string): asserts name is string {
 		throw new Error("`name` must not contain two adjacent periods (..)");
 	}
 }
+
+function ensureParsedXml(text: string): unknown {
+	try {
+		const r = xmlParser.parse(text);
+		if (!r) {
+			throw new S3Error("Unknown", "", {
+				message: "S3 service responded with empty XML.",
+			});
+		}
+		return r;
+	} catch (cause) {
+		// Possible according to AWS docs
+		throw new S3Error("Unknown", "", {
+			message: "S3 service responded with invalid XML.",
+			cause,
+		});
+	}
+}

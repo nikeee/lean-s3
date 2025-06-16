@@ -81,6 +81,16 @@ export type ListObjectsIteratingOptions = {
 	internalPageSize?: number;
 };
 
+export type ListMultipartUploadsOptions = {
+	bucket?: string;
+	prefix?: string;
+	delimiter?: string;
+	maxUploads?: number;
+	uploadIdMarker?: string;
+
+	signal?: AbortSignal;
+};
+
 export type ListObjectsResponse = {
 	name: string;
 	prefix: string | undefined;
@@ -283,6 +293,10 @@ export default class S3Client {
 		// See `buildSearchParams` for casing on this parameter
 		res.search = `${query}&X-Amz-Signature=${signature}`;
 		return res.toString();
+	}
+
+	async listMultipartUploads(options: ListMultipartUploadsOptions = {}) {
+		// TODO
 	}
 
 	/**

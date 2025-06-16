@@ -403,7 +403,7 @@ export default class S3Client {
 
 		// biome-ignore lint/suspicious/noExplicitAny: :shrug:
 		const parsed = ensureParsedXml(text) as any;
-		const root = parsed.ListMultipartUploadsResult;
+		const root = parsed.ListMultipartUploadsResult ?? {};
 
 		return {
 			bucket: root.Bucket || undefined,

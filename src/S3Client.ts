@@ -399,7 +399,24 @@ export default class S3Client {
 			throw await getResponseError(response, "");
 		}
 
-		throw new Error("Not implemented yet: listMultipartUploads"); // TODO
+		const text = await response.body.text();
+
+		// biome-ignore lint/suspicious/noExplicitAny: :shrug:
+		const parsed = ensureParsedXml(text) as any;
+		const root = parsed.ListMultipartUploadsResult;
+
+		return {
+			bucket: root.Bucket || undefined,
+			delimiter: root.Delimiter || undefined,
+			prefix: root.Prefix || undefined,
+			keyMarker: root.KeyMarker || undefined,
+			uploadIdMarker: root.UploadIdMarker || undefined,
+			nextKeyMarker: root.NextKeyMarker || undefined,
+			nextUploadIdMarker: root.NextUploadIdMarker || undefined,
+			maxUploads: root.MaxUploads ?? 1000, // not using || to not override 0; caution: minio supports 10000(!)
+			isTruncated: root.IsTruncated === "true",
+			uploads: [], // TODO
+		};
 	}
 
 	/**

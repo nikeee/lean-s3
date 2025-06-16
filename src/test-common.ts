@@ -481,7 +481,18 @@ export function runTests(
 	describe("multipart uploads", () => {
 		test("listMultipartUploads", async () => {
 			const uploads = await client.listMultipartUploads();
-			expect(uploads).toBeDefined();
+			expect(uploads).toStrictEqual({
+				bucket: "test-bucket",
+				delimiter: undefined,
+				prefix: undefined,
+				keyMarker: undefined,
+				uploadIdMarker: undefined,
+				nextKeyMarker: undefined,
+				nextUploadIdMarker: undefined,
+				maxUploads: expect.any(Number),
+				isTruncated: false,
+				uploads: [],
+			});
 		});
 	});
 }

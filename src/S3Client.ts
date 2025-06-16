@@ -554,6 +554,8 @@ export default class S3Client {
 
 	/**
 	 * Implements [`ListObjectsV2`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html) to iterate over all keys.
+	 *
+	 * @throws {RangeError} If `maxKeys` is not between `1` and `1000`.
 	 */
 	async list(options: ListObjectsOptions = {}): Promise<ListObjectsResponse> {
 		// See `benchmark-operations.js` on why we don't use URLSearchParams but string concat
@@ -578,7 +580,11 @@ export default class S3Client {
 				throw new TypeError("`maxKeys` should be a `number`.");
 			}
 
-			query += `&max-keys=${Math.min(1000, options.maxKeys)}`; // no encoding needed, it's a number
+			if (options.maxKeys < 1 || options.maxKeys > 1000) {
+				throw new RangeError("`maxKeys` should be between 1 and 1000.");
+			}
+
+			query += `&max-keys=${options.maxKeys}`; // no encoding needed, it's a number
 		}
 
 		// TODO: delimiter?

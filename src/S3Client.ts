@@ -83,9 +83,10 @@ export type ListObjectsIteratingOptions = {
 
 export type ListMultipartUploadsOptions = {
 	bucket?: string;
-	prefix?: string;
 	delimiter?: string;
+	keyMarker?: string;
 	maxUploads?: number;
+	prefix?: string;
 	uploadIdMarker?: string;
 
 	signal?: AbortSignal;
@@ -295,8 +296,73 @@ export default class S3Client {
 		return res.toString();
 	}
 
+	/**
+	 * @param options
+	 * @remarks Uses [`ListMultipartUploads`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html).
+	 * @throws {RangeError} If `options.maxKeys` is not between `1` and `1000`.
+	 */
 	async listMultipartUploads(options: ListMultipartUploadsOptions = {}) {
-		// TODO
+		const bucket = options.bucket ?? this.#options.bucket;
+		ensureValidBucketName(bucket);
+
+		// See `benchmark-operations.js` on why we don't use URLSearchParams but string concat
+		// tldr: This is faster and we know the params exactly, so we can focus our encoding
+
+		let query = "uploads="; // MinIO requires the = to be present
+
+		if (options.delimiter) {
+			if (typeof options.delimiter !== "string") {
+				throw new TypeError("`delimiter` should be a `string`.");
+			}
+
+			query += `&delimiter=${encodeURIComponent(options.delimiter)}`;
+		}
+
+		// we don't support encoding-type
+
+		if (options.keyMarker) {
+			if (typeof options.keyMarker !== "string") {
+				throw new TypeError("`keyMarker` should be a `string`.");
+			}
+
+			query += `&key-marker=${encodeURIComponent(options.keyMarker)}`;
+		}
+		if (typeof options.maxUploads !== "undefined") {
+			if (typeof options.maxUploads !== "number") {
+				throw new TypeError("`maxUploads` should be a `number`.");
+			}
+			if (options.maxUploads < 1 || options.maxUploads > 1000) {
+				throw new RangeError("`maxUploads` should be between 1 and 1000.");
+			}
+
+			query += `&max-uploads=${options.maxUploads}`; // no encoding needed, it's a number
+		}
+
+		if (options.prefix) {
+			if (typeof options.prefix !== "string") {
+				throw new TypeError("`prefix` should be a `string`.");
+			}
+
+			query += `&prefix=${encodeURIComponent(options.prefix)}`;
+		}
+
+		const response = await this[signedRequest](
+			"GET",
+			"",
+			query,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			bucket,
+			options.signal,
+		);
+
+		if (response.statusCode !== 200) {
+			throw await getResponseError(response, "");
+		}
+
+		throw new Error("Not implemented yet: listMultipartUploads"); // TODO
 	}
 
 	/**

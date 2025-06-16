@@ -36,7 +36,8 @@ const xmlBuilder = new XMLBuilder({
 	ignoreAttributes: false,
 });
 
-let listMultipartUploadsXmlParser = undefined;
+let listMultipartUploadsXmlParser: XMLParser | undefined = undefined;
+let listObjectsXmlParser: XMLParser | undefined = undefined;
 
 export interface S3ClientOptions {
 	bucket: string;
@@ -770,29 +771,23 @@ export default class S3Client {
 
 		const text = await response.body.text();
 
-		let res = undefined;
-		try {
-			res = xmlParser.parse(text)?.ListBucketResult;
-		} catch (cause) {
-			// Possible according to AWS docs
-			throw new S3Error("Unknown", "", {
-				message: "S3 service responded with invalid XML.",
-				cause,
-			});
-		}
+		const res = (
+			ensureParsedXml(
+				// biome-ignore lint/suspicious/noAssignInExpressions: lazy-init
+				(listObjectsXmlParser ??= new XMLParser({
+					ignoreAttributes: true,
+					isArray: (_, jPath) => jPath === "ListBucketResult.Contents",
+				})),
+				text,
+				// biome-ignore lint/suspicious/noExplicitAny: we're parsing here
+			) as any
+		).ListBucketResult;
 
 		if (!res) {
 			throw new S3Error("Unknown", "", {
 				message: "Could not read bucket contents.",
 			});
 		}
-
-		// S3 is weird and doesn't return an array if there is only one item
-		const contents = Array.isArray(res.Contents)
-			? (res.Contents?.map(S3BucketEntry.parse) ?? [])
-			: res.Contents
-				? [res.Contents]
-				: [];
 
 		return {
 			name: res.Name,
@@ -803,7 +798,7 @@ export default class S3Client {
 			maxKeys: res.MaxKeys,
 			keyCount: res.KeyCount,
 			nextContinuationToken: res.NextContinuationToken,
-			contents,
+			contents: res.Contents?.map(S3BucketEntry.parse) ?? [],
 		};
 	}
 

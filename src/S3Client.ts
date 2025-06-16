@@ -16,6 +16,8 @@ import type {
 	Acl,
 	BucketInfo,
 	BucketLocationInfo,
+	ChecksumAlgorithm,
+	ChecksumType,
 	HttpMethod,
 	PresignableHttpMethod,
 	StorageClass,
@@ -81,6 +83,7 @@ export type ListObjectsIteratingOptions = {
 	internalPageSize?: number;
 };
 
+//#region ListMultipartUploads
 export type ListMultipartUploadsOptions = {
 	bucket?: string;
 	delimiter?: string;
@@ -91,6 +94,38 @@ export type ListMultipartUploadsOptions = {
 
 	signal?: AbortSignal;
 };
+export type ListMultipartUploadsResult = {
+	bucket?: string;
+	keyMarker?: string;
+	uploadIdMarker?: string;
+	nextKeyMarker?: string;
+	prefix?: string;
+	delimiter?: string;
+	nextUploadIdMarker?: string;
+	maxUploads?: number;
+	isTruncated?: boolean;
+
+	uploads: MultipartUpload[];
+};
+
+export type MultipartUpload = {
+	checksumAlgorithm?: ChecksumAlgorithm;
+	checksumType?: ChecksumType;
+	initiated?: Date;
+	// TODO: initiator
+	/**
+	 * Key of the object for which the multipart upload was initiated.
+	 * Length Constraints: Minimum length of 1.
+	 */
+	key?: string;
+	// TODO: owner
+	storageClass?: StorageClass;
+	/**
+	 * Upload ID identifying the multipart upload.
+	 */
+	uploadId?: string;
+};
+//#endregion
 
 export type ListObjectsResponse = {
 	name: string;
@@ -301,7 +336,9 @@ export default class S3Client {
 	 * @remarks Uses [`ListMultipartUploads`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html).
 	 * @throws {RangeError} If `options.maxKeys` is not between `1` and `1000`.
 	 */
-	async listMultipartUploads(options: ListMultipartUploadsOptions = {}) {
+	async listMultipartUploads(
+		options: ListMultipartUploadsOptions = {},
+	): Promise<ListMultipartUploadsResult> {
 		const bucket = options.bucket ?? this.#options.bucket;
 		ensureValidBucketName(bucket);
 

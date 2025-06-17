@@ -361,6 +361,8 @@ export default class S3Client {
 		return res.toString();
 	}
 
+	//#region multipart uploads
+
 	/**
 	 * @remarks Uses [`ListMultipartUploads`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html).
 	 * @throws {RangeError} If `options.maxKeys` is not between `1` and `1000`.
@@ -553,76 +555,8 @@ export default class S3Client {
 		};
 	}
 
-	/**
-	 * Uses [`DeleteObjects`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html) to delete multiple objects in a single request.
-	 */
-	async deleteObjects(
-		objects: readonly S3BucketEntry[] | readonly string[],
-		options: DeleteObjectsOptions = {},
-	) {
-		const body = xmlBuilder.build({
-			Delete: {
-				Quiet: true,
-				Object: objects.map(o => ({
-					Key: typeof o === "string" ? o : o.key,
-				})),
-			},
-		});
-
-		const response = await this[signedRequest](
-			"POST",
-			"",
-			"delete=", // "=" is needed by minio for some reason
-			body,
-			{
-				"content-md5": sign.md5Base64(body),
-			},
-			undefined,
-			undefined,
-			this.#options.bucket,
-			options.signal,
-		);
-
-		if (response.statusCode === 200) {
-			const text = await response.body.text();
-
-			let res = undefined;
-			try {
-				// Quite mode omits all deleted elements, so it will be parsed as "", wich we need to coalasce to null/undefined
-				res = (xmlParser.parse(text)?.DeleteResult || undefined)?.Error ?? [];
-			} catch (cause) {
-				// Possible according to AWS docs
-				throw new S3Error("Unknown", "", {
-					message: "S3 service responded with invalid XML.",
-					cause,
-				});
-			}
-
-			if (!res || !Array.isArray(res)) {
-				throw new S3Error("Unknown", "", {
-					message: "Could not process response.",
-				});
-			}
-
-			const errors = res.map(e => ({
-				code: e.Code,
-				key: e.Key,
-				message: e.Message,
-				versionId: e.VersionId,
-			}));
-
-			return errors.length > 0 ? { errors } : null;
-		}
-
-		if (400 <= response.statusCode && response.statusCode < 500) {
-			throw await getResponseError(response, "");
-		}
-
-		response.body.dump(); // undici docs state that we should dump the body if not used
-		throw new Error(
-			`Response code not implemented yet: ${response.statusCode}`,
-		);
-	}
+	//#endregion
+	//#region bucket operations
 
 	/**
 	 * Creates a new bucket on the S3 server.
@@ -771,7 +705,8 @@ export default class S3Client {
 		throw new Error(`Response code not supported: ${response.statusCode}`);
 	}
 
-	//#region list
+	//#endregion
+	//#region list objects
 
 	/**
 	 * Uses [`ListObjectsV2`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html) to iterate over all keys. Pagination and continuation is handled internally.
@@ -897,6 +832,77 @@ export default class S3Client {
 	}
 
 	//#endregion
+
+	/**
+	 * Uses [`DeleteObjects`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html) to delete multiple objects in a single request.
+	 */
+	async deleteObjects(
+		objects: readonly S3BucketEntry[] | readonly string[],
+		options: DeleteObjectsOptions = {},
+	) {
+		const body = xmlBuilder.build({
+			Delete: {
+				Quiet: true,
+				Object: objects.map(o => ({
+					Key: typeof o === "string" ? o : o.key,
+				})),
+			},
+		});
+
+		const response = await this[signedRequest](
+			"POST",
+			"",
+			"delete=", // "=" is needed by minio for some reason
+			body,
+			{
+				"content-md5": sign.md5Base64(body),
+			},
+			undefined,
+			undefined,
+			this.#options.bucket,
+			options.signal,
+		);
+
+		if (response.statusCode === 200) {
+			const text = await response.body.text();
+
+			let res = undefined;
+			try {
+				// Quite mode omits all deleted elements, so it will be parsed as "", wich we need to coalasce to null/undefined
+				res = (xmlParser.parse(text)?.DeleteResult || undefined)?.Error ?? [];
+			} catch (cause) {
+				// Possible according to AWS docs
+				throw new S3Error("Unknown", "", {
+					message: "S3 service responded with invalid XML.",
+					cause,
+				});
+			}
+
+			if (!res || !Array.isArray(res)) {
+				throw new S3Error("Unknown", "", {
+					message: "Could not process response.",
+				});
+			}
+
+			const errors = res.map(e => ({
+				code: e.Code,
+				key: e.Key,
+				message: e.Message,
+				versionId: e.VersionId,
+			}));
+
+			return errors.length > 0 ? { errors } : null;
+		}
+
+		if (400 <= response.statusCode && response.statusCode < 500) {
+			throw await getResponseError(response, "");
+		}
+
+		response.body.dump(); // undici docs state that we should dump the body if not used
+		throw new Error(
+			`Response code not implemented yet: ${response.statusCode}`,
+		);
+	}
 
 	/**
 	 * Do not use this. This is an internal method.

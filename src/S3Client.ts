@@ -149,10 +149,6 @@ export type CompleteMultipartUploadOptions = {
 	bucket?: string;
 	signal?: AbortSignal;
 };
-export type MultipartUploadPart = {
-	partNumber: number;
-	etag: string;
-};
 export type CompleteMultipartUploadResult = {
 	location?: string;
 	bucket?: string;
@@ -164,6 +160,10 @@ export type CompleteMultipartUploadResult = {
 	checksumSHA1?: string;
 	checksumSHA256?: string;
 	checksumType?: ChecksumType;
+};
+export type MultipartUploadPart = {
+	partNumber: number;
+	etag: string;
 };
 
 export type ListObjectsResponse = {

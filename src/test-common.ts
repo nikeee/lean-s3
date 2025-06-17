@@ -562,6 +562,21 @@ export function runTests(
 	});
 
 	describe("multipart uploads", () => {
+		test("create + abort multipart upload", async () => {
+			const uploads = await client.listMultipartUploads();
+			expect(uploads.uploads.length).toBe(0);
+
+			const res = await client.createMultipartUpload("foo-key-9000");
+			try {
+				expect(res).toStrictEqual({
+					bucket: expect.any(String),
+					key: "foo-key-9000",
+					uploadId: expect.any(String),
+				});
+			} finally {
+				await client.abortMultipartUpload("foo-key-9000", res.uploadId);
+			}
+		});
 		test("listMultipartUploads", async () => {
 			const uploads = await client.listMultipartUploads();
 			expect(uploads).toStrictEqual({

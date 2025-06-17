@@ -30,14 +30,16 @@ export const write = Symbol("write");
 export const stream = Symbol("stream");
 export const signedRequest = Symbol("signedRequest");
 
-const xmlParser = new XMLParser();
+const xmlParser = new XMLParser({
+	ignoreAttributes: true,
+	isArray: (_, jPath) =>
+		jPath === "ListMultipartUploadsResult.Upload" ||
+		jPath === "ListBucketResult.Contents",
+});
 const xmlBuilder = new XMLBuilder({
 	attributeNamePrefix: "$",
 	ignoreAttributes: false,
 });
-
-let listMultipartUploadsXmlParser: XMLParser | undefined = undefined;
-let listObjectsXmlParser: XMLParser | undefined = undefined;
 
 export interface S3ClientOptions {
 	bucket: string;
@@ -404,15 +406,8 @@ export default class S3Client {
 		}
 
 		const text = await response.body.text();
-		const parsed = ensureParsedXml(
-			// biome-ignore lint/suspicious/noAssignInExpressions: lazy-init
-			(listMultipartUploadsXmlParser ??= new XMLParser({
-				ignoreAttributes: true,
-				isArray: (_, jPath) => jPath === "ListMultipartUploadsResult.Upload",
-			})),
-			text,
-			// biome-ignore lint/suspicious/noExplicitAny: :shrug:
-		) as any;
+		// biome-ignore lint/suspicious/noExplicitAny: :shrug:
+		const parsed = ensureParsedXml(xmlParser, text) as any;
 
 		const root = parsed.ListMultipartUploadsResult ?? {};
 
@@ -767,18 +762,8 @@ export default class S3Client {
 
 		const text = await response.body.text();
 
-		const res = (
-			ensureParsedXml(
-				// biome-ignore lint/suspicious/noAssignInExpressions: lazy-init
-				(listObjectsXmlParser ??= new XMLParser({
-					ignoreAttributes: true,
-					isArray: (_, jPath) => jPath === "ListBucketResult.Contents",
-				})),
-				text,
-				// biome-ignore lint/suspicious/noExplicitAny: we're parsing here
-			) as any
-		).ListBucketResult;
-
+		// biome-ignore lint/suspicious/noExplicitAny: we're parsing here
+		const res = (ensureParsedXml(xmlParser, text) as any).ListBucketResult;
 		if (!res) {
 			throw new S3Error("Unknown", "", {
 				message: "Could not read bucket contents.",

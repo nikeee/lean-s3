@@ -13,6 +13,7 @@ export {
 	type ListObjectsResponse,
 	type ListMultipartUploadsOptions,
 	type ListMultipartUploadsResult,
+	type AbortMultipartUploadOptions,
 	type MultipartUpload,
 	type CreateFileInstanceOptions,
 	type OverridableS3ClientOptions,

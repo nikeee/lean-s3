@@ -131,6 +131,10 @@ export type MultipartUpload = {
 	uploadId?: string;
 };
 //#endregion
+export type AbortMultipartUploadOptions = {
+	bucket?: string;
+	signal?: AbortSignal;
+};
 
 export type ListObjectsResponse = {
 	name: string;
@@ -435,6 +439,41 @@ export default class S3Client {
 						}) satisfies MultipartUpload,
 				) ?? [],
 		};
+	}
+
+	/**
+	 * @param options
+	 * @remarks Uses [`AbortMultipartUpload`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_AbortMultipartUpload.html).
+	 * @throws {RangeError} If `key` is not at least 1 character long.
+	 * @throws {Error} If `uploadId` is not provided.
+	 */
+	async abortMultipartUpload(
+		key: string,
+		uploadId: string,
+		options: AbortMultipartUploadOptions = {},
+	): Promise<void> {
+		if (key.length < 1) {
+			throw new RangeError("`key` must be at least 1 character long.");
+		}
+		if (!uploadId) {
+			throw new Error("`uploadId` is required.");
+		}
+
+		const response = await this[signedRequest](
+			"DELETE",
+			key,
+			`uploadId=${encodeURIComponent(uploadId)}`,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			ensureValidBucketName(options.bucket ?? this.#options.bucket),
+			options.signal,
+		);
+
+		if (response.statusCode !== 204) {
+			throw await getResponseError(response, key);
+		}
 	}
 
 	/**

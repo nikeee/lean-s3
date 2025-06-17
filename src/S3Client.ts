@@ -136,6 +136,11 @@ export type AbortMultipartUploadOptions = {
 	signal?: AbortSignal;
 };
 
+export type CompleteMultipartUploadOptions = {
+	bucket?: string;
+	signal?: AbortSignal;
+};
+
 export type ListObjectsResponse = {
 	name: string;
 	prefix: string | undefined;
@@ -341,7 +346,6 @@ export default class S3Client {
 	}
 
 	/**
-	 * @param options
 	 * @remarks Uses [`ListMultipartUploads`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html).
 	 * @throws {RangeError} If `options.maxKeys` is not between `1` and `1000`.
 	 */
@@ -442,7 +446,6 @@ export default class S3Client {
 	}
 
 	/**
-	 * @param options
 	 * @remarks Uses [`AbortMultipartUpload`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_AbortMultipartUpload.html).
 	 * @throws {RangeError} If `key` is not at least 1 character long.
 	 * @throws {Error} If `uploadId` is not provided.
@@ -474,6 +477,27 @@ export default class S3Client {
 		if (response.statusCode !== 204) {
 			throw await getResponseError(response, key);
 		}
+	}
+
+	/**
+	 * @remarks Uses [`CompleteMultipartUpload`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html).
+	 * @throws {RangeError} If `key` is not at least 1 character long.
+	 * @throws {Error} If `uploadId` is not provided.
+	 */
+	async completeMultipartUpload(
+		key: string,
+		uploadId: string,
+		parts: unknown,
+		options: CompleteMultipartUploadOptions = {},
+	) {
+		if (key.length < 1) {
+			throw new RangeError("`key` must be at least 1 character long.");
+		}
+		if (!uploadId) {
+			throw new Error("`uploadId` is required.");
+		}
+
+		throw new Error("Not implemented yet.");
 	}
 
 	/**

@@ -8,6 +8,8 @@ export {
 } from "./S3File.ts";
 export {
 	default as S3Client,
+	type CreateMultipartUploadOptions,
+	type CreateMultipartUploadResponse,
 	type ListObjectsOptions,
 	type ListObjectsIteratingOptions,
 	type ListObjectsResponse,

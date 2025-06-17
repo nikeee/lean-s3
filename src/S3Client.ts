@@ -131,6 +131,15 @@ export type MultipartUpload = {
 	uploadId?: string;
 };
 //#endregion
+export type CreateMultipartUploadOptions = {
+	bucket?: string;
+	signal?: AbortSignal;
+};
+export type CreateMultipartUploadResponse = {
+	bucket: string;
+	key: string;
+	uploadId: string;
+};
 export type AbortMultipartUploadOptions = {
 	bucket?: string;
 	signal?: AbortSignal;
@@ -362,6 +371,40 @@ export default class S3Client {
 	}
 
 	//#region multipart uploads
+
+	async createMultipartUpload(
+		key: string,
+		options: CreateMultipartUploadOptions = {},
+	): Promise<CreateMultipartUploadResponse> {
+		if (key.length < 1) {
+			throw new RangeError("`key` must be at least 1 character long.");
+		}
+
+		const response = await this[signedRequest](
+			"POST",
+			key,
+			"uploads=",
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			ensureValidBucketName(options.bucket ?? this.#options.bucket),
+			options.signal,
+		);
+
+		if (response.statusCode !== 200) {
+			throw await getResponseError(response, key);
+		}
+
+		const text = await response.body.text();
+		const res = ensureParsedXml(text).InitiateMultipartUploadResult ?? {};
+
+		return {
+			bucket: res.Bucket,
+			key: res.Key,
+			uploadId: res.UploadId,
+		};
+	}
 
 	/**
 	 * @remarks Uses [`ListMultipartUploads`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html).

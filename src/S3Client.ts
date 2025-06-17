@@ -140,6 +140,10 @@ export type CompleteMultipartUploadOptions = {
 	bucket?: string;
 	signal?: AbortSignal;
 };
+export type MultipartUploadPart = {
+	partNumber: number;
+	etag: string;
+};
 export type CompleteMultipartUploadResult = {
 	location?: string;
 	bucket?: string;
@@ -498,7 +502,7 @@ export default class S3Client {
 	async completeMultipartUpload(
 		key: string,
 		uploadId: string,
-		parts: unknown,
+		parts: readonly MultipartUploadPart[],
 		options: CompleteMultipartUploadOptions = {},
 	) {
 		if (key.length < 1) {
@@ -508,7 +512,14 @@ export default class S3Client {
 			throw new Error("`uploadId` is required.");
 		}
 
-		const body = undefined; // TODO:
+		const body = xmlBuilder.build({
+			CompleteMultipartUpload: {
+				Part: parts.map(part => ({
+					PartNumber: part.partNumber,
+					ETag: part.etag,
+				})),
+			},
+		});
 
 		const response = await this[signedRequest](
 			"POST",

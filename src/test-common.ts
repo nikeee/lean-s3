@@ -573,10 +573,23 @@ export function runTests(
 					key: "foo-key-9000",
 					uploadId: expect.any(String),
 				});
+
+				const uploads = await client.listMultipartUploads();
+				expect(uploads.uploads).toStrictEqual([
+					expect.objectContaining({
+						initiated: expect.any(Date),
+						key: "foo-key-9000",
+						// storageClass is missing or STANDARD on different services
+						checksumType: undefined,
+						checksumAlgorithm: undefined,
+						uploadId: res.uploadId,
+					}),
+				]);
 			} finally {
 				await client.abortMultipartUpload("foo-key-9000", res.uploadId);
 			}
 		});
+
 		test("listMultipartUploads", async () => {
 			const uploads = await client.listMultipartUploads();
 			expect(uploads).toStrictEqual({

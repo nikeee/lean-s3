@@ -406,10 +406,8 @@ export default class S3Client {
 		}
 
 		const text = await response.body.text();
-		// biome-ignore lint/suspicious/noExplicitAny: :shrug:
-		const parsed = ensureParsedXml(xmlParser, text) as any;
-
-		const root = parsed.ListMultipartUploadsResult ?? {};
+		const root =
+			ensureParsedXml(xmlParser, text).ListMultipartUploadsResult ?? {};
 
 		return {
 			bucket: root.Bucket || undefined,
@@ -762,8 +760,7 @@ export default class S3Client {
 
 		const text = await response.body.text();
 
-		// biome-ignore lint/suspicious/noExplicitAny: we're parsing here
-		const res = (ensureParsedXml(xmlParser, text) as any).ListBucketResult;
+		const res = ensureParsedXml(xmlParser, text).ListBucketResult ?? {};
 		if (!res) {
 			throw new S3Error("Unknown", "", {
 				message: "Could not read bucket contents.",
@@ -1158,7 +1155,8 @@ function ensureValidBucketName(name: string) {
 	return name;
 }
 
-function ensureParsedXml(parser: XMLParser, text: string): unknown {
+// biome-ignore lint/suspicious/noExplicitAny: parsing result is just unknown
+function ensureParsedXml(parser: XMLParser, text: string): any {
 	try {
 		const r = parser.parse(text);
 		if (!r) {

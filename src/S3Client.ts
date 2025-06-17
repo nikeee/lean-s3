@@ -140,6 +140,18 @@ export type CompleteMultipartUploadOptions = {
 	bucket?: string;
 	signal?: AbortSignal;
 };
+export type CompleteMultipartUploadResult = {
+	location?: string;
+	bucket?: string;
+	key?: string;
+	etag?: string;
+	checksumCRC32?: string;
+	checksumCRC32C?: string;
+	checksumCRC64NVME?: string;
+	checksumSHA1?: string;
+	checksumSHA256?: string;
+	checksumType?: ChecksumType;
+};
 
 export type ListObjectsResponse = {
 	name: string;
@@ -414,8 +426,7 @@ export default class S3Client {
 		}
 
 		const text = await response.body.text();
-		const root =
-			ensureParsedXml(xmlParser, text).ListMultipartUploadsResult ?? {};
+		const root = ensureParsedXml(text).ListMultipartUploadsResult ?? {};
 
 		return {
 			bucket: root.Bucket || undefined,
@@ -497,7 +508,38 @@ export default class S3Client {
 			throw new Error("`uploadId` is required.");
 		}
 
-		throw new Error("Not implemented yet.");
+		const body = undefined; // TODO:
+
+		const response = await this[signedRequest](
+			"POST",
+			key,
+			`uploadId=${encodeURIComponent(uploadId)}`,
+			body,
+			undefined,
+			undefined,
+			undefined,
+			ensureValidBucketName(options.bucket ?? this.#options.bucket),
+			options.signal,
+		);
+
+		if (response.statusCode !== 200) {
+			throw await getResponseError(response, key);
+		}
+		const text = await response.body.text();
+		const res = ensureParsedXml(text).CompleteMultipartUploadResult ?? {};
+
+		return {
+			location: res.Location || undefined,
+			bucket: res.Bucket || undefined,
+			key: res.Key || undefined,
+			etag: res.ETag || undefined,
+			checksumCRC32: res.ChecksumCRC32 || undefined,
+			checksumCRC32C: res.ChecksumCRC32C || undefined,
+			checksumCRC64NVME: res.ChecksumCRC64NVME || undefined,
+			checksumSHA1: res.ChecksumSHA1 || undefined,
+			checksumSHA256: res.ChecksumSHA256 || undefined,
+			checksumType: res.ChecksumType || undefined,
+		};
 	}
 
 	/**
@@ -823,7 +865,7 @@ export default class S3Client {
 
 		const text = await response.body.text();
 
-		const res = ensureParsedXml(xmlParser, text).ListBucketResult ?? {};
+		const res = ensureParsedXml(text).ListBucketResult ?? {};
 		if (!res) {
 			throw new S3Error("Unknown", "", {
 				message: "Could not read bucket contents.",
@@ -1219,9 +1261,9 @@ function ensureValidBucketName(name: string) {
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: parsing result is just unknown
-function ensureParsedXml(parser: XMLParser, text: string): any {
+function ensureParsedXml(text: string): any {
 	try {
-		const r = parser.parse(text);
+		const r = xmlParser.parse(text);
 		if (!r) {
 			throw new S3Error("Unknown", "", {
 				message: "S3 service responded with empty XML.",

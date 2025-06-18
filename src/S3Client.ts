@@ -34,7 +34,9 @@ const xmlParser = new XMLParser({
 	ignoreAttributes: true,
 	isArray: (_, jPath) =>
 		jPath === "ListMultipartUploadsResult.Upload" ||
-		jPath === "ListBucketResult.Contents",
+		jPath === "ListBucketResult.Contents" ||
+		jPath === "DeleteResult.Deleted" ||
+		jPath === "DeleteResult.Error",
 });
 const xmlBuilder = new XMLBuilder({
 	attributeNamePrefix: "$",
@@ -909,10 +911,11 @@ export default class S3Client {
 		if (response.statusCode === 200) {
 			const text = await response.body.text();
 
-			let res = undefined;
+			// biome-ignore lint/suspicious/noExplicitAny: parsing
+			let deleteResult: any;
 			try {
 				// Quite mode omits all deleted elements, so it will be parsed as "", wich we need to coalasce to null/undefined
-				res = (xmlParser.parse(text)?.DeleteResult || undefined)?.Error ?? [];
+				deleteResult = ensureParsedXml(text).DeleteResult ?? {};
 			} catch (cause) {
 				// Possible according to AWS docs
 				throw new S3Error("Unknown", "", {
@@ -921,18 +924,14 @@ export default class S3Client {
 				});
 			}
 
-			if (!res || !Array.isArray(res)) {
-				throw new S3Error("Unknown", "", {
-					message: "Could not process response.",
-				});
-			}
-
-			const errors = res.map(e => ({
-				code: e.Code,
-				key: e.Key,
-				message: e.Message,
-				versionId: e.VersionId,
-			}));
+			const errors =
+				// biome-ignore lint/suspicious/noExplicitAny: parsing
+				deleteResult.Error?.map((e: any) => ({
+					code: e.Code,
+					key: e.Key,
+					message: e.Message,
+					versionId: e.VersionId,
+				})) ?? [];
 
 			return errors.length > 0 ? { errors } : null;
 		}

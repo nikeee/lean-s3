@@ -284,7 +284,7 @@ export default class S3Client {
 	 *
 	 * lean-s3 does not enforce these restrictions.
 	 *
-	 * @param {Partial<CreateFileInstanceOptions>} [options] TODO
+	 * @param {Partial<CreateFileInstanceOptions>} [_options] TODO
 	 * @example
 	 * ```js
 	 * const file = client.file("image.jpg");

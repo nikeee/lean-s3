@@ -2,7 +2,6 @@ import { Readable } from "node:stream";
 
 import type S3Client from "./S3Client.ts";
 import type { ByteSource } from "./index.ts";
-import S3Error from "./S3Error.ts";
 import S3Stat from "./S3Stat.ts";
 import {
 	write,

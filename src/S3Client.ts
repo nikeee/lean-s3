@@ -296,8 +296,9 @@ export default class S3Client {
 	 * });
 	 * ```
 	 */
-	file(path: string, options?: Partial<CreateFileInstanceOptions>): S3File {
+	file(path: string, _options?: Partial<CreateFileInstanceOptions>): S3File {
 		// TODO: Check max path length in bytes
+		// TODO: Use options
 		return new S3File(this, path, undefined, undefined, undefined);
 	}
 
@@ -618,7 +619,7 @@ export default class S3Client {
 	 * @remarks Uses [`CreateBucket`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html)
 	 */
 	async createBucket(name: string, options?: BucketCreationOptions) {
-		let body = undefined;
+		let body: string | undefined;
 		if (options) {
 			const location =
 				options.location && (options.location.name || options.location.type)
@@ -762,10 +763,9 @@ export default class S3Client {
 		// only used to get smaller pages, so we can test this properly
 		const maxKeys = options?.internalPageSize ?? undefined;
 
-		let res = undefined;
-		let continuationToken = undefined;
+		let continuationToken: string | undefined;
 		do {
-			res = await this.list({
+			const res = await this.list({
 				...options,
 				maxKeys,
 				continuationToken,
@@ -1057,8 +1057,7 @@ export default class S3Client {
 			"x-amz-date": now.dateTime,
 		});
 
-		/** @type {import("undici").Dispatcher.ResponseData<unknown> | undefined} */
-		let response = undefined;
+		let response: Dispatcher.ResponseData<unknown>;
 		try {
 			response = await request(url, {
 				method: "PUT",
@@ -1204,11 +1203,11 @@ export default class S3Client {
 					if (400 <= status && status < 500) {
 						// Some providers actually support JSON via "accept: application/json", but we cant rely on it
 						const responseText = undefined;
-						const ct = response.headers["content-type"];
 
 						if (response.headers["content-type"] === "application/xml") {
 							return response.body.text().then(body => {
-								let error = undefined;
+								// biome-ignore lint/suspicious/noExplicitAny: :shrug:
+								let error: any;
 								try {
 									error = xmlParser.parse(body);
 								} catch (cause) {

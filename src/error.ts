@@ -9,7 +9,8 @@ export async function getResponseError(
 	response: Dispatcher.ResponseData<unknown>,
 	path: string,
 ): Promise<S3Error> {
-	let body = undefined;
+	// biome-ignore lint/suspicious/noExplicitAny: :shrug:
+	let body: any;
 	try {
 		body = await response.body.text();
 	} catch (cause) {
@@ -48,7 +49,8 @@ export function fromStatusCode(
 }
 
 function parseAndGetXmlError(body: string, path: string): S3Error {
-	let error = undefined;
+	// biome-ignore lint/suspicious/noExplicitAny: :shrug:
+	let error: any;
 	try {
 		error = xmlParser.parse(body);
 	} catch (cause) {

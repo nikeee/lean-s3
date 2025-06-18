@@ -52,7 +52,7 @@
     "@testcontainers/minio": "^11.0.3",
     "@types/node": "^24.0.3",
     "@typescript/native-preview": "^7.0.0-dev.20250618.1",
-    "expect": "^30.0.0",
+    "expect": "^30.0.1",
     "lefthook": "^1.11.14",
     "tsup": "^8.5.0",
     "tsx": "^4.20.3",

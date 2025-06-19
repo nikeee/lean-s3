@@ -57,22 +57,19 @@ export function runTests(
 			{
 				const url = client.presign(`${runId}/presign-test.txt`, {
 					method: "PUT",
-					contentLength: 100,
-				});
-				const res = await fetch(url, { method: "PUT", body });
-				expect(res.ok).toBe(true);
-			}
-			{
-				const url = client.presign(`${runId}/presign-test.txt`, {
-					method: "PUT",
-					contentLength: 10,
+					contentLength: body.length,
 				});
 				const res = await fetch(url, {
 					method: "PUT",
-					body: crypto.randomUUID(),
+					body,
 				});
-				expect(res.ok).toBe(false);
+				expect(res.ok).toBe(true);
 			}
+
+			// we don't test if it works when the file size is larger or smaller
+			// some providers don't care about the content-length (localstack)
+			// others see it as an exact requirement for the body (minio)
+			// others see it as a maximum body size (AWS?) :shrug:
 
 			const f = client.file(`${runId}/presign-test.txt`);
 			try {

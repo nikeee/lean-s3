@@ -625,6 +625,53 @@ export function runTests(
 			}
 		});
 
+		test("create + complete multipart upload", async () => {
+			const uploads = await client.listMultipartUploads();
+			expect(uploads.uploads.length).toBe(0);
+
+			const key = crypto.randomUUID();
+
+			const res = await client.createMultipartUpload(key);
+			expect(res).toStrictEqual({
+				bucket: expect.any(String),
+				key: key,
+				uploadId: expect.any(String),
+			});
+			try {
+				// R2 requires parts to be at least 5 MiB. Also, they have to be the same size (except the last one, which has to be <= in size)
+				const parts = [
+					Buffer.alloc(6 * 1024 * 1024).fill(1),
+					Buffer.alloc(6 * 1024 * 1024).fill(2),
+					Buffer.alloc(1 * 1024 * 1024).fill(3),
+				];
+
+				const uploadedParts = [
+					await client.uploadPart(res.key, res.uploadId, parts[0], 1),
+					await client.uploadPart(res.key, res.uploadId, parts[1], 2),
+					await client.uploadPart(res.key, res.uploadId, parts[2], 3),
+				];
+
+				const completed = await client.completeMultipartUpload(
+					res.key,
+					res.uploadId,
+					uploadedParts,
+				);
+				expect(completed).toStrictEqual(
+					expect.objectContaining({
+						bucket: expect.any(String),
+						location: expect.any(String),
+						key,
+					}),
+				);
+
+				const expectedData = Buffer.concat(parts);
+				const uploaded = await client.file(key).bytes();
+				expect(expectedData.compare(uploaded)).toBe(0);
+			} finally {
+				await client.file(key).delete();
+			}
+		});
+
 		test("listMultipartUploads", async () => {
 			const uploads = await client.listMultipartUploads();
 			expect(uploads).toStrictEqual({

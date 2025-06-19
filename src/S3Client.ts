@@ -138,7 +138,7 @@ export type CreateMultipartUploadOptions = {
 	bucket?: string;
 	signal?: AbortSignal;
 };
-export type CreateMultipartUploadResponse = {
+export type CreateMultipartUploadResult = {
 	bucket: string;
 	key: string;
 	uploadId: string;
@@ -168,8 +168,16 @@ export type MultipartUploadPart = {
 	partNumber: number;
 	etag: string;
 };
+export type UploadPartOptions = {
+	bucket?: string;
+	signal?: AbortSignal;
+};
+export type UploadPartResult = {
+	partNumber: number;
+	etag: string;
+};
 
-export type ListObjectsResponse = {
+export type ListObjectsResult = {
 	name: string;
 	prefix: string | undefined;
 	startAfter: string | undefined;
@@ -397,7 +405,7 @@ export default class S3Client {
 	async createMultipartUpload(
 		key: string,
 		options: CreateMultipartUploadOptions = {},
-	): Promise<CreateMultipartUploadResponse> {
+	): Promise<CreateMultipartUploadResult> {
 		if (key.length < 1) {
 			throw new RangeError("`key` must be at least 1 character long.");
 		}
@@ -571,7 +579,7 @@ export default class S3Client {
 		uploadId: string,
 		parts: readonly MultipartUploadPart[],
 		options: CompleteMultipartUploadOptions = {},
-	) {
+	): Promise<CompleteMultipartUploadResult> {
 		if (key.length < 1) {
 			throw new RangeError("`key` must be at least 1 character long.");
 		}
@@ -618,6 +626,61 @@ export default class S3Client {
 			checksumSHA256: res.ChecksumSHA256 || undefined,
 			checksumType: res.ChecksumType || undefined,
 		};
+	}
+
+	/**
+	 * @remarks Uses [`UploadPart`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPart.html).
+	 * @throws {RangeError} If `key` is not at least 1 character long.
+	 * @throws {Error} If `uploadId` is not provided.
+	 */
+	async uploadPart(
+		key: string,
+		uploadId: string,
+		data: UndiciBodyInit,
+		partNumber: number,
+		options: UploadPartOptions = {},
+	): Promise<UploadPartResult> {
+		if (key.length < 1) {
+			throw new RangeError("`key` must be at least 1 character long.");
+		}
+		if (!uploadId) {
+			throw new Error("`uploadId` is required.");
+		}
+		if (!data) {
+			throw new Error("`data` is required.");
+		}
+		if (typeof partNumber !== "number" || partNumber <= 0) {
+			throw new Error("`partNumber` has to be a `number` which is >= 1.");
+		}
+
+		const response = await this[signedRequest](
+			"PUT",
+			key,
+			`partNumber=${partNumber}&uploadId=${encodeURIComponent(uploadId)}`,
+			data,
+			undefined,
+			undefined,
+			undefined,
+			ensureValidBucketName(options.bucket ?? this.#options.bucket),
+			options.signal,
+		);
+
+		if (response.statusCode === 200) {
+			await response.body.dump();
+
+			const etag = response.headers.etag;
+			if (typeof etag !== "string" || etag.length === 0) {
+				throw new S3Error("Unknown", "", {
+					message: "Response did not contain an etag.",
+				});
+			}
+			return {
+				partNumber,
+				etag,
+			};
+		}
+
+		throw await getResponseError(response, "");
 	}
 
 	//#endregion
@@ -805,7 +868,7 @@ export default class S3Client {
 	 *
 	 * @throws {RangeError} If `maxKeys` is not between `1` and `1000`.
 	 */
-	async list(options: ListObjectsOptions = {}): Promise<ListObjectsResponse> {
+	async list(options: ListObjectsOptions = {}): Promise<ListObjectsResult> {
 		// See `benchmark-operations.js` on why we don't use URLSearchParams but string concat
 		// tldr: This is faster and we know the params exactly, so we can focus our encoding
 

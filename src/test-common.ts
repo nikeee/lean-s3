@@ -607,16 +607,19 @@ export function runTests(
 					uploadId: expect.any(String),
 				});
 
+				// Use `expect.arrayContaining` because the tests will run in parallel and might interfere
 				const uploads = await client.listMultipartUploads();
-				expect(uploads.uploads).toStrictEqual([
-					expect.objectContaining({
-						initiated: expect.any(Date),
-						key: "foo-key-9000",
-						// storageClass is missing or STANDARD on different services
-						// cloudflare somehow returns a different uploadId than the one provided by createMultipartUpload
-						// uploadId: res.uploadId,
-					}),
-				]);
+				expect(uploads.uploads).toStrictEqual(
+					expect.arrayContaining([
+						expect.objectContaining({
+							initiated: expect.any(Date),
+							key: "foo-key-9000",
+							// storageClass is missing or STANDARD on different services
+							// cloudflare somehow returns a different uploadId than the one provided by createMultipartUpload
+							// uploadId: res.uploadId,
+						}),
+					]),
+				);
 			} finally {
 				await client.abortMultipartUpload("foo-key-9000", res.uploadId);
 			}
@@ -634,7 +637,7 @@ export function runTests(
 				nextUploadIdMarker: undefined,
 				maxUploads: expect.any(Number),
 				isTruncated: false,
-				uploads: [],
+				uploads: expect.any(Array),
 			});
 		});
 	});

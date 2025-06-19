@@ -23,56 +23,60 @@ export function runTests(
 		bucket,
 	});
 
-	test("presign-put", async () => {
-		const testId = crypto.randomUUID();
-		const expected = {
-			hello: testId,
-		};
+	describe("presign", () => {
+		test("put", async () => {
+			const testId = crypto.randomUUID();
+			const expected = {
+				hello: testId,
+			};
 
-		const url = client.presign(`${runId}/presign-test.json`, { method: "PUT" });
-		const res = await fetch(url, {
-			method: "PUT",
-			body: JSON.stringify(expected),
-			headers: {
-				accept: "application/json",
-			},
+			const url = client.presign(`${runId}/presign-test.json`, {
+				method: "PUT",
+			});
+			const res = await fetch(url, {
+				method: "PUT",
+				body: JSON.stringify(expected),
+				headers: {
+					accept: "application/json",
+				},
+			});
+			expect(res.ok).toBe(true);
+
+			const f = client.file(`${runId}/presign-test.json`);
+			try {
+				const actual = await f.json();
+				expect(actual).toStrictEqual(expected);
+			} finally {
+				await f.delete();
+			}
 		});
-		expect(res.ok).toBe(true);
 
-		const f = client.file(`${runId}/presign-test.json`);
-		try {
-			const actual = await f.json();
-			expect(actual).toStrictEqual(expected);
-		} finally {
-			await f.delete();
-		}
-	});
+		test("put with weird key", async () => {
+			const testId = crypto.randomUUID();
+			const expected = {
+				hello: testId,
+			};
 
-	test("presign-put with weird key", async () => {
-		const testId = crypto.randomUUID();
-		const expected = {
-			hello: testId,
-		};
+			const key = `${runId}/${testId}/Sun Jun 15 2025 00:57:03 GMT+0200 (test)`;
 
-		const key = `${runId}/${testId}/Sun Jun 15 2025 00:57:03 GMT+0200 (test)`;
+			const url = client.presign(key, { method: "PUT" });
+			const res = await fetch(url, {
+				method: "PUT",
+				body: JSON.stringify(expected),
+				headers: {
+					accept: "application/json",
+				},
+			});
+			expect(res.ok).toBe(true);
 
-		const url = client.presign(key, { method: "PUT" });
-		const res = await fetch(url, {
-			method: "PUT",
-			body: JSON.stringify(expected),
-			headers: {
-				accept: "application/json",
-			},
+			const f = client.file(key);
+			try {
+				const actual = await f.json();
+				expect(actual).toStrictEqual(expected);
+			} finally {
+				await f.delete();
+			}
 		});
-		expect(res.ok).toBe(true);
-
-		const f = client.file(key);
-		try {
-			const actual = await f.json();
-			expect(actual).toStrictEqual(expected);
-		} finally {
-			await f.delete();
-		}
 	});
 
 	test("roundtrip", async () => {

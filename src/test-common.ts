@@ -23,56 +23,89 @@ export function runTests(
 		bucket,
 	});
 
-	test("presign-put", async () => {
-		const testId = crypto.randomUUID();
-		const expected = {
-			hello: testId,
-		};
+	describe("presign", () => {
+		test("put", async () => {
+			const testId = crypto.randomUUID();
+			const expected = {
+				hello: testId,
+			};
 
-		const url = client.presign(`${runId}/presign-test.json`, { method: "PUT" });
-		const res = await fetch(url, {
-			method: "PUT",
-			body: JSON.stringify(expected),
-			headers: {
-				accept: "application/json",
-			},
+			const url = client.presign(`${runId}/presign-test.json`, {
+				method: "PUT",
+			});
+			const res = await fetch(url, {
+				method: "PUT",
+				body: JSON.stringify(expected),
+				headers: {
+					accept: "application/json",
+				},
+			});
+			expect(res.ok).toBe(true);
+
+			const f = client.file(`${runId}/presign-test.json`);
+			try {
+				const actual = await f.json();
+				expect(actual).toStrictEqual(expected);
+			} finally {
+				await f.delete();
+			}
 		});
-		expect(res.ok).toBe(true);
 
-		const f = client.file(`${runId}/presign-test.json`);
-		try {
-			const actual = await f.json();
-			expect(actual).toStrictEqual(expected);
-		} finally {
-			await f.delete();
-		}
-	});
+		test("put with content length", async () => {
+			const body = crypto.randomUUID();
 
-	test("presign-put with weird key", async () => {
-		const testId = crypto.randomUUID();
-		const expected = {
-			hello: testId,
-		};
+			{
+				const url = client.presign(`${runId}/presign-test.txt`, {
+					method: "PUT",
+					contentLength: body.length,
+				});
+				const res = await fetch(url, {
+					method: "PUT",
+					body,
+				});
+				expect(res.ok).toBe(true);
+			}
 
-		const key = `${runId}/${testId}/Sun Jun 15 2025 00:57:03 GMT+0200 (test)`;
+			// we don't test if it works when the file size is larger or smaller
+			// some providers don't care about the content-length (localstack)
+			// others see it as an exact requirement for the body (minio)
+			// others see it as a maximum body size (AWS?) :shrug:
 
-		const url = client.presign(key, { method: "PUT" });
-		const res = await fetch(url, {
-			method: "PUT",
-			body: JSON.stringify(expected),
-			headers: {
-				accept: "application/json",
-			},
+			const f = client.file(`${runId}/presign-test.txt`);
+			try {
+				const actual = await f.text();
+				expect(actual).toStrictEqual(body);
+			} finally {
+				await f.delete();
+			}
 		});
-		expect(res.ok).toBe(true);
 
-		const f = client.file(key);
-		try {
-			const actual = await f.json();
-			expect(actual).toStrictEqual(expected);
-		} finally {
-			await f.delete();
-		}
+		test("put with weird key", async () => {
+			const testId = crypto.randomUUID();
+			const expected = {
+				hello: testId,
+			};
+
+			const key = `${runId}/${testId}/Sun Jun 15 2025 00:57:03 GMT+0200 (test)`;
+
+			const url = client.presign(key, { method: "PUT" });
+			const res = await fetch(url, {
+				method: "PUT",
+				body: JSON.stringify(expected),
+				headers: {
+					accept: "application/json",
+				},
+			});
+			expect(res.ok).toBe(true);
+
+			const f = client.file(key);
+			try {
+				const actual = await f.json();
+				expect(actual).toStrictEqual(expected);
+			} finally {
+				await f.delete();
+			}
+		});
 	});
 
 	test("roundtrip", async () => {

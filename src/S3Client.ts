@@ -68,6 +68,7 @@ export interface S3FilePresignOptions {
 	/** Seconds. */
 	expiresIn: number; // TODO: Maybe support Temporal.Duration once major support arrives
 	method: PresignableHttpMethod;
+	contentLength: number;
 	storageClass: StorageClass;
 	acl: Acl;
 }
@@ -320,12 +321,19 @@ export default class S3Client {
 			method = "GET",
 			expiresIn = 3600, // TODO: Maybe rename this to expiresInSeconds
 			storageClass,
+			contentLength,
 			acl,
 			region: regionOverride,
 			bucket: bucketOverride,
 			endpoint: endpointOverride,
 		}: Partial<S3FilePresignOptions & OverridableS3ClientOptions> = {},
 	): string {
+		if (typeof contentLength === "number") {
+			if (contentLength < 0) {
+				throw new RangeError("`contentLength` must be >= 0.");
+			}
+		}
+
 		const now = new Date();
 		const date = amzDate.getAmzDate(now);
 		const options = this.#options;
@@ -340,19 +348,30 @@ export default class S3Client {
 			`${options.accessKeyId}/${date.date}/${region}/s3/aws4_request`,
 			date,
 			expiresIn,
-			"host",
-			undefined,
+			typeof contentLength === "number" ? "content-length;host" : "host",
+			sign.unsignedPayload,
 			storageClass,
 			options.sessionToken,
 			acl,
 		);
 
-		const dataDigest = sign.createCanonicalDataDigestHostOnly(
-			method,
-			res.pathname,
-			query,
-			res.host,
-		);
+		// This probably does'nt scale if there are more headers in the signature
+		// But we want to take a fast-path if there is only the host header to sign
+		const dataDigest =
+			typeof contentLength === "number"
+				? sign.createCanonicalDataDigest(
+						method,
+						res.pathname,
+						query,
+						{ "content-length": String(contentLength), host: res.host },
+						sign.unsignedPayload,
+					)
+				: sign.createCanonicalDataDigestHostOnly(
+						method,
+						res.pathname,
+						query,
+						res.host,
+					);
 
 		const signingKey = this.#keyCache.computeIfAbsent(
 			date,

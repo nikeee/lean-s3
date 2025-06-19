@@ -51,6 +51,38 @@ export function runTests(
 			}
 		});
 
+		test("put with content length", async () => {
+			const body = crypto.randomUUID();
+
+			{
+				const url = client.presign(`${runId}/presign-test.txt`, {
+					method: "PUT",
+					contentLength: 100,
+				});
+				const res = await fetch(url, { method: "PUT", body });
+				expect(res.ok).toBe(true);
+			}
+			{
+				const url = client.presign(`${runId}/presign-test.txt`, {
+					method: "PUT",
+					contentLength: 10,
+				});
+				const res = await fetch(url, {
+					method: "PUT",
+					body: crypto.randomUUID(),
+				});
+				expect(res.ok).toBe(false);
+			}
+
+			const f = client.file(`${runId}/presign-test.txt`);
+			try {
+				const actual = await f.text();
+				expect(actual).toStrictEqual(body);
+			} finally {
+				await f.delete();
+			}
+		});
+
 		test("put with weird key", async () => {
 			const testId = crypto.randomUUID();
 			const expected = {

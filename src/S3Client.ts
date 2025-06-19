@@ -68,6 +68,7 @@ export interface S3FilePresignOptions {
 	/** Seconds. */
 	expiresIn: number; // TODO: Maybe support Temporal.Duration once major support arrives
 	method: PresignableHttpMethod;
+	contentLength: number;
 	storageClass: StorageClass;
 	acl: Acl;
 }

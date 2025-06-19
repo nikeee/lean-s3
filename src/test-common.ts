@@ -580,8 +580,6 @@ export function runTests(
 						initiated: expect.any(Date),
 						key: "foo-key-9000",
 						// storageClass is missing or STANDARD on different services
-						checksumType: undefined,
-						checksumAlgorithm: undefined,
 						// cloudflare somehow returns a different uploadId than the one provided by createMultipartUpload
 						// uploadId: res.uploadId,
 					}),

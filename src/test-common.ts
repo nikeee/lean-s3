@@ -599,7 +599,7 @@ export function runTests(
 			const testId = crypto.randomUUID();
 			const key = `${testId}/foo-key-9000`;
 
-			const res = await client.createMultipartUpload("foo-key-9000");
+			const res = await client.createMultipartUpload(key);
 			try {
 				expect(res).toStrictEqual({
 					bucket: expect.any(String),

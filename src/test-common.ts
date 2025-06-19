@@ -596,14 +596,14 @@ export function runTests(
 
 	describe("multipart uploads", () => {
 		test("create + abort multipart upload", async () => {
-			const uploads = await client.listMultipartUploads();
-			expect(uploads.uploads.length).toBe(0);
+			const testId = crypto.randomUUID();
+			const key = `${testId}/foo-key-9000`;
 
 			const res = await client.createMultipartUpload("foo-key-9000");
 			try {
 				expect(res).toStrictEqual({
 					bucket: expect.any(String),
-					key: "foo-key-9000",
+					key,
 					uploadId: expect.any(String),
 				});
 
@@ -613,7 +613,7 @@ export function runTests(
 					expect.arrayContaining([
 						expect.objectContaining({
 							initiated: expect.any(Date),
-							key: "foo-key-9000",
+							key,
 							// storageClass is missing or STANDARD on different services
 							// cloudflare somehow returns a different uploadId than the one provided by createMultipartUpload
 							// uploadId: res.uploadId,
@@ -621,15 +621,13 @@ export function runTests(
 					]),
 				);
 			} finally {
-				await client.abortMultipartUpload("foo-key-9000", res.uploadId);
+				await client.abortMultipartUpload(key, res.uploadId);
 			}
 		});
 
 		test("create + complete multipart upload", async () => {
-			const uploads = await client.listMultipartUploads();
-			expect(uploads.uploads.length).toBe(0);
-
-			const key = crypto.randomUUID();
+			const testId = crypto.randomUUID();
+			const key = `${testId}/foo-key-9000`;
 
 			const res = await client.createMultipartUpload(key);
 			expect(res).toStrictEqual({

@@ -715,7 +715,7 @@ export default class S3Client {
 		);
 
 		if (response.statusCode === 200) {
-			await response.body.dump();
+			response.body.dump(); // dump's floating promise should not throw
 
 			const etag = response.headers.etag;
 			if (typeof etag !== "string" || etag.length === 0) {
@@ -875,7 +875,8 @@ export default class S3Client {
 			throw await getResponseError(response, "");
 		}
 
-		await response.body.dump(); // undici docs state that we should dump the body if not used
+		// undici docs state that we should dump the body if not used
+		response.body.dump(); // dump's floating promise should not throw
 
 		if (response.statusCode === 200) {
 			return;
@@ -908,7 +909,8 @@ export default class S3Client {
 			throw await getResponseError(response, "");
 		}
 
-		await response.body.dump(); // undici docs state that we should dump the body if not used
+		// undici docs state that we should dump the body if not used
+		response.body.dump(); // dump's floating promise should not throw
 
 		if (response.statusCode === 204) {
 			return;
@@ -946,7 +948,8 @@ export default class S3Client {
 			throw await getResponseError(response, "");
 		}
 
-		await response.body.dump(); // undici docs state that we should dump the body if not used
+		// undici docs state that we should dump the body if not used
+		response.body.dump(); // dump's floating promise should not throw
 
 		if (response.statusCode === 200) {
 			return true;
@@ -1054,7 +1057,8 @@ export default class S3Client {
 		);
 
 		if (response.statusCode !== 200) {
-			response.body.dump(); // undici docs state that we should dump the body if not used
+			// undici docs state that we should dump the body if not used
+			response.body.dump(); // dump's floating promise should not throw
 			throw new Error(
 				`Response code not implemented yet: ${response.statusCode}`,
 			);
@@ -1146,7 +1150,8 @@ export default class S3Client {
 			throw await getResponseError(response, "");
 		}
 
-		response.body.dump(); // undici docs state that we should dump the body if not used
+		// undici docs state that we should dump the body if not used
+		response.body.dump(); // dump's floating promise should not throw
 		throw new Error(
 			`Response code not implemented yet: ${response.statusCode}`,
 		);

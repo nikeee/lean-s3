@@ -91,7 +91,8 @@ export default class S3File {
 		);
 
 		// Heads don't have a body, but we still need to consume it to avoid leaks
-		await response.body.dump();
+		// undici docs state that we should dump the body if not used
+		response.body.dump(); // dump's floating promise should not throw
 
 		if (200 <= response.statusCode && response.statusCode < 300) {
 			const result = S3Stat.tryParseFromHeaders(response.headers);
@@ -132,7 +133,8 @@ export default class S3File {
 		);
 
 		// Heads don't have a body, but we still need to consume it to avoid leaks
-		await response.body.dump();
+		// undici docs state that we should dump the body if not used
+		response.body.dump(); // dump's floating promise should not throw
 
 		if (200 <= response.statusCode && response.statusCode < 300) {
 			return true;
@@ -188,7 +190,8 @@ export default class S3File {
 		);
 
 		if (response.statusCode === 204) {
-			await response.body.dump(); // Consume the body to avoid leaks
+			// undici docs state that we should dump the body if not used
+			response.body.dump(); // dump's floating promise should not throw
 			return;
 		}
 

@@ -629,3 +629,32 @@ summary(() => {
 });
 
 await run();
+
+// API sketch:
+/*
+new UltraXMLParser({
+    children: {
+        ListPartsResult: objectElement({
+            children: {
+                Bucket: stringElement({ tagName: "Bucket" }),
+                Key: stringElement(),
+                UploadId: stringElement(),
+                PartNumberMarker: integerElement(),
+                NextPartNumberMarker: integerElement(),
+                MaxParts: integerElement(),
+                IsTruncated: booleanElement(),
+                Part: arrayElement({
+                    item: objectElement({
+                        children: {
+                            ETag: stringElement(),
+                            LastModified: dateElement(),
+                            PartNumber: integerElement(),
+                            Size: integerElement(),
+                        }
+                    }),
+                }),
+            },
+        }),
+    },
+});
+*/

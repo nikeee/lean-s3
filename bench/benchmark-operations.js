@@ -296,6 +296,50 @@ summary(() => {
 			}
 		});
 	});
+
+	group(() => {
+
+		// Which is faster, always adding a & and substring(1) or check if we need a preceeding & on every append?
+
+		bench("substring", () => {
+			for (let i = 0 ; i < 1000; ++i) {
+				let a = "";
+				if (Math.random() > 0.5) {
+					a += "&qwert=asdf";
+				}
+				if (Math.random() > 0.5) {
+					a += "&asdsadfsadf=dsljfhsjdkfh";
+				}
+				if (Math.random() > 0.5) {
+					a += "&kflkfdjglkfdjg=dslkfdsjf";
+				}
+
+				a += "&uploadId=12323456432";
+
+				const q = a.substring(1);
+			}
+		});
+		bench("conditional", () => {
+			for (let i = 0 ; i < 1000; ++i) {
+				let a = "";
+				if (Math.random() > 0.5) {
+					a += "&qwert=asdf";
+				}
+				if (Math.random() > 0.5) {
+					if (a.length > 0) a += "&"
+					a += "asdsadfsadf=dsljfhsjdkfh";
+				}
+				if (Math.random() > 0.5) {
+					if (a.length > 0)  a += "&"
+					a += "kflkfdjglkfdjg=dslkfdsjf";
+				}
+
+				if (a.length > 0)  a += "&"
+				a += "uploadId=12323456432";
+			}
+		});
+
+	});
 });
 
 await run();

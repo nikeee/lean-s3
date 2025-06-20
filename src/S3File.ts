@@ -12,6 +12,7 @@ import {
 import { sha256 } from "./sign.ts";
 import { fromStatusCode, getResponseError } from "./error.ts";
 import assertNever from "./assertNever.ts";
+import type { ObjectKey } from "./branded.ts";
 
 // TODO: If we want to hack around, we can use this to access the private implementation of the "get stream" algorithm used by Node.js's blob internally
 // We probably have to do this some day if the fetch implementation is moved to internals.
@@ -22,7 +23,7 @@ import assertNever from "./assertNever.ts";
 // const kHandle = Object.getOwnPropertySymbols(new Blob).find(s => s.toString() === 'Symbol(kHandle)');
 export default class S3File {
 	#client: S3Client;
-	#path: string;
+	#path: ObjectKey;
 	#start: number | undefined;
 	#end: number | undefined;
 	#contentType: string;
@@ -32,7 +33,7 @@ export default class S3File {
 	 */
 	constructor(
 		client: S3Client,
-		path: string,
+		path: ObjectKey,
 		start: number | undefined,
 		end: number | undefined,
 		contentType: string | undefined,

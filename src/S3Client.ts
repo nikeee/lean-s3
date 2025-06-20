@@ -25,7 +25,12 @@ import type {
 } from "./index.ts";
 import { getResponseError } from "./error.ts";
 import { getAuthorizationHeader } from "./request.ts";
-import type { BucketName } from "./branded.ts";
+import {
+	ensureValidBucketName,
+	ensureValidPath,
+	type BucketName,
+	type ObjectKey,
+} from "./branded.ts";
 
 export const write = Symbol("write");
 export const stream = Symbol("stream");
@@ -356,7 +361,13 @@ export default class S3Client {
 	file(path: string, _options?: Partial<CreateFileInstanceOptions>): S3File {
 		// TODO: Check max path length in bytes
 		// TODO: Use options
-		return new S3File(this, path, undefined, undefined, undefined);
+		return new S3File(
+			this,
+			ensureValidPath(path),
+			undefined,
+			undefined,
+			undefined,
+		);
 	}
 
 	/**
@@ -455,12 +466,11 @@ export default class S3Client {
 		options: CreateMultipartUploadOptions = {},
 	): Promise<CreateMultipartUploadResult> {
 		if (key.length < 1) {
-			throw new RangeError("`key` must be at least 1 character long.");
 		}
 
 		const response = await this[signedRequest](
 			"POST",
-			key,
+			ensureValidPath(key),
 			"uploads=",
 			undefined,
 			undefined,
@@ -538,7 +548,7 @@ export default class S3Client {
 
 		const response = await this[signedRequest](
 			"GET",
-			"",
+			"" as ObjectKey,
 			query,
 			undefined,
 			undefined,
@@ -589,20 +599,17 @@ export default class S3Client {
 	 * @throws {Error} If `uploadId` is not provided.
 	 */
 	async abortMultipartUpload(
-		key: string,
+		path: string,
 		uploadId: string,
 		options: AbortMultipartUploadOptions = {},
 	): Promise<void> {
-		if (key.length < 1) {
-			throw new RangeError("`key` must be at least 1 character long.");
-		}
 		if (!uploadId) {
 			throw new Error("`uploadId` is required.");
 		}
 
 		const response = await this[signedRequest](
 			"DELETE",
-			key,
+			ensureValidPath(path),
 			`uploadId=${encodeURIComponent(uploadId)}`,
 			undefined,
 			undefined,
@@ -613,7 +620,7 @@ export default class S3Client {
 		);
 
 		if (response.statusCode !== 204) {
-			throw await getResponseError(response, key);
+			throw await getResponseError(response, path);
 		}
 	}
 
@@ -623,14 +630,11 @@ export default class S3Client {
 	 * @throws {Error} If `uploadId` is not provided.
 	 */
 	async completeMultipartUpload(
-		key: string,
+		path: string,
 		uploadId: string,
 		parts: readonly MultipartUploadPart[],
 		options: CompleteMultipartUploadOptions = {},
 	): Promise<CompleteMultipartUploadResult> {
-		if (key.length < 1) {
-			throw new RangeError("`key` must be at least 1 character long.");
-		}
 		if (!uploadId) {
 			throw new Error("`uploadId` is required.");
 		}
@@ -646,7 +650,7 @@ export default class S3Client {
 
 		const response = await this[signedRequest](
 			"POST",
-			key,
+			ensureValidPath(path),
 			`uploadId=${encodeURIComponent(uploadId)}`,
 			body,
 			undefined,
@@ -657,7 +661,7 @@ export default class S3Client {
 		);
 
 		if (response.statusCode !== 200) {
-			throw await getResponseError(response, key);
+			throw await getResponseError(response, path);
 		}
 		const text = await response.body.text();
 		const res = ensureParsedXml(text).CompleteMultipartUploadResult ?? {};
@@ -682,15 +686,12 @@ export default class S3Client {
 	 * @throws {Error} If `uploadId` is not provided.
 	 */
 	async uploadPart(
-		key: string,
+		path: string,
 		uploadId: string,
 		data: UndiciBodyInit,
 		partNumber: number,
 		options: UploadPartOptions = {},
 	): Promise<UploadPartResult> {
-		if (key.length < 1) {
-			throw new RangeError("`key` must be at least 1 character long.");
-		}
 		if (!uploadId) {
 			throw new Error("`uploadId` is required.");
 		}
@@ -703,7 +704,7 @@ export default class S3Client {
 
 		const response = await this[signedRequest](
 			"PUT",
-			key,
+			ensureValidPath(path),
 			`partNumber=${partNumber}&uploadId=${encodeURIComponent(uploadId)}`,
 			data,
 			undefined,
@@ -740,7 +741,7 @@ export default class S3Client {
 	 * @throws {TypeError} If `options.partNumberMarker` is not a `string`.
 	 */
 	async listParts(
-		key: string,
+		path: string,
 		uploadId: string,
 		options: ListPartsOptions = {},
 	): Promise<ListPartsResult> {
@@ -768,7 +769,7 @@ export default class S3Client {
 
 		const response = await this[signedRequest](
 			"GET",
-			key,
+			ensureValidPath(path),
 			// We always have a leading &, so we can slice the leading & away (this way, we have less conditionals on the hot path); see benchmark-operations.js
 			query.substring(1),
 			undefined,
@@ -803,7 +804,7 @@ export default class S3Client {
 			};
 		}
 
-		throw await getResponseError(response, key);
+		throw await getResponseError(response, path);
 	}
 
 	//#endregion
@@ -860,7 +861,7 @@ export default class S3Client {
 
 		const response = await this[signedRequest](
 			"PUT",
-			"",
+			"" as ObjectKey,
 			undefined,
 			body,
 			additionalSignedHeaders,
@@ -893,7 +894,7 @@ export default class S3Client {
 	async deleteBucket(name: string, options?: BucketDeletionOptions) {
 		const response = await this[signedRequest](
 			"DELETE",
-			"",
+			"" as ObjectKey,
 			undefined,
 			undefined,
 			undefined,
@@ -927,7 +928,7 @@ export default class S3Client {
 	): Promise<boolean> {
 		const response = await this[signedRequest](
 			"HEAD",
-			"",
+			"" as ObjectKey,
 			undefined,
 			undefined,
 			undefined,
@@ -1042,7 +1043,7 @@ export default class S3Client {
 
 		const response = await this[signedRequest](
 			"GET",
-			"",
+			"" as ObjectKey,
 			query,
 			undefined,
 			undefined,
@@ -1101,7 +1102,7 @@ export default class S3Client {
 
 		const response = await this[signedRequest](
 			"POST",
-			"",
+			"" as ObjectKey,
 			"delete=", // "=" is needed by minio for some reason
 			body,
 			{
@@ -1158,7 +1159,7 @@ export default class S3Client {
 	 */
 	async [signedRequest](
 		method: HttpMethod,
-		pathWithoutBucket: string,
+		pathWithoutBucket: ObjectKey,
 		query: string | undefined,
 		body: UndiciBodyInit | undefined,
 		additionalSignedHeaders: Record<string, string> | undefined,
@@ -1499,27 +1500,6 @@ export function buildSearchParams(
 		res += `&X-Amz-Storage-Class=${storageClass}`;
 	}
 	return res;
-}
-
-function ensureValidBucketName(name: string): BucketName {
-	if (name.length < 3 || name.length > 63) {
-		throw new Error("`name` must be between 3 and 63 characters long.");
-	}
-
-	if (name.startsWith(".") || name.endsWith(".")) {
-		throw new Error("`name` must not start or end with a period (.)");
-	}
-
-	if (!/^[a-z0-9.-]+$/.test(name)) {
-		throw new Error(
-			"`name` can only contain lowercase letters, numbers, periods (.), and hyphens (-).",
-		);
-	}
-
-	if (name.includes("..")) {
-		throw new Error("`name` must not contain two adjacent periods (..)");
-	}
-	return name as BucketName;
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: parsing result is just unknown

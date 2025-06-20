@@ -729,6 +729,14 @@ export default class S3Client {
 		throw await getResponseError(response, "");
 	}
 
+	/**
+	 * @remarks Uses [`ListParts`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListParts.html).
+	 * @throws {RangeError} If `key` is not at least 1 character long.
+	 * @throws {Error} If `uploadId` is not provided.
+	 * @throws {TypeError} If `options.maxParts` is not a `number`.
+	 * @throws {RangeError} If `options.maxParts` is <= 0.
+	 * @throws {TypeError} If `options.partNumberMarker` is not a `string`.
+	 */
 	async listParts(
 		key: string,
 		uploadId: string,

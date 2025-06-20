@@ -180,6 +180,9 @@ export type UploadPartResult = {
 export type ListPartsOptions = {
 	maxParts?: number;
 	partNumberMarker?: string;
+
+	bucket?: string;
+	signal?: AbortSignal;
 };
 export type ListPartsResult = {
 	bucket: string;
@@ -726,8 +729,47 @@ export default class S3Client {
 		throw await getResponseError(response, "");
 	}
 
-	async listParts(key: string, uploadId: string, options: ListPartsOptions): Promise<ListPartsResult> {
-		throw new Error("Not implemented");
+	async listParts(key: string, uploadId: string, options: ListPartsOptions = {}): Promise<ListPartsResult> {
+		let query = "";
+
+		if (options.maxParts) {
+			if (typeof options.maxParts !== "number") {
+				throw new TypeError("`maxParts` must be a `number`.");
+			}
+			if (options.maxParts <= 0) {
+				throw new RangeError("`maxParts` must be >= 1.");
+			}
+
+			query += `&max-parts=${options.maxParts}`;
+		}
+
+		if (options.partNumberMarker) {
+			if (typeof options.partNumberMarker !== "string") {
+				throw new TypeError("`partNumberMarker` must be a `string`.");
+			}
+			query += `&part-number-marker=${encodeURIComponent(options.partNumberMarker)}`;
+		}
+
+		query += `&uploadId=${encodeURIComponent(uploadId)}`;
+
+		const response = await this[signedRequest](
+			"GET",
+			key,
+			// We always have a leading &, so we can slice the leading & away (this way, we have less conditionals on the hot path); see benchmark-operations.js
+			query.substring(1),
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			ensureValidBucketName(options.bucket ?? this.#options.bucket),
+			options?.signal,
+		);
+
+		if (response.statusCode === 200) {
+			throw new Error("Not implemented");
+		}
+
+		throw await getResponseError(response, key);
 	}
 
 	//#endregion

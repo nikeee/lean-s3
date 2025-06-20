@@ -1,7 +1,7 @@
 //@ts-check
 import { createHash } from "node:crypto";
 
-import { summary, group, bench, run } from "mitata";
+import { summary, group, bench, run, do_not_optimize } from "mitata";
 
 /**
  * @module Case study whether to use URLSearchParams or manual string concat for simple search params.
@@ -339,6 +339,65 @@ summary(() => {
 			}
 		});
 
+		function fnWithDefaultParam(options = {}) {
+			let s = 0;
+			if (options.a) {
+				s += 1;
+			}
+			if (options.b) {
+				s += 10;
+			}
+			if (options.c) {
+				s += 100;
+			}
+			if (options.d) {
+				s += 1000;
+			}
+			return s;
+		}
+
+		function fnWithOptionalParam(options) {
+			let s = 0;
+			if (options?.a) {
+				s += 1;
+			}
+			if (options?.b) {
+				s += 10;
+			}
+			if (options?.c) {
+				s += 100;
+			}
+			if (options?.d) {
+				s += 1000;
+			}
+			return s;
+		}
+
+		// What is faster, passing an empty object as a default or accepting undefined and use safe-navigation?
+		// -> This is probably hard to benchmark and the results are pretty close -> we don't care
+
+		group(() => {
+			bench("allocation", () => {
+				for (let i = 0; i < 1000; ++i) {
+					do_not_optimize(fnWithDefaultParam());
+					do_not_optimize(fnWithDefaultParam({a: true}));
+					do_not_optimize(fnWithDefaultParam({a: true, b: true}));
+					do_not_optimize(fnWithDefaultParam());
+					do_not_optimize(fnWithDefaultParam());
+					do_not_optimize(fnWithDefaultParam());
+				}
+			});
+			bench("conditional", () => {
+				for (let i = 0; i < 1000; ++i) {
+					do_not_optimize(fnWithOptionalParam());
+					do_not_optimize(fnWithOptionalParam({a: true}));
+					do_not_optimize(fnWithOptionalParam({a: true, b: true}));
+					do_not_optimize(fnWithOptionalParam());
+					do_not_optimize(fnWithOptionalParam());
+					do_not_optimize(fnWithOptionalParam());
+				}
+			});
+		});
 	});
 });
 

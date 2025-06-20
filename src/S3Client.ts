@@ -497,7 +497,7 @@ export default class S3Client {
 
 		if (options.delimiter) {
 			if (typeof options.delimiter !== "string") {
-				throw new TypeError("`delimiter` should be a `string`.");
+				throw new TypeError("`delimiter` must be a `string`.");
 			}
 
 			query += `&delimiter=${encodeURIComponent(options.delimiter)}`;
@@ -507,17 +507,17 @@ export default class S3Client {
 
 		if (options.keyMarker) {
 			if (typeof options.keyMarker !== "string") {
-				throw new TypeError("`keyMarker` should be a `string`.");
+				throw new TypeError("`keyMarker` must be a `string`.");
 			}
 
 			query += `&key-marker=${encodeURIComponent(options.keyMarker)}`;
 		}
 		if (typeof options.maxUploads !== "undefined") {
 			if (typeof options.maxUploads !== "number") {
-				throw new TypeError("`maxUploads` should be a `number`.");
+				throw new TypeError("`maxUploads` must be a `number`.");
 			}
 			if (options.maxUploads < 1 || options.maxUploads > 1000) {
-				throw new RangeError("`maxUploads` should be between 1 and 1000.");
+				throw new RangeError("`maxUploads` has to be between 1 and 1000.");
 			}
 
 			query += `&max-uploads=${options.maxUploads}`; // no encoding needed, it's a number
@@ -525,7 +525,7 @@ export default class S3Client {
 
 		if (options.prefix) {
 			if (typeof options.prefix !== "string") {
-				throw new TypeError("`prefix` should be a `string`.");
+				throw new TypeError("`prefix` must be a `string`.");
 			}
 
 			query += `&prefix=${encodeURIComponent(options.prefix)}`;
@@ -925,7 +925,7 @@ export default class S3Client {
 
 		if (typeof options.continuationToken !== "undefined") {
 			if (typeof options.continuationToken !== "string") {
-				throw new TypeError("`continuationToken` should be a `string`.");
+				throw new TypeError("`continuationToken` must be a `string`.");
 			}
 
 			query += `continuation-token=${encodeURIComponent(options.continuationToken)}&`;
@@ -935,11 +935,11 @@ export default class S3Client {
 
 		if (typeof options.maxKeys !== "undefined") {
 			if (typeof options.maxKeys !== "number") {
-				throw new TypeError("`maxKeys` should be a `number`.");
+				throw new TypeError("`maxKeys` must be a `number`.");
 			}
 
 			if (options.maxKeys < 1 || options.maxKeys > 1000) {
-				throw new RangeError("`maxKeys` should be between 1 and 1000.");
+				throw new RangeError("`maxKeys` has to be between 1 and 1000.");
 			}
 
 			query += `&max-keys=${options.maxKeys}`; // no encoding needed, it's a number
@@ -950,7 +950,7 @@ export default class S3Client {
 		// plain `if(a)` check, so empty strings will also not go into this branch, omitting the parameter
 		if (options.prefix) {
 			if (typeof options.prefix !== "string") {
-				throw new TypeError("`prefix` should be a `string`.");
+				throw new TypeError("`prefix` must be a `string`.");
 			}
 
 			query += `&prefix=${encodeURIComponent(options.prefix)}`;
@@ -958,7 +958,7 @@ export default class S3Client {
 
 		if (typeof options.startAfter !== "undefined") {
 			if (typeof options.startAfter !== "string") {
-				throw new TypeError("`startAfter` should be a `string`.");
+				throw new TypeError("`startAfter` must be a `string`.");
 			}
 
 			query += `&start-after=${encodeURIComponent(options.startAfter)}`;

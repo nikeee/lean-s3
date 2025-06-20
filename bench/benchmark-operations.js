@@ -4,6 +4,8 @@ import { createHash } from "node:crypto";
 import { summary, group, bench, run, do_not_optimize } from "mitata";
 import { XMLParser } from "fast-xml-parser";
 
+import { parseListPartsResult } from "./xml.ts";
+
 /**
  * @module Case study whether to use URLSearchParams or manual string concat for simple search params.
  */
@@ -429,6 +431,11 @@ summary(() => {
 			bench("parse buffer with fxp", () => {
 				for(let i = 0; i < 10000; ++i) {
 					xmlParser.parse(b);
+				}
+			});
+			bench("custom parser", () => {
+				for(let i = 0; i < 10000; ++i) {
+					parseListPartsResult(s);
 				}
 			});
 		});

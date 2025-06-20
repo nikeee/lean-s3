@@ -86,6 +86,7 @@ export type ListObjectsOptions = {
 
 	prefix?: string;
 	maxKeys?: number;
+	delimiter?: string;
 	startAfter?: string;
 	continuationToken?: string;
 	signal?: AbortSignal;
@@ -1025,7 +1026,12 @@ export default class S3Client {
 			query += `&max-keys=${options.maxKeys}`; // no encoding needed, it's a number
 		}
 
-		// TODO: delimiter?
+		if (typeof options.delimiter !== "undefined") {
+			if (typeof options.delimiter !== "string") {
+				throw new TypeError("`delimiter` must be a `string`.");
+			}
+			query += `&delimiter=${options.delimiter === "/" ? "/" : encodeURIComponent(options.delimiter)}`;
+		}
 
 		// plain `if(a)` check, so empty strings will also not go into this branch, omitting the parameter
 		if (options.prefix) {

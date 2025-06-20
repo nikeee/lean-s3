@@ -25,6 +25,7 @@ import type {
 } from "./index.ts";
 import { getResponseError } from "./error.ts";
 import { getAuthorizationHeader } from "./request.ts";
+import type { BucketName } from "./branded.ts";
 
 export const write = Symbol("write");
 export const stream = Symbol("stream");
@@ -61,6 +62,7 @@ export type OverridableS3ClientOptions = Pick<
 export type CreateFileInstanceOptions = {}; // TODO
 
 export type DeleteObjectsOptions = {
+	bucket?: string;
 	signal?: AbortSignal;
 };
 
@@ -1046,7 +1048,7 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			options.bucket ?? this.#options.bucket,
+			ensureValidBucketName(options.bucket ?? this.#options.bucket),
 			options.signal,
 		);
 
@@ -1107,7 +1109,7 @@ export default class S3Client {
 			},
 			undefined,
 			undefined,
-			this.#options.bucket,
+			ensureValidBucketName(options.bucket ?? this.#options.bucket),
 			options.signal,
 		);
 
@@ -1162,7 +1164,7 @@ export default class S3Client {
 		additionalSignedHeaders: Record<string, string> | undefined,
 		additionalUnsignedHeaders: Record<string, string> | undefined,
 		contentHash: Buffer | undefined,
-		bucket: string | undefined,
+		bucket: BucketName | undefined,
 		signal: AbortSignal | undefined = undefined,
 	) {
 		const endpoint = this.#options.endpoint;
@@ -1499,8 +1501,7 @@ export function buildSearchParams(
 	return res;
 }
 
-/** TODO: Create a branded type, so we can ensure that we always check bucket names */
-function ensureValidBucketName(name: string) {
+function ensureValidBucketName(name: string): BucketName {
 	if (name.length < 3 || name.length > 63) {
 		throw new Error("`name` must be between 3 and 63 characters long.");
 	}
@@ -1518,7 +1519,7 @@ function ensureValidBucketName(name: string) {
 	if (name.includes("..")) {
 		throw new Error("`name` must not contain two adjacent periods (..)");
 	}
-	return name;
+	return name as BucketName;
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: parsing result is just unknown

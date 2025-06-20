@@ -44,7 +44,6 @@
   },
   "dependencies": {
     "fast-xml-parser": "^5.2.5",
-    "i": "^0.3.7",
     "undici": "^7.10.0"
   },
   "devDependencies": {

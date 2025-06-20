@@ -35,6 +35,7 @@ const xmlParser = new XMLParser({
 	isArray: (_, jPath) =>
 		jPath === "ListMultipartUploadsResult.Upload" ||
 		jPath === "ListBucketResult.Contents" ||
+		jPath === "ListPartsResult.Part" ||
 		jPath === "DeleteResult.Deleted" ||
 		jPath === "DeleteResult.Error",
 });
@@ -175,6 +176,48 @@ export type UploadPartOptions = {
 export type UploadPartResult = {
 	partNumber: number;
 	etag: string;
+};
+export type ListPartsOptions = {
+	maxParts?: number;
+	partNumberMarker?: string;
+};
+export type ListPartsResult = {
+	bucket: string;
+	key: string;
+	uploadId: string;
+	partNumberMarker?: string;
+	nextPartNumberMarker?: string;
+	maxParts?: number;
+	isTruncated: boolean;
+	parts: Array<{
+		checksumCRC32?: string;
+		checksumCRC32C?: string;
+		checksumCRC64NVME?: string;
+		checksumSHA1?: string;
+		checksumSHA256?: string;
+		etag: string;
+		lastModified: Date;
+		partNumber: number;
+		size: number;
+	}>;
+
+	storageClass?: StorageClass;
+	checksumAlgorithm?: ChecksumAlgorithm;
+	checksumType?: ChecksumType;
+
+	// TODO
+	// initiator: unknown;
+	// <Initiator>
+	// 	<DisplayName>string</DisplayName>
+	// 	<ID>string</ID>
+	// </Initiator>
+
+	// TODO
+	// owner: unknown;
+	// <Owner>
+	// 	<DisplayName>string</DisplayName>
+	// 	<ID>string</ID>
+	// </Owner>
 };
 
 export type ListObjectsResult = {
@@ -681,6 +724,10 @@ export default class S3Client {
 		}
 
 		throw await getResponseError(response, "");
+	}
+
+	async listParts(key: string, uploadId: string, options: ListPartsOptions): Promise<ListPartsResult> {
+		throw new Error("Not implemented");
 	}
 
 	//#endregion

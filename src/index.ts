@@ -15,6 +15,8 @@ export {
 	type ListObjectsResult,
 	type ListMultipartUploadsOptions,
 	type ListMultipartUploadsResult,
+	type ListPartsOptions,
+	type ListPartsResult,
 	type AbortMultipartUploadOptions,
 	type UploadPartOptions,
 	type UploadPartResult,

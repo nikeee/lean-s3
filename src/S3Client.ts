@@ -729,7 +729,11 @@ export default class S3Client {
 		throw await getResponseError(response, "");
 	}
 
-	async listParts(key: string, uploadId: string, options: ListPartsOptions = {}): Promise<ListPartsResult> {
+	async listParts(
+		key: string,
+		uploadId: string,
+		options: ListPartsOptions = {},
+	): Promise<ListPartsResult> {
 		let query = "";
 
 		if (options.maxParts) {
@@ -766,7 +770,27 @@ export default class S3Client {
 		);
 
 		if (response.statusCode === 200) {
-			throw new Error("Not implemented");
+			const text = await response.body.text();
+			const root = ensureParsedXml(text).ListPartsResult ?? {};
+			return {
+				bucket: root.Bucket,
+				key: root.Key,
+				uploadId: root.UploadId,
+				partNumberMarker: root.PartNumberMarker ?? undefined,
+				nextPartNumberMarker: root.NextPartNumberMarker ?? undefined,
+				maxParts: root.MaxParts ?? 1000,
+				isTruncated: root.IsTruncated ?? false,
+				parts:
+					// biome-ignore lint/suspicious/noExplicitAny: parsing code
+					root.Part?.map((part: any) => ({
+						etag: part.ETag,
+						lastModified: part.LastModified
+							? new Date(part.LastModified)
+							: undefined,
+						partNumber: part.PartNumber ?? undefined,
+						size: part.Size ?? undefined,
+					})) ?? [],
+			};
 		}
 
 		throw await getResponseError(response, key);

@@ -687,5 +687,66 @@ export function runTests(
 				}),
 			);
 		});
+
+		test("list parts", async () => {
+			const testId = crypto.randomUUID();
+			const key = `${testId}/foo-key-9000`;
+
+			const res = await client.createMultipartUpload(key);
+			expect(res).toStrictEqual({
+				bucket: expect.any(String),
+				key: key,
+				uploadId: expect.any(String),
+			});
+
+			try {
+				// R2 requires parts to be at least 5 MiB. Also, they have to be the same size (except the last one, which has to be <= in size)
+				const parts = [
+					Buffer.alloc(6 * 1024 * 1024).fill(1),
+					Buffer.alloc(6 * 1024 * 1024).fill(2),
+					Buffer.alloc(1 * 1024 * 1024).fill(3),
+				];
+
+				await client.uploadPart(res.key, res.uploadId, parts[0], 1);
+				await client.uploadPart(res.key, res.uploadId, parts[1], 2);
+				await client.uploadPart(res.key, res.uploadId, parts[2], 3);
+
+				const availableParts = await client.listParts(key, res.uploadId);
+
+				expect(availableParts).toStrictEqual(
+					expect.objectContaining({
+						bucket: expect.any(String),
+						key,
+						uploadId: res.uploadId,
+						partNumberMarker: 0,
+						nextPartNumberMarker: expect.any(Number), // Minio returns 0, localstack returns 3
+						maxParts: expect.any(Number),
+						isTruncated: false,
+						parts: [
+							expect.objectContaining({
+								etag: expect.any(String),
+								lastModified: expect.any(Date),
+								partNumber: 1,
+								size: 6 * 1024 * 1024,
+							}),
+							expect.objectContaining({
+								etag: expect.any(String),
+								lastModified: expect.any(Date),
+								partNumber: 2,
+								size: 6 * 1024 * 1024,
+							}),
+							expect.objectContaining({
+								etag: expect.any(String),
+								lastModified: expect.any(Date),
+								partNumber: 3,
+								size: 1 * 1024 * 1024,
+							}),
+						],
+					}),
+				);
+			} finally {
+				await client.abortMultipartUpload(res.key, res.uploadId);
+			}
+		});
 	});
 }

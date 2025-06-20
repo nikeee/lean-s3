@@ -28,9 +28,7 @@ export default class S3File {
 	#end: number | undefined;
 	#contentType: string;
 
-	/**
-	 * @internal
-	 */
+	/** @internal */
 	constructor(
 		client: S3Client,
 		path: ObjectKey,
@@ -77,7 +75,7 @@ export default class S3File {
 	 * @throws {S3Error} If the file does not exist or the server has some other issues.
 	 * @throws {Error} If the server returns an invalid response.
 	 */
-	async stat({ signal }: Partial<S3StatOptions> = {}): Promise<S3Stat> {
+	async stat(options: Partial<S3StatOptions> = {}): Promise<S3Stat> {
 		// TODO: Support all options
 
 		const response = await this.#client[signedRequest](
@@ -89,7 +87,7 @@ export default class S3File {
 			undefined,
 			undefined,
 			undefined,
-			signal,
+			options.signal,
 		);
 
 		// Heads don't have a body, but we still need to consume it to avoid leaks
@@ -118,9 +116,7 @@ export default class S3File {
 	 *
 	 * @remarks Uses [`HeadObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html).
 	 */
-	async exists({
-		signal,
-	}: Partial<S3FileExistsOptions> = {}): Promise<boolean> {
+	async exists(options: Partial<S3FileExistsOptions> = {}): Promise<boolean> {
 		// TODO: Support all options
 
 		const response = await this.#client[signedRequest](
@@ -132,7 +128,7 @@ export default class S3File {
 			undefined,
 			undefined,
 			undefined,
-			signal,
+			options.signal,
 		);
 
 		// Heads don't have a body, but we still need to consume it to avoid leaks
@@ -165,18 +161,18 @@ export default class S3File {
 	 * @example
 	 * ```js
 	 * // Simple delete
-	 * await client.unlink("old-file.txt");
+	 * await client.delete("old-file.txt");
 	 *
 	 * // With error handling
 	 * try {
-	 *   await client.unlink("file.dat");
+	 *   await client.delete("file.dat");
 	 *   console.log("File deleted");
 	 * } catch (err) {
 	 *   console.error("Delete failed:", err);
 	 * }
 	 * ```
 	 */
-	async delete({ signal }: Partial<S3FileDeleteOptions> = {}): Promise<void> {
+	async delete(options: Partial<S3FileDeleteOptions> = {}): Promise<void> {
 		// TODO: Support all options
 
 		const response = await this.#client[signedRequest](
@@ -188,7 +184,7 @@ export default class S3File {
 			undefined,
 			undefined,
 			undefined,
-			signal,
+			options.signal,
 		);
 
 		if (response.statusCode === 204) {
@@ -302,10 +298,6 @@ export default class S3File {
 
 	/*
 	// Future API?
-	writer(): WritableStream<ArrayBufferLike | ArrayBufferView> {
-		throw new Error("Not implemented");
-	}
-	// Future API?
 	setTags(): Promise<void> {
 		throw new Error("Not implemented");
 	}
@@ -318,7 +310,6 @@ export default class S3File {
 export interface S3FileDeleteOptions extends OverridableS3ClientOptions {
 	signal: AbortSignal;
 }
-
 export interface S3StatOptions extends OverridableS3ClientOptions {
 	signal: AbortSignal;
 }

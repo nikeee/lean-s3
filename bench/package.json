@@ -17,6 +17,7 @@
     "@testcontainers/minio": "^11.0.3",
     "aws4fetch": "^1.0.20",
     "bun": "^1.2.16",
+    "fast-xml-parser": "^5.2.5",
     "minio": "^8.0.5",
     "mitata": "^1.0.34",
     "s3mini": "^0.2.0",

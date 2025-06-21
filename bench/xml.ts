@@ -49,10 +49,7 @@ export function parseListPartsResult(text: string) {
 						res.UploadId = parseStringTag(scanner, "UploadId");
 						break;
 					case "PartNumberMarker":
-						res.PartNumberMarker = parseIntegerTag(
-							scanner,
-							"PartNumberMarker",
-						);
+						res.PartNumberMarker = parseIntegerTag(scanner, "PartNumberMarker");
 						break;
 					case "NextPartNumberMarker":
 						res.NextPartNumberMarker = parseIntegerTag(
@@ -353,7 +350,8 @@ function emitRootParser(spec, globals: Map<unknown, string>): string {
 
 	const { children } = spec;
 
-	return `
+	return (
+		`
 ${emitChildParsers(spec, globals)}
 function ${parseFn}(scanner) {
 	// Init structure entirely, so v8 can create a single hidden class
@@ -391,7 +389,8 @@ function ${parseFn}(scanner) {
 				throw new Error(\`Unhandled token kind: \${scanner.token}\`);
 		}
 	} while (true);
-}`.trim() + "\n";
+}`.trim() + "\n"
+	);
 }
 function emitObjectParser(
 	spec,
@@ -403,7 +402,8 @@ function emitObjectParser(
 
 	const { children } = spec;
 
-	return `
+	return (
+		`
 ${emitChildParsers(spec, globals)}
 function ${parseFn}(scanner) {
 	// Init structure entirely, so v8 can create a single hidden class
@@ -449,10 +449,51 @@ function ${parseFn}(scanner) {
 		}
 	} while (true);
 }
-`.trim() + "\n";
+`.trim() + "\n"
+	);
 }
 
-const rootSpec = {
+type ParseSpec =
+	| ObjectSpec
+	| ArraySpec
+	| StringSpec
+	| BooleanSpec
+	| IntegerSpec
+	| DateSpec;
+
+type RootSpec = {
+	type: "root";
+	tagName?: string;
+	children: Record<string, ParseSpec>;
+};
+type ObjectSpec = {
+	type: "object";
+	tagName?: string;
+	children: Record<string, ParseSpec>;
+};
+type ArraySpec = {
+	type: "array";
+	tagName?: string;
+	item: ParseSpec;
+};
+type StringSpec = {
+	type: "string";
+	tagName?: string;
+};
+type BooleanSpec = {
+	type: "boolean";
+	tagName?: string;
+};
+type IntegerSpec = {
+	type: "integer";
+	tagName?: string;
+};
+type DateSpec = {
+	type: "date";
+	tagName?: string;
+};
+
+const rootSpec: RootSpec = {
 	type: "root",
 	children: {
 		result: {
@@ -464,7 +505,10 @@ const rootSpec = {
 				uploadId: { type: "string", tagName: "UploadId" },
 				storageClass: { type: "string", tagName: "StorageClass" },
 				partNumberMarker: { type: "integer", tagName: "PartNumberMarker" },
-				nextPartNumberMarker: { type: "integer", tagName: "NextPartNumberMarker" },
+				nextPartNumberMarker: {
+					type: "integer",
+					tagName: "NextPartNumberMarker",
+				},
 				maxParts: { type: "integer", tagName: "MaxParts" },
 				isTruncated: { type: "boolean", tagName: "IsTruncated" },
 				initiator: {
@@ -489,10 +533,10 @@ const rootSpec = {
 					item: {
 						type: "object",
 						children: {
-							ETag: { type: "string" },
-							LastModified: { type: "date" },
-							PartNumber: { type: "integer" },
-							Size: { type: "integer" },
+							etag: { type: "string", tagName: "ETag" },
+							lastModified: { type: "date", tagName: "LastModified" },
+							partNumber: { type: "integer", tagName: "PartNumber" },
+							size: { type: "integer", tagName: "Size" },
 						},
 					},
 				},

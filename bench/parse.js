@@ -140,7 +140,7 @@ function fn_1_ListPartsResult(scanner) {
 		isTruncated: undefined,
 		initiator: undefined,
 		owner: undefined,
-		parts: undefined,
+		parts: [],
 	};
 
 	skipAttributes(scanner);
@@ -162,7 +162,6 @@ function fn_1_ListPartsResult(scanner) {
 				if (res.isTruncated === undefined) throw new TypeError(`Value for field "isTruncated" was required but not present (expected as tag name "IsTruncated").`);
 				if (res.initiator === undefined) throw new TypeError(`Value for field "initiator" was required but not present (expected as tag name "Initiator").`);
 				if (res.owner === undefined) throw new TypeError(`Value for field "owner" was required but not present (expected as tag name "Owner").`);
-				if (res.parts === undefined) throw new TypeError(`Value for field "parts" was required but not present (expected as tag name "Part").`);
 				return res;
 			}
 			case tokenKind.startTag: {
@@ -199,7 +198,7 @@ function fn_1_ListPartsResult(scanner) {
 						res.owner = fn_3_Owner(scanner);
 						break;
 					case "Part":
-						(res.parts ??= []).push(fn_4_Part(scanner));
+						res.parts.push(fn_4_Part(scanner));
 						break;
 					default:
 						throw new Error(`Unexpected tag identifier: ${scanner.tokenValue}`);

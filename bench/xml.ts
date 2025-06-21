@@ -147,12 +147,14 @@ function ${parseFn}(scanner) {
 		switch (scanner.token) {
 			case tokenKind.eof: {
 				${Object.entries(children)
-						.map(([name, childSpec]) =>
-							childSpec.optional
-								? ""
-								: `if (res.${name} === undefined) throw new TypeError(\`Value for field "${name}" was required but not present (expected as tag name "${childSpec.tagName ?? name}").\`);`,
-						)
-						.join("\n\t\t\t\t")}
+					.map(([name, childSpec]) =>
+						childSpec.optional ||
+						(childSpec.type === "array" && childSpec.defaultEmpty)
+							? undefined
+							: `if (res.${name} === undefined) throw new TypeError(\`Value for field "${name}" was required but not present (expected as tag name "${childSpec.tagName ?? name}").\`);`,
+					)
+					.filter(s => !!s)
+					.join("\n\t\t\t\t")}
 				return res;
 			}
 			case tokenKind.startTag: {
@@ -219,10 +221,12 @@ function ${parseFn}(scanner) {
 				scanExpected(scanner, tokenKind.endTag);
 				${Object.entries(children)
 					.map(([name, childSpec]) =>
-						childSpec.optional
-							? ""
+						childSpec.optional ||
+						(childSpec.type === "array" && childSpec.defaultEmpty)
+							? undefined
 							: `if (res.${name} === undefined) throw new TypeError(\`Value for field "${name}" was required but not present (expected as tag name "${childSpec.tagName ?? name}").\`);`,
 					)
+					.filter(s => !!s)
 					.join("\n\t\t\t\t")}
 				return res;
 			}
@@ -392,6 +396,7 @@ const _parser = buildParser({
 				parts: {
 					type: "array",
 					tagName: "Part",
+					defaultEmpty: true,
 					item: {
 						type: "object",
 						children: {

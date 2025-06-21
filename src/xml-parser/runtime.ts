@@ -22,6 +22,27 @@ export class Scanner {
 		this.text = text;
 	}
 
+	skipPreamble() {
+		// TODO: Make this optional
+		let inPreamble = false;
+		while (true) {
+			const ch = this.text.charCodeAt(this.pos);
+			++this.pos;
+			switch (ch) {
+				case charCode.lessThan:
+					inPreamble = true;
+					break;
+				case charCode.greaterThan:
+					if (inPreamble) {
+						return;
+					}
+					break;
+				default:
+					break;
+			}
+		}
+	}
+
 	scan(): number {
 		this.startPos = this.pos;
 
@@ -251,6 +272,7 @@ const charCode = {
 	lessThan: 0x3c, // <
 	slash: 0x2f, // /
 	exclamationMark: 33,
+	questionMark: 63,
 	minus: 0x2d,
 
 	equals: 0x3d, // =

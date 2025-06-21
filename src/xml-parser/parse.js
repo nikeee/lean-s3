@@ -284,6 +284,7 @@ function root_parse_fn_0(scanner) {
 	const res = {
 		result: undefined,
 	};
+	scanner.skipPreamble();
 
 	do {
 		scanner.scan();

@@ -141,6 +141,7 @@ function ${parseFn}(scanner) {
 			)
 			.join("\n\t\t")}
 	};
+	scanner.skipPreamble();
 
 	do {
 		scanner.scan();

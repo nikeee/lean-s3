@@ -13,7 +13,7 @@ export function parseListPartsResult(text: string) {
 	}
 
 	// Init structure entirely, so v8 can create a single hidden class
-	const nodeResult = {
+	const res = {
 		Bucket: undefined,
 		Key: undefined,
 		UploadId: undefined,
@@ -34,49 +34,49 @@ export function parseListPartsResult(text: string) {
 			case tokenKind.startClosingTag: {
 				expectIdentifier(scanner, "ListPartsResult");
 				scanExpected(scanner, tokenKind.endTag);
-				return nodeResult;
+				return res;
 			}
 			case tokenKind.startTag: {
 				scanExpected(scanner, tokenKind.identifier);
 				switch (scanner.tokenValue) {
 					case "Bucket":
-						nodeResult.Bucket = parseStringTag(scanner, "Bucket");
+						res.Bucket = parseStringTag(scanner, "Bucket");
 						break;
 					case "Key":
-						nodeResult.Key = parseStringTag(scanner, "Key");
+						res.Key = parseStringTag(scanner, "Key");
 						break;
 					case "UploadId":
-						nodeResult.UploadId = parseStringTag(scanner, "UploadId");
+						res.UploadId = parseStringTag(scanner, "UploadId");
 						break;
 					case "PartNumberMarker":
-						nodeResult.PartNumberMarker = parseIntegerTag(
+						res.PartNumberMarker = parseIntegerTag(
 							scanner,
 							"PartNumberMarker",
 						);
 						break;
 					case "NextPartNumberMarker":
-						nodeResult.NextPartNumberMarker = parseIntegerTag(
+						res.NextPartNumberMarker = parseIntegerTag(
 							scanner,
 							"NextPartNumberMarker",
 						);
 						break;
 					case "MaxParts":
-						nodeResult.MaxParts = parseIntegerTag(scanner, "MaxParts");
+						res.MaxParts = parseIntegerTag(scanner, "MaxParts");
 						break;
 					case "IsTruncated":
-						nodeResult.IsTruncated = parseBooleanTag(scanner, "IsTruncated");
+						res.IsTruncated = parseBooleanTag(scanner, "IsTruncated");
 						break;
 					case "Part":
-						(nodeResult.Part ??= []).push(parsePart(scanner));
+						(res.Part ??= []).push(parsePart(scanner));
 						break;
 					case "Initiator":
-						nodeResult.Initiator = parseOwnerOrInitiator(scanner, "Initiator");
+						res.Initiator = parseOwnerOrInitiator(scanner, "Initiator");
 						break;
 					case "Owner":
-						nodeResult.Owner = parseOwnerOrInitiator(scanner, "Owner");
+						res.Owner = parseOwnerOrInitiator(scanner, "Owner");
 						break;
 					case "StorageClass":
-						nodeResult.StorageClass = parseStringTag(scanner, "StorageClass");
+						res.StorageClass = parseStringTag(scanner, "StorageClass");
 						break;
 					default:
 						throw new Error(`Unexpected tag identifier: ${scanner.tokenValue}`);
@@ -91,7 +91,7 @@ export function parseListPartsResult(text: string) {
 }
 
 function parseOwnerOrInitiator(scanner: Scanner, name: string) {
-	const nodeResult = {
+	const res = {
 		DisplayName: undefined,
 		ID: undefined,
 	};
@@ -105,16 +105,16 @@ function parseOwnerOrInitiator(scanner: Scanner, name: string) {
 			case tokenKind.startClosingTag: {
 				expectIdentifier(scanner, name);
 				scanExpected(scanner, tokenKind.endTag);
-				return nodeResult;
+				return res;
 			}
 			case tokenKind.startTag: {
 				scanExpected(scanner, tokenKind.identifier);
 				switch (scanner.tokenValue) {
 					case "DisplayName":
-						nodeResult.DisplayName = parseStringTag(scanner, "DisplayName");
+						res.DisplayName = parseStringTag(scanner, "DisplayName");
 						break;
 					case "ID":
-						nodeResult.ID = parseStringTag(scanner, "ID");
+						res.ID = parseStringTag(scanner, "ID");
 						break;
 					default:
 						throw new Error(`Unexpected tag identifier: ${scanner.tokenValue}`);
@@ -128,7 +128,7 @@ function parseOwnerOrInitiator(scanner: Scanner, name: string) {
 }
 
 function parsePart(scanner: Scanner) {
-	const nodeResult = {
+	const res = {
 		ETag: undefined,
 		LastModified: undefined,
 		PartNumber: undefined,
@@ -144,22 +144,22 @@ function parsePart(scanner: Scanner) {
 			case tokenKind.startClosingTag: {
 				expectIdentifier(scanner, "Part");
 				scanExpected(scanner, tokenKind.endTag);
-				return nodeResult;
+				return res;
 			}
 			case tokenKind.startTag: {
 				scanExpected(scanner, tokenKind.identifier);
 				switch (scanner.tokenValue) {
 					case "ETag":
-						nodeResult.ETag = parseStringTag(scanner, "ETag");
+						res.ETag = parseStringTag(scanner, "ETag");
 						break;
 					case "LastModified":
-						nodeResult.LastModified = parseDateTag(scanner, "LastModified");
+						res.LastModified = parseDateTag(scanner, "LastModified");
 						break;
 					case "PartNumber":
-						nodeResult.PartNumber = parseIntegerTag(scanner, "PartNumber");
+						res.PartNumber = parseIntegerTag(scanner, "PartNumber");
 						break;
 					case "Size":
-						nodeResult.Size = parseIntegerTag(scanner, "Size");
+						res.Size = parseIntegerTag(scanner, "Size");
 						break;
 					default:
 						throw new Error(`Unexpected tag identifier: ${scanner.tokenValue}`);
@@ -357,7 +357,7 @@ function emitRootParser(spec, globals: Map<unknown, string>): string {
 ${emitChildParsers(spec, globals)}
 function ${parseFn}(scanner) {
 	// Init structure entirely, so v8 can create a single hidden class
-	const nodeResult = {
+	const res = {
 		${Object.keys(children)
 			.map(n => `${n}: undefined,`)
 			.join("\n\t\t")}
@@ -366,7 +366,7 @@ function ${parseFn}(scanner) {
 	do {
 		scanner.scan();
 		switch (scanner.token) {
-			case tokenKind.eof: return nodeResult;
+			case tokenKind.eof: return res;
 			case tokenKind.startTag: {
 				scanExpected(scanner, tokenKind.identifier);
 				switch (scanner.tokenValue) {
@@ -376,8 +376,8 @@ function ${parseFn}(scanner) {
 								`case "${childSpec.tagName ?? name}":
 						${
 							childSpec.type === "array"
-								? `(nodeResult.${name} ??= []).push(${emitParserCall(childSpec.item, childSpec.tagName ?? name, globals)})`
-								: `nodeResult.${name} = ${emitParserCall(childSpec, childSpec.tagName ?? name, globals)}`
+								? `(res.${name} ??= []).push(${emitParserCall(childSpec.item, childSpec.tagName ?? name, globals)})`
+								: `res.${name} = ${emitParserCall(childSpec, childSpec.tagName ?? name, globals)}`
 						};
 						break;`,
 						)
@@ -407,7 +407,7 @@ function emitObjectParser(
 ${emitChildParsers(spec, globals)}
 function ${parseFn}(scanner) {
 	// Init structure entirely, so v8 can create a single hidden class
-	const nodeResult = {
+	const res = {
 		${Object.keys(children)
 			.map(n => `${n}: undefined,`)
 			.join("\n\t\t")}
@@ -422,7 +422,7 @@ function ${parseFn}(scanner) {
 			case tokenKind.startClosingTag: {
 				expectIdentifier(scanner, "${tagName}");
 				scanExpected(scanner, tokenKind.endTag);
-				return nodeResult;
+				return res;
 			}
 			case tokenKind.startTag: {
 				scanExpected(scanner, tokenKind.identifier);
@@ -433,8 +433,8 @@ function ${parseFn}(scanner) {
 								`case "${childSpec.tagName ?? name}":
 						${
 							childSpec.type === "array"
-								? `(nodeResult.${name} ??= []).push(${emitParserCall(childSpec.item, childSpec.tagName ?? name, globals)})`
-								: `nodeResult.${name} = ${emitParserCall(childSpec, childSpec.tagName ?? name, globals)}`
+								? `(res.${name} ??= []).push(${emitParserCall(childSpec.item, childSpec.tagName ?? name, globals)})`
+								: `res.${name} = ${emitParserCall(childSpec, childSpec.tagName ?? name, globals)}`
 						};
 						break;`,
 						)

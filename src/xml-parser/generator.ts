@@ -371,6 +371,16 @@ const _parser = buildParser({
 				key: { type: "string", tagName: "Key" },
 				uploadId: { type: "string", tagName: "UploadId" },
 				storageClass: { type: "string", tagName: "StorageClass" },
+				checksumAlgorithm: {
+					type: "string",
+					tagName: "ChecksumAlgorithm",
+					optional: true,
+				},
+				checksumType: {
+					type: "string",
+					tagName: "ChecksumType",
+					optional: true,
+				},
 				partNumberMarker: { type: "integer", tagName: "PartNumberMarker" },
 				nextPartNumberMarker: {
 					type: "integer",

@@ -169,6 +169,8 @@ function fn_1_ListPartsResult(scanner) {
 		key: undefined,
 		uploadId: undefined,
 		storageClass: undefined,
+		checksumAlgorithm: undefined,
+		checksumType: undefined,
 		partNumberMarker: undefined,
 		nextPartNumberMarker: undefined,
 		maxParts: undefined,
@@ -243,6 +245,15 @@ function fn_1_ListPartsResult(scanner) {
 						break;
 					case "StorageClass":
 						res.storageClass = parseStringTag(scanner, "StorageClass");
+						break;
+					case "ChecksumAlgorithm":
+						res.checksumAlgorithm = parseStringTag(
+							scanner,
+							"ChecksumAlgorithm",
+						);
+						break;
+					case "ChecksumType":
+						res.checksumType = parseStringTag(scanner, "ChecksumType");
 						break;
 					case "PartNumberMarker":
 						res.partNumberMarker = parseIntegerTag(scanner, "PartNumberMarker");

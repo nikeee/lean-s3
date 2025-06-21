@@ -1,6 +1,5 @@
 const text = `<ListPartsResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Bucket>test-bucket</Bucket><Key>583ea250-5016-48e5-8b26-b3ce0d9e5822/foo-key-9000</Key><UploadId>tWA7cuzMIElE_sIi8weNVQJdxXnxZI9mhRT3hi9Xuaeqv4DjyteO64y_o4SuJP_E0Uf-D4Mzqeno7eWIakTtmlgabUjQ3uko2TE9Qv5BpztLPVqqJKEQnhulwkgLzcOs</UploadId><PartNumberMarker>0</PartNumberMarker><NextPartNumberMarker>3</NextPartNumberMarker><MaxParts>1000</MaxParts><IsTruncated>false</IsTruncated><Part><ETag>"4715e35cf900ae14837e3c098e87d522"</ETag><LastModified>2025-06-20T13:58:01.000Z</LastModified><PartNumber>1</PartNumber><Size>6291456</Size></Part><Part><ETag>"ce1b200f8c97447474929b722ed93b00"</ETag><LastModified>2025-06-20T13:58:02.000Z</LastModified><PartNumber>2</PartNumber><Size>6291456</Size></Part><Part><ETag>"3bc3be0b850eacf461ec036374616058"</ETag><LastModified>2025-06-20T13:58:02.000Z</LastModified><PartNumber>3</PartNumber><Size>1048576</Size></Part><Initiator><DisplayName>webfile</DisplayName><ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID></Initiator><Owner><DisplayName>webfile</DisplayName><ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID></Owner><StorageClass>STANDARD</StorageClass></ListPartsResult>`;
 
-
 /*
 import { summary, group, bench, run } from "mitata";
 import { XMLParser } from "fast-xml-parser";
@@ -65,20 +64,8 @@ summary(() => {
 
 // await run();
 
-function emitParseFunction(spec) {
-	const globals = new Map();
-	const parsingCode = emitParser(spec, "", globals);
-	const rootParseFunctionName = globals.get(spec);
-	return `
-${parsingCode}
-function parse(text) {
-	const scanner = new Scanner(text);
-	return ${rootParseFunctionName}(scanner);
-}`;
-}
-
 function emitParser(
-	spec: ParseSpec | RootSpec,
+	spec: ParseSpec<string> | RootSpec<string>,
 	tagName: string,
 	globals: Map<unknown, string>,
 ): string {
@@ -101,7 +88,7 @@ function emitParser(
 	}
 }
 function emitParserCall(
-	spec: ParseSpec,
+	spec: ParseSpec<string>,
 	tagName: string,
 	globals: Map<unknown, string>,
 ): string {
@@ -122,7 +109,7 @@ function emitParserCall(
 }
 
 function emitChildParsers(
-	spec: RootSpec | ObjectSpec,
+	spec: RootSpec<string> | ObjectSpec<string>,
 	globals: Map<unknown, string>,
 ): string {
 	let code = "";
@@ -132,7 +119,10 @@ function emitChildParsers(
 	}
 	return code;
 }
-function emitRootParser(spec: RootSpec, globals: Map<unknown, string>): string {
+function emitRootParser(
+	spec: RootSpec<string>,
+	globals: Map<unknown, string>,
+): string {
 	const parseFn = `root_parse_fn_${globals.size}`;
 	globals.set(spec, parseFn);
 
@@ -181,7 +171,7 @@ function ${parseFn}(scanner) {
 	);
 }
 function emitObjectParser(
-	spec: ObjectSpec,
+	spec: ObjectSpec<string>,
 	tagName: string,
 	globals: Map<unknown, string>,
 ): string {
@@ -247,28 +237,28 @@ function asIdentifier(value: string): string {
 	return value; // TODO: Escaping
 }
 
-type ParseSpec =
-	| ObjectSpec
-	| ArraySpec
+type ParseSpec<T extends string> =
+	| ObjectSpec<T>
+	| ArraySpec<T>
 	| StringSpec
 	| BooleanSpec
 	| IntegerSpec
 	| DateSpec;
 
-type RootSpec = {
+type RootSpec<T extends string> = {
 	type: "root";
 	tagName?: string;
-	children: Record<string, ParseSpec>;
+	children: Record<T, ParseSpec<string>>;
 };
-type ObjectSpec = {
+type ObjectSpec<T extends string> = {
 	type: "object";
 	tagName?: string;
-	children: Record<string, ParseSpec>;
+	children: Record<T, ParseSpec<string>>;
 };
-type ArraySpec = {
+type ArraySpec<T extends string> = {
 	type: "array";
 	tagName?: string;
-	item: ParseSpec;
+	item: ParseSpec<T>;
 };
 type StringSpec = {
 	type: "string";
@@ -287,7 +277,54 @@ type DateSpec = {
 	tagName?: string;
 };
 
-const rootSpec: RootSpec = {
+/*
+type ParsedRoot<V extends Record<string, ParseSpec<string>>, T extends RootSpec<V>> = {
+	[k in keyof T["children"]]: ParsedType<T["children"][k]>;
+};
+
+type ParsedObject<V extends Record<string, ParseSpec<string>>, T extends ObjectSpec<V>> = {
+	[k in keyof T["children"]]: ParsedType<T["children"][k]>;
+};
+
+type ParsedType<T extends ParseSpec<string>> = T extends StringSpec
+	? string
+	: T extends BooleanSpec
+		? boolean
+		: T extends IntegerSpec
+			? number
+			: T extends DateSpec
+				? Date
+				: T extends ObjectSpec<infer U>
+					? ParsedObject<U , ObjectSpec<U>>
+					: never;
+
+function buildParser<T extends Record<string, ParseSpec<string>>, V extends T>(
+	rootSpec: RootSpec<T>,
+): Parser<ParsedRoot<T, RootSpec<V>>> {
+	throw new Error("Not implemented");
+}
+*/
+
+type Parser<T> = (text: string) => T;
+
+function buildParser<T extends string>(rootSpec: RootSpec<T>): Parser<unknown> {
+	const globals = new Map();
+	const _parsingCode = emitParser(rootSpec, "", globals);
+	const _rootParseFunctionName = globals.get(rootSpec);
+	globals.clear(); // make sure we clear all references (even though this map won't survive past this function)
+
+/*
+	return `
+${parsingCode}
+function parse(text) {
+	const scanner = new Scanner(text);
+	return ${rootParseFunctionName}(scanner);
+}`;
+*/
+
+	throw new Error("Not implemented");
+}
+const _parser = buildParser({
 	type: "root",
 	children: {
 		result: {
@@ -337,11 +374,13 @@ const rootSpec: RootSpec = {
 			},
 		},
 	},
-};
+});
 
+/*
 const x = emitParseFunction(rootSpec);
 console.log(
 	`import { Scanner, tokenKind, scanExpected, skipAttributes, expectIdentifier, expectClosingTag, parseStringTag, parseDateTag, parseIntegerTag, parseBooleanTag} from "./parser-runtime.ts";`,
 );
 console.log(x);
 console.log(`console.log("parse result:", parse(\`${text}\`))`);
+*/

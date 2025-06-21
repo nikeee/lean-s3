@@ -1,4 +1,3 @@
-import { Scanner, tokenKind, scanExpected, skipAttributes, expectIdentifier, expectClosingTag, parseStringTag, parseDateTag, parseIntegerTag, parseBooleanTag} from "./parser-runtime.ts";
 
 function fn_2_Initiator(scanner) {
 	// Init structure entirely, so v8 can create a single hidden class
@@ -16,6 +15,8 @@ function fn_2_Initiator(scanner) {
 			case tokenKind.startClosingTag: {
 				expectIdentifier(scanner, "Initiator");
 				scanExpected(scanner, tokenKind.endTag);
+				if (res.displayName === undefined) throw new TypeError(`Value for field "displayName" was required but not present (expected as tag name "DisplayName").`);
+				if (res.id === undefined) throw new TypeError(`Value for field "id" was required but not present (expected as tag name "ID").`);
 				return res;
 			}
 			case tokenKind.startTag: {
@@ -53,6 +54,8 @@ function fn_3_Owner(scanner) {
 			case tokenKind.startClosingTag: {
 				expectIdentifier(scanner, "Owner");
 				scanExpected(scanner, tokenKind.endTag);
+				if (res.displayName === undefined) throw new TypeError(`Value for field "displayName" was required but not present (expected as tag name "DisplayName").`);
+				if (res.id === undefined) throw new TypeError(`Value for field "id" was required but not present (expected as tag name "ID").`);
 				return res;
 			}
 			case tokenKind.startTag: {
@@ -92,6 +95,10 @@ function fn_4_Part(scanner) {
 			case tokenKind.startClosingTag: {
 				expectIdentifier(scanner, "Part");
 				scanExpected(scanner, tokenKind.endTag);
+				if (res.etag === undefined) throw new TypeError(`Value for field "etag" was required but not present (expected as tag name "ETag").`);
+				if (res.lastModified === undefined) throw new TypeError(`Value for field "lastModified" was required but not present (expected as tag name "LastModified").`);
+				if (res.partNumber === undefined) throw new TypeError(`Value for field "partNumber" was required but not present (expected as tag name "PartNumber").`);
+				if (res.size === undefined) throw new TypeError(`Value for field "size" was required but not present (expected as tag name "Size").`);
 				return res;
 			}
 			case tokenKind.startTag: {
@@ -145,6 +152,17 @@ function fn_1_ListPartsResult(scanner) {
 			case tokenKind.startClosingTag: {
 				expectIdentifier(scanner, "ListPartsResult");
 				scanExpected(scanner, tokenKind.endTag);
+				if (res.bucket === undefined) throw new TypeError(`Value for field "bucket" was required but not present (expected as tag name "Bucket").`);
+				if (res.key === undefined) throw new TypeError(`Value for field "key" was required but not present (expected as tag name "Key").`);
+				if (res.uploadId === undefined) throw new TypeError(`Value for field "uploadId" was required but not present (expected as tag name "UploadId").`);
+				if (res.storageClass === undefined) throw new TypeError(`Value for field "storageClass" was required but not present (expected as tag name "StorageClass").`);
+				if (res.partNumberMarker === undefined) throw new TypeError(`Value for field "partNumberMarker" was required but not present (expected as tag name "PartNumberMarker").`);
+				if (res.nextPartNumberMarker === undefined) throw new TypeError(`Value for field "nextPartNumberMarker" was required but not present (expected as tag name "NextPartNumberMarker").`);
+				if (res.maxParts === undefined) throw new TypeError(`Value for field "maxParts" was required but not present (expected as tag name "MaxParts").`);
+				if (res.isTruncated === undefined) throw new TypeError(`Value for field "isTruncated" was required but not present (expected as tag name "IsTruncated").`);
+				if (res.initiator === undefined) throw new TypeError(`Value for field "initiator" was required but not present (expected as tag name "Initiator").`);
+				if (res.owner === undefined) throw new TypeError(`Value for field "owner" was required but not present (expected as tag name "Owner").`);
+				if (res.parts === undefined) throw new TypeError(`Value for field "parts" was required but not present (expected as tag name "Part").`);
 				return res;
 			}
 			case tokenKind.startTag: {
@@ -203,7 +221,10 @@ function root_parse_fn_0(scanner) {
 	do {
 		scanner.scan();
 		switch (scanner.token) {
-			case tokenKind.eof: return res;
+			case tokenKind.eof: {
+				if (res.result === undefined) throw new TypeError(`Value for field "result" was required but not present (expected as tag name "ListPartsResult").`);
+				return res;
+			}
 			case tokenKind.startTag: {
 				scanExpected(scanner, tokenKind.identifier);
 				switch (scanner.tokenValue) {

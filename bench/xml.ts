@@ -134,15 +134,27 @@ ${emitChildParsers(spec, globals)}
 function ${parseFn}(scanner) {
 	// Init structure entirely, so v8 can create a single hidden class
 	const res = {
-		${Object.keys(children)
-			.map(n => `${n}: undefined,`)
+		${Object.entries(children)
+			.map(
+				([n, childSpec]) =>
+					`${n}: ${childSpec.type === "array" && childSpec.defaultEmpty ? "[]" : undefined},`,
+			)
 			.join("\n\t\t")}
 	};
 
 	do {
 		scanner.scan();
 		switch (scanner.token) {
-			case tokenKind.eof: return res;
+			case tokenKind.eof: {
+				${Object.entries(children)
+						.map(([name, childSpec]) =>
+							childSpec.optional
+								? ""
+								: `if (res.${name} === undefined) throw new TypeError(\`Value for field "${name}" was required but not present (expected as tag name "${childSpec.tagName ?? name}").\`);`,
+						)
+						.join("\n\t\t\t\t")}
+				return res;
+			}
 			case tokenKind.startTag: {
 				scanExpected(scanner, tokenKind.identifier);
 				switch (scanner.tokenValue) {
@@ -152,7 +164,9 @@ function ${parseFn}(scanner) {
 								`case ${asLiteral(childSpec.tagName ?? name)}:
 						${
 							childSpec.type === "array"
-								? `(res.${name} ??= []).push(${emitParserCall(childSpec.item, childSpec.tagName ?? name, globals)})`
+								? childSpec.defaultEmpty
+									? `res.${name}.push(${emitParserCall(childSpec.item, childSpec.tagName ?? name, globals)})`
+									: `(res.${name} ??= []).push(${emitParserCall(childSpec.item, childSpec.tagName ?? name, globals)})`
 								: `res.${name} = ${emitParserCall(childSpec, childSpec.tagName ?? name, globals)}`
 						};
 						break;`,
@@ -186,8 +200,11 @@ ${emitChildParsers(spec, globals)}
 function ${parseFn}(scanner) {
 	// Init structure entirely, so v8 can create a single hidden class
 	const res = {
-		${Object.keys(children)
-			.map(n => `${n}: undefined,`)
+		${Object.entries(children)
+			.map(
+				([n, childSpec]) =>
+					`${n}: ${childSpec.type === "array" && childSpec.defaultEmpty ? "[]" : undefined},`,
+			)
 			.join("\n\t\t")}
 	};
 
@@ -200,6 +217,13 @@ function ${parseFn}(scanner) {
 			case tokenKind.startClosingTag: {
 				expectIdentifier(scanner, ${asLiteral(tagName)});
 				scanExpected(scanner, tokenKind.endTag);
+				${Object.entries(children)
+					.map(([name, childSpec]) =>
+						childSpec.optional
+							? ""
+							: `if (res.${name} === undefined) throw new TypeError(\`Value for field "${name}" was required but not present (expected as tag name "${childSpec.tagName ?? name}").\`);`,
+					)
+					.join("\n\t\t\t\t")}
 				return res;
 			}
 			case tokenKind.startTag: {
@@ -211,7 +235,9 @@ function ${parseFn}(scanner) {
 								`case ${asLiteral(childSpec.tagName ?? name)}:
 						${
 							childSpec.type === "array"
-								? `(res.${name} ??= []).push(${emitParserCall(childSpec.item, childSpec.tagName ?? name, globals)})`
+								? childSpec.defaultEmpty
+									? `res.${name}.push(${emitParserCall(childSpec.item, childSpec.tagName ?? name, globals)})`
+									: `(res.${name} ??= []).push(${emitParserCall(childSpec.item, childSpec.tagName ?? name, globals)})`
 								: `res.${name} = ${emitParserCall(childSpec, childSpec.tagName ?? name, globals)}`
 						};
 						break;`,
@@ -253,28 +279,35 @@ type RootSpec<T extends string> = {
 type ObjectSpec<T extends string> = {
 	type: "object";
 	tagName?: string;
+	optional?: boolean;
 	children: Record<T, ParseSpec<string>>;
 };
 type ArraySpec<T extends string> = {
 	type: "array";
 	tagName?: string;
+	optional?: boolean;
+	defaultEmpty?: boolean;
 	item: ParseSpec<T>;
 };
 type StringSpec = {
 	type: "string";
 	tagName?: string;
+	optional?: boolean;
 };
 type BooleanSpec = {
 	type: "boolean";
 	tagName?: string;
+	optional?: boolean;
 };
 type IntegerSpec = {
 	type: "integer";
 	tagName?: string;
+	optional?: boolean;
 };
 type DateSpec = {
 	type: "date";
 	tagName?: string;
+	optional?: boolean;
 };
 
 /*
@@ -309,18 +342,16 @@ type Parser<T> = (text: string) => T;
 
 function buildParser<T extends string>(rootSpec: RootSpec<T>): Parser<unknown> {
 	const globals = new Map();
-	const _parsingCode = emitParser(rootSpec, "", globals);
-	const _rootParseFunctionName = globals.get(rootSpec);
+	const parsingCode = emitParser(rootSpec, "", globals);
+	const rootParseFunctionName = globals.get(rootSpec);
 	globals.clear(); // make sure we clear all references (even though this map won't survive past this function)
 
-/*
-	return `
+	console.log(`
 ${parsingCode}
 function parse(text) {
 	const scanner = new Scanner(text);
 	return ${rootParseFunctionName}(scanner);
-}`;
-*/
+}`);
 
 	throw new Error("Not implemented");
 }

@@ -428,11 +428,6 @@ summary(() => {
 					xmlParser.parse(s);
 				}
 			});
-			bench("parse buffer with fxp", () => {
-				for(let i = 0; i < 10000; ++i) {
-					xmlParser.parse(b);
-				}
-			});
 			bench("custom parser", () => {
 				for(let i = 0; i < 10000; ++i) {
 					parse(s);

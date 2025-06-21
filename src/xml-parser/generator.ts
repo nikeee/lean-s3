@@ -1,5 +1,3 @@
-const text = `<ListPartsResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Bucket>test-bucket</Bucket><Key>583ea250-5016-48e5-8b26-b3ce0d9e5822/foo-key-9000</Key><UploadId>tWA7cuzMIElE_sIi8weNVQJdxXnxZI9mhRT3hi9Xuaeqv4DjyteO64y_o4SuJP_E0Uf-D4Mzqeno7eWIakTtmlgabUjQ3uko2TE9Qv5BpztLPVqqJKEQnhulwkgLzcOs</UploadId><PartNumberMarker>0</PartNumberMarker><NextPartNumberMarker>3</NextPartNumberMarker><MaxParts>1000</MaxParts><IsTruncated>false</IsTruncated><Part><ETag>"4715e35cf900ae14837e3c098e87d522"</ETag><LastModified>2025-06-20T13:58:01.000Z</LastModified><PartNumber>1</PartNumber><Size>6291456</Size></Part><Part><ETag>"ce1b200f8c97447474929b722ed93b00"</ETag><LastModified>2025-06-20T13:58:02.000Z</LastModified><PartNumber>2</PartNumber><Size>6291456</Size></Part><Part><ETag>"3bc3be0b850eacf461ec036374616058"</ETag><LastModified>2025-06-20T13:58:02.000Z</LastModified><PartNumber>3</PartNumber><Size>1048576</Size></Part><Initiator><DisplayName>webfile</DisplayName><ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID></Initiator><Owner><DisplayName>webfile</DisplayName><ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID></Owner><StorageClass>STANDARD</StorageClass></ListPartsResult>`;
-
 /*
 import { summary, group, bench, run } from "mitata";
 import { XMLParser } from "fast-xml-parser";
@@ -128,8 +126,7 @@ function emitRootParser(
 
 	const { children } = spec;
 
-	return (
-		`
+	return `
 ${emitChildParsers(spec, globals)}
 function ${parseFn}(scanner) {
 	// Init structure entirely, so v8 can create a single hidden class
@@ -183,9 +180,10 @@ function ${parseFn}(scanner) {
 			default:
 				throw new Error(\`Unhandled token kind: \${scanner.token}\`);
 		}
+	// biome-ignore lint/correctness/noConstantCondition: generated
 	} while (true);
-}`.trim() + "\n"
-	);
+}
+`.trimStart();
 }
 function emitObjectParser(
 	spec: ObjectSpec<string>,
@@ -197,8 +195,7 @@ function emitObjectParser(
 
 	const { children } = spec;
 
-	return (
-		`
+	return `
 ${emitChildParsers(spec, globals)}
 function ${parseFn}(scanner) {
 	// Init structure entirely, so v8 can create a single hidden class
@@ -256,15 +253,15 @@ function ${parseFn}(scanner) {
 			default:
 				throw new Error(\`Unhandled token kind: \${scanner.token}\`);
 		}
+	// biome-ignore lint/correctness/noConstantCondition: generated
 	} while (true);
 }
-`.trim() + "\n"
-	);
+`.trimStart();
 }
 function asLiteral(value: string): string {
 	return `"${value}"`; // TODO: Escaping
 }
-function asIdentifier(value: string): string {
+function _asIdentifier(value: string): string {
 	return value; // TODO: Escaping
 }
 
@@ -353,7 +350,7 @@ function buildParser<T extends string>(rootSpec: RootSpec<T>): Parser<unknown> {
 	globals.clear(); // make sure we clear all references (even though this map won't survive past this function)
 
 	console.log(`
-import { Scanner, tokenKind, scanExpected, skipAttributes, expectIdentifier, expectClosingTag, parseStringTag, parseDateTag, parseIntegerTag, parseBooleanTag} from "./runtime.ts";
+import { Scanner, tokenKind, scanExpected, skipAttributes, expectIdentifier, parseStringTag, parseDateTag, parseIntegerTag, parseBooleanTag} from "./runtime.ts";
 ${parsingCode}
 export default function parse(text) {
 	return ${rootParseFunctionName}(new Scanner(text));

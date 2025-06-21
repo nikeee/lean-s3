@@ -127,7 +127,6 @@ export class Scanner {
 					// biome-ignore lint/suspicious/noAssignInExpressions: ok here
 					return (this.token = tokenKind.endTag);
 
-				// biome-ignore lint/suspicious/noFallthroughSwitchClause: we want to go to the default case
 				case charCode.doubleQuote: {
 					if (this.inTag) {
 						++this.pos; // consume opening "
@@ -146,8 +145,44 @@ export class Scanner {
 
 						// biome-ignore lint/suspicious/noAssignInExpressions: ok here
 						return (this.token = tokenKind.attributeValue);
+					} else {
+						// Read text node
+						let tokenValueStart = this.pos;
+						while (isWhitespace(this.text.charCodeAt(this.pos))) {
+							++tokenValueStart;
+						}
+						// TODO: First element gets cut off
+
+						while (
+							this.pos < this.end &&
+							this.text.charCodeAt(this.pos) !== charCode.lessThan
+						) {
+							++this.pos;
+						}
+
+						let tokenValueEnd = this.pos;
+						do {
+							--tokenValueEnd;
+						} while (isWhitespace(this.text.charCodeAt(tokenValueEnd)));
+						++tokenValueEnd;
+
+						if (tokenValueStart === tokenValueEnd) {
+							// no text content, next token
+							continue;
+						}
+
+						this.tokenValueStart = tokenValueStart;
+						this.tokenValueEnd = tokenValueEnd;
+
+						// const value = this.text.substring(tokenValueStart, this.pos).trim();
+						// if (value === "") {
+						// 	continue;
+						// }
+						// this.tokenValue = value;
+
+						// biome-ignore lint/suspicious/noAssignInExpressions: ok here
+						return (this.token = tokenKind.identifier);
 					}
-					// fall-through
 				}
 				default:
 					if (this.inTag) {

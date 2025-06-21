@@ -785,6 +785,7 @@ export default class S3Client {
 
 		if (response.statusCode === 200) {
 			const text = await response.body.text();
+			// biome-ignore lint/suspicious/noExplicitAny: POC
 			return parseListPartsResult(text).result as any;
 			/*
 			return {

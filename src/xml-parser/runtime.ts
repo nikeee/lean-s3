@@ -328,6 +328,12 @@ export function expectClosingTag(scanner: Scanner, tagName: string) {
 export function parseStringTag(scanner: Scanner, tagName: string): string {
 	skipAttributes(scanner);
 	scanner.scan(); // consume >
+	if (scanner.token === tokenKind.startClosingTag) {
+		expectIdentifier(scanner, tagName);
+		scanExpected(scanner, tokenKind.endTag);
+		return "";
+	}
+
 	const value = scanner.tokenValue;
 	expectClosingTag(scanner, tagName);
 	return value;

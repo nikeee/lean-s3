@@ -94,7 +94,7 @@ function emitParserCall(
 ): string {
 	switch (spec.type) {
 		case "string":
-			return `parseStringTag(scanner, ${asLiteral(tagName)})`;
+			return `parseStringTag(scanner, ${asLiteral(tagName)})${spec.emptyIsAbsent ? " || undefined" : ""}`;
 		case "integer":
 			return `parseIntegerTag(scanner, ${asLiteral(tagName)})`;
 		case "boolean":
@@ -298,6 +298,7 @@ type StringSpec = {
 	type: "string";
 	tagName?: string;
 	optional?: boolean;
+	emptyIsAbsent?: boolean;
 };
 type BooleanSpec = {
 	type: "boolean";
@@ -375,11 +376,13 @@ const _parser = buildParser({
 					type: "string",
 					tagName: "ChecksumAlgorithm",
 					optional: true,
+					emptyIsAbsent: true,
 				},
 				checksumType: {
 					type: "string",
 					tagName: "ChecksumType",
 					optional: true,
+					emptyIsAbsent: true,
 				},
 				partNumberMarker: { type: "integer", tagName: "PartNumberMarker" },
 				nextPartNumberMarker: {

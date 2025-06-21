@@ -455,34 +455,37 @@ function ${parseFn}(scanner) {
 const rootSpec = {
 	type: "root",
 	children: {
-		ListPartsResult: {
+		result: {
 			type: "object",
 			tagName: "ListPartsResult",
 			children: {
-				Bucket: { type: "string", tagName: "Bucket" },
-				Key: { type: "string" },
-				UploadId: { type: "string" },
-				StorageClass: { type: "string" },
-				PartNumberMarker: { type: "integer" },
-				NextPartNumberMarker: { type: "integer" },
-				MaxParts: { type: "integer" },
-				IsTruncated: { type: "boolean" },
-				Initiator: {
+				bucket: { type: "string", tagName: "Bucket" },
+				key: { type: "string", tagName: "Key" },
+				uploadId: { type: "string", tagName: "UploadId" },
+				storageClass: { type: "string", tagName: "StorageClass" },
+				partNumberMarker: { type: "integer", tagName: "PartNumberMarker" },
+				nextPartNumberMarker: { type: "integer", tagName: "NextPartNumberMarker" },
+				maxParts: { type: "integer", tagName: "MaxParts" },
+				isTruncated: { type: "boolean", tagName: "IsTruncated" },
+				initiator: {
 					type: "object",
+					tagName: "Initiator",
 					children: {
-						DisplayName: { type: "string" },
-						ID: { type: "string" },
+						displayName: { type: "string", tagName: "DisplayName" },
+						id: { type: "string", tagName: "ID" },
 					},
 				},
-				Owner: {
+				owner: {
 					type: "object",
+					tagName: "Owner",
 					children: {
-						DisplayName: { type: "string" },
-						ID: { type: "string" },
+						displayName: { type: "string", tagName: "DisplayName" },
+						id: { type: "string", tagName: "ID" },
 					},
 				},
-				Part: {
+				parts: {
 					type: "array",
+					tagName: "Part",
 					item: {
 						type: "object",
 						children: {

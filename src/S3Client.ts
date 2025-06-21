@@ -32,6 +32,8 @@ import {
 	type ObjectKey,
 } from "./branded.ts";
 
+import parseListPartsResult from "./xml-parser/parse.js";
+
 export const write = Symbol("write");
 export const stream = Symbol("stream");
 export const signedRequest = Symbol("signedRequest");
@@ -783,7 +785,9 @@ export default class S3Client {
 
 		if (response.statusCode === 200) {
 			const text = await response.body.text();
-			const root = ensureParsedXml(text).ListPartsResult ?? {};
+			// biome-ignore lint/suspicious/noExplicitAny: POC
+			return parseListPartsResult(text).result as any;
+			/*
 			return {
 				bucket: root.Bucket,
 				key: root.Key,
@@ -803,6 +807,7 @@ export default class S3Client {
 						size: part.Size ?? undefined,
 					})) ?? [],
 			};
+			*/
 		}
 
 		throw await getResponseError(response, path);

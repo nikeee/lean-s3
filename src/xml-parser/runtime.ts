@@ -287,7 +287,9 @@ const charCode = {
 
 export function scanExpected(scanner: Scanner, expected: number) {
 	if (scanner.scan() !== expected) {
-		throw new Error(`Wrong token, expected: ${expected}`);
+		throw new Error(
+			`Wrong token, expected: ${expected}, got: ${scanner.token}`,
+		);
 	}
 }
 

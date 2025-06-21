@@ -351,10 +351,10 @@ function buildParser<T extends string>(rootSpec: RootSpec<T>): Parser<unknown> {
 	globals.clear(); // make sure we clear all references (even though this map won't survive past this function)
 
 	console.log(`
+import { Scanner, tokenKind, scanExpected, skipAttributes, expectIdentifier, expectClosingTag, parseStringTag, parseDateTag, parseIntegerTag, parseBooleanTag} from "./runtime.ts";
 ${parsingCode}
-function parse(text) {
-	const scanner = new Scanner(text);
-	return ${rootParseFunctionName}(scanner);
+export default function parse(text) {
+	return ${rootParseFunctionName}(new Scanner(text));
 }`);
 
 	throw new Error("Not implemented");
@@ -414,9 +414,6 @@ const _parser = buildParser({
 
 /*
 const x = emitParseFunction(rootSpec);
-console.log(
-	`import { Scanner, tokenKind, scanExpected, skipAttributes, expectIdentifier, expectClosingTag, parseStringTag, parseDateTag, parseIntegerTag, parseBooleanTag} from "./parser-runtime.ts";`,
-);
 console.log(x);
 console.log(`console.log("parse result:", parse(\`${text}\`))`);
 */

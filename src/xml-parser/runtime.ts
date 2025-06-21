@@ -263,7 +263,6 @@ const charCode = {
 	_: 0x5f,
 };
 
-
 export function scanExpected(scanner: Scanner, expected: number) {
 	if (scanner.scan() !== expected) {
 		throw new Error(`Wrong token, expected: ${expected}`);

@@ -391,7 +391,7 @@ function ${parseFn}(scanner) {
 				throw new Error(\`Unhandled token kind: \${scanner.token}\`);
 		}
 	} while (true);
-}`.trim();
+}`.trim() + "\n";
 }
 function emitObjectParser(
 	spec,
@@ -449,7 +449,7 @@ function ${parseFn}(scanner) {
 		}
 	} while (true);
 }
-`.trim();
+`.trim() + "\n";
 }
 
 const rootSpec = {

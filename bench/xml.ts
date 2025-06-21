@@ -107,13 +107,13 @@ function emitParserCall(
 ): string {
 	switch (spec.type) {
 		case "string":
-			return `parseStringTag(scanner, "${tagName}")`;
+			return `parseStringTag(scanner, ${asLiteral(tagName)})`;
 		case "integer":
-			return `parseIntegerTag(scanner, "${tagName}")`;
+			return `parseIntegerTag(scanner, ${asLiteral(tagName)})`;
 		case "boolean":
-			return `parseBooleanTag(scanner, "${tagName}")`;
+			return `parseBooleanTag(scanner, ${asLiteral(tagName)})`;
 		case "date":
-			return `parseDateTag(scanner, "${tagName}")`;
+			return `parseDateTag(scanner, ${asLiteral(tagName)})`;
 		case "object":
 			return `${globals.get(spec)}(scanner)`;
 		case "array":
@@ -159,7 +159,7 @@ function ${parseFn}(scanner) {
 					${Object.entries(children)
 						.map(
 							([name, childSpec]) =>
-								`case "${childSpec.tagName ?? name}":
+								`case ${asLiteral(childSpec.tagName ?? name)}:
 						${
 							childSpec.type === "array"
 								? `(res.${name} ??= []).push(${emitParserCall(childSpec.item, childSpec.tagName ?? name, globals)})`
@@ -208,7 +208,7 @@ function ${parseFn}(scanner) {
 
 		switch (scanner.token) {
 			case tokenKind.startClosingTag: {
-				expectIdentifier(scanner, "${tagName}");
+				expectIdentifier(scanner, ${asLiteral(tagName)});
 				scanExpected(scanner, tokenKind.endTag);
 				return res;
 			}
@@ -218,7 +218,7 @@ function ${parseFn}(scanner) {
 					${Object.entries(children)
 						.map(
 							([name, childSpec]) =>
-								`case "${childSpec.tagName ?? name}":
+								`case ${asLiteral(childSpec.tagName ?? name)}:
 						${
 							childSpec.type === "array"
 								? `(res.${name} ??= []).push(${emitParserCall(childSpec.item, childSpec.tagName ?? name, globals)})`
@@ -239,6 +239,12 @@ function ${parseFn}(scanner) {
 }
 `.trim() + "\n"
 	);
+}
+function asLiteral(value: string): string {
+	return `"${value}"`; // TODO: Escaping
+}
+function asIdentifier(value: string): string {
+	return value; // TODO: Escaping
 }
 
 type ParseSpec =

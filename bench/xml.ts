@@ -1,206 +1,9 @@
-import { summary, group, bench, run } from "mitata";
-import { XMLParser } from "fast-xml-parser";
-
 const text = `<ListPartsResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Bucket>test-bucket</Bucket><Key>583ea250-5016-48e5-8b26-b3ce0d9e5822/foo-key-9000</Key><UploadId>tWA7cuzMIElE_sIi8weNVQJdxXnxZI9mhRT3hi9Xuaeqv4DjyteO64y_o4SuJP_E0Uf-D4Mzqeno7eWIakTtmlgabUjQ3uko2TE9Qv5BpztLPVqqJKEQnhulwkgLzcOs</UploadId><PartNumberMarker>0</PartNumberMarker><NextPartNumberMarker>3</NextPartNumberMarker><MaxParts>1000</MaxParts><IsTruncated>false</IsTruncated><Part><ETag>"4715e35cf900ae14837e3c098e87d522"</ETag><LastModified>2025-06-20T13:58:01.000Z</LastModified><PartNumber>1</PartNumber><Size>6291456</Size></Part><Part><ETag>"ce1b200f8c97447474929b722ed93b00"</ETag><LastModified>2025-06-20T13:58:02.000Z</LastModified><PartNumber>2</PartNumber><Size>6291456</Size></Part><Part><ETag>"3bc3be0b850eacf461ec036374616058"</ETag><LastModified>2025-06-20T13:58:02.000Z</LastModified><PartNumber>3</PartNumber><Size>1048576</Size></Part><Initiator><DisplayName>webfile</DisplayName><ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID></Initiator><Owner><DisplayName>webfile</DisplayName><ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID></Owner><StorageClass>STANDARD</StorageClass></ListPartsResult>`;
 
-export function parseListPartsResult(text: string) {
-	const scanner = new Scanner(text);
-	scanExpected(scanner, tokenKind.startTag);
 
-	scanExpected(scanner, tokenKind.identifier);
-	if (scanner.tokenValue !== "ListPartsResult") {
-		throw new Error("Expected identifier: " + "ListPartsResult");
-	}
-
-	// Init structure entirely, so v8 can create a single hidden class
-	const res = {
-		Bucket: undefined,
-		Key: undefined,
-		UploadId: undefined,
-		PartNumberMarker: undefined,
-		NextPartNumberMarker: undefined,
-		MaxParts: undefined,
-		IsTruncated: undefined,
-		Part: undefined,
-		Initiator: undefined,
-		Owner: undefined,
-		StorageClass: undefined,
-	};
-
-	skipAttributes(scanner);
-	do {
-		scanner.scan(); // consume >
-		switch (scanner.token) {
-			case tokenKind.startClosingTag: {
-				expectIdentifier(scanner, "ListPartsResult");
-				scanExpected(scanner, tokenKind.endTag);
-				return res;
-			}
-			case tokenKind.startTag: {
-				scanExpected(scanner, tokenKind.identifier);
-				switch (scanner.tokenValue) {
-					case "Bucket":
-						res.Bucket = parseStringTag(scanner, "Bucket");
-						break;
-					case "Key":
-						res.Key = parseStringTag(scanner, "Key");
-						break;
-					case "UploadId":
-						res.UploadId = parseStringTag(scanner, "UploadId");
-						break;
-					case "PartNumberMarker":
-						res.PartNumberMarker = parseIntegerTag(scanner, "PartNumberMarker");
-						break;
-					case "NextPartNumberMarker":
-						res.NextPartNumberMarker = parseIntegerTag(
-							scanner,
-							"NextPartNumberMarker",
-						);
-						break;
-					case "MaxParts":
-						res.MaxParts = parseIntegerTag(scanner, "MaxParts");
-						break;
-					case "IsTruncated":
-						res.IsTruncated = parseBooleanTag(scanner, "IsTruncated");
-						break;
-					case "Part":
-						(res.Part ??= []).push(parsePart(scanner));
-						break;
-					case "Initiator":
-						res.Initiator = parseOwnerOrInitiator(scanner, "Initiator");
-						break;
-					case "Owner":
-						res.Owner = parseOwnerOrInitiator(scanner, "Owner");
-						break;
-					case "StorageClass":
-						res.StorageClass = parseStringTag(scanner, "StorageClass");
-						break;
-					default:
-						throw new Error(`Unexpected tag identifier: ${scanner.tokenValue}`);
-				}
-				break;
-			}
-			default:
-				throw new Error(`Unhandled token kind: ${scanner.token}`);
-		}
-		// biome-ignore lint/correctness/noConstantCondition: see above
-	} while (true);
-}
-
-function parseOwnerOrInitiator(scanner: Scanner, name: string) {
-	const res = {
-		DisplayName: undefined,
-		ID: undefined,
-	};
-
-	skipAttributes(scanner);
-
-	do {
-		scanner.scan(); // consume >
-
-		switch (scanner.token) {
-			case tokenKind.startClosingTag: {
-				expectIdentifier(scanner, name);
-				scanExpected(scanner, tokenKind.endTag);
-				return res;
-			}
-			case tokenKind.startTag: {
-				scanExpected(scanner, tokenKind.identifier);
-				switch (scanner.tokenValue) {
-					case "DisplayName":
-						res.DisplayName = parseStringTag(scanner, "DisplayName");
-						break;
-					case "ID":
-						res.ID = parseStringTag(scanner, "ID");
-						break;
-					default:
-						throw new Error(`Unexpected tag identifier: ${scanner.tokenValue}`);
-				}
-				break;
-			}
-			default:
-				throw new Error(`Unhandled token kind: ${scanner.token}`);
-		}
-	} while (true);
-}
-
-function parsePart(scanner: Scanner) {
-	const res = {
-		ETag: undefined,
-		LastModified: undefined,
-		PartNumber: undefined,
-		Size: undefined,
-	};
-
-	skipAttributes(scanner);
-
-	do {
-		scanner.scan(); // consume >
-
-		switch (scanner.token) {
-			case tokenKind.startClosingTag: {
-				expectIdentifier(scanner, "Part");
-				scanExpected(scanner, tokenKind.endTag);
-				return res;
-			}
-			case tokenKind.startTag: {
-				scanExpected(scanner, tokenKind.identifier);
-				switch (scanner.tokenValue) {
-					case "ETag":
-						res.ETag = parseStringTag(scanner, "ETag");
-						break;
-					case "LastModified":
-						res.LastModified = parseDateTag(scanner, "LastModified");
-						break;
-					case "PartNumber":
-						res.PartNumber = parseIntegerTag(scanner, "PartNumber");
-						break;
-					case "Size":
-						res.Size = parseIntegerTag(scanner, "Size");
-						break;
-					default:
-						throw new Error(`Unexpected tag identifier: ${scanner.tokenValue}`);
-				}
-				break;
-			}
-			default:
-				throw new Error(`Unhandled token kind: ${scanner.token}`);
-		}
-	} while (true);
-}
-
-// console.log(text);
-
-const shortText = `
-	<ListPartsResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-    <Bucket>test-bucket</Bucket>
-    <Key>583ea250-5016-48e5-8b26-b3ce0d9e5822/foo-key-9000</Key>
-    <UploadId>
-        tWA7cuzMIElE_sIi8weNVQJdxXnxZI9mhRT3hi9Xuaeqv4DjyteO64y_o4SuJP_E0Uf-D4Mzqeno7eWIakTtmlgabUjQ3uko2TE9Qv5BpztLPVqqJKEQnhulwkgLzcOs</UploadId>
-    <PartNumberMarker>0</PartNumberMarker>
-    <NextPartNumberMarker>3</NextPartNumberMarker>
-    <MaxParts>1000</MaxParts>
-    <IsTruncated>false</IsTruncated>
-    <Initiator>
-        <DisplayName>webfile</DisplayName>
-        <ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID>
-    </Initiator>
-    <Owner>
-        <DisplayName>webfile</DisplayName>
-        <ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID>
-    </Owner>
-    <StorageClass>STANDARD</StorageClass>
-</ListPartsResult>
-`;
-
-// console.log("Parsing");
-// const p = parseListPartsResult(text);
-// console.log("End parsing", p);
-
-// const x = new XMLParser({
-// 	ignoreAttributes: true,
-// });
-// console.log("fxml", x.parse(text).ListPartsResult);
+/*
+import { summary, group, bench, run } from "mitata";
+import { XMLParser } from "fast-xml-parser";
 
 const out = process.stdout;
 
@@ -238,27 +41,9 @@ function printToken(scanner: Scanner) {
 			throw new Error("Token not supported: " + scanner.token);
 	}
 }
-/*
-const tokenStream = [];
-do {
-	tokenStream.push(scanner.scan());
-	printToken(scanner);
-} while (scanner.token !== tokenKind.eof);
-console.log(tokenStream);
-*/
 
 summary(() => {
 	group(() => {
-		/*
-		const scanner = new Scanner(text);
-		bench("tokenize", () => {
-			const tokenStream = [];
-			do {
-				tokenStream.push(scanner.scan());
-			} while (scanner.token !== tokenKind.eof);
-		});
-		*/
-
 		bench("parser", () => {
 			for (let i = 0; i < 1000; ++i) {
 				parseListPartsResult(text);
@@ -276,6 +61,7 @@ summary(() => {
 		});
 	});
 });
+*/
 
 // await run();
 
@@ -283,7 +69,6 @@ function emitParseFunction(spec) {
 	const globals = new Map();
 	const parsingCode = emitParser(spec, "", globals);
 	const rootParseFunctionName = globals.get(spec);
-
 	return `
 ${parsingCode}
 function parse(text) {
@@ -292,7 +77,11 @@ function parse(text) {
 }`;
 }
 
-function emitParser(spec, tagName, globals: Map<unknown, string>): string {
+function emitParser(
+	spec: ParseSpec | RootSpec,
+	tagName: string,
+	globals: Map<unknown, string>,
+): string {
 	if (globals.has(spec)) {
 		return "";
 	}
@@ -309,12 +98,10 @@ function emitParser(spec, tagName, globals: Map<unknown, string>): string {
 			return emitParser(spec.item, tagName, globals);
 		case "root":
 			return emitRootParser(spec, globals);
-		default:
-			throw new Error(`Unsupported spec type: ${spec.type}`);
 	}
 }
 function emitParserCall(
-	spec,
+	spec: ParseSpec,
 	tagName: string,
 	globals: Map<unknown, string>,
 ): string {
@@ -331,12 +118,13 @@ function emitParserCall(
 			return `${globals.get(spec)}(scanner)`;
 		case "array":
 			return ""; // arrays handled differently
-		default:
-			throw new Error(`Unsupported spec type: ${spec.type}`);
 	}
 }
 
-function emitChildParsers(spec, globals: Map<unknown, string>) {
+function emitChildParsers(
+	spec: RootSpec | ObjectSpec,
+	globals: Map<unknown, string>,
+): string {
 	let code = "";
 	for (const [childName, childSpec] of Object.entries(spec.children)) {
 		const childTagName = childSpec.tagName ?? childName;
@@ -344,7 +132,7 @@ function emitChildParsers(spec, globals: Map<unknown, string>) {
 	}
 	return code;
 }
-function emitRootParser(spec, globals: Map<unknown, string>): string {
+function emitRootParser(spec: RootSpec, globals: Map<unknown, string>): string {
 	const parseFn = `root_parse_fn_${globals.size}`;
 	globals.set(spec, parseFn);
 
@@ -393,7 +181,7 @@ function ${parseFn}(scanner) {
 	);
 }
 function emitObjectParser(
-	spec,
+	spec: ObjectSpec,
 	tagName: string,
 	globals: Map<unknown, string>,
 ): string {

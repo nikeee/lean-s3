@@ -78,27 +78,6 @@ export class Scanner {
 		this.text = text;
 	}
 
-	skipPreamble(): void {
-		// TODO: Make this optional
-		let inPreamble = false;
-		while (true) {
-			const ch = this.text.charCodeAt(this.pos);
-			++this.pos;
-			switch (ch) {
-				case CharCode.lessThan:
-					inPreamble = true;
-					break;
-				case CharCode.greaterThan:
-					if (inPreamble) {
-						return;
-					}
-					break;
-				default:
-					break;
-			}
-		}
-	}
-
 	scan(): TokenKind {
 		this.startPos = this.pos;
 
@@ -153,21 +132,11 @@ export class Scanner {
 					return (this.token = TokenKind.endTag);
 
 				case CharCode.doubleQuote: {
+					// TODO: We actually don't care about attributes
+					// We might just skip scanning everything after the tag identifier
+					// > cannot appear in a quoted string, since it must be escaped
 					if (this.inTag) {
-						++this.pos; // consume opening "
-						const start = this.pos;
-						while (
-							this.pos < this.end &&
-							this.text.charCodeAt(this.pos) !== CharCode.doubleQuote
-						) {
-							++this.pos;
-						}
-
-						++this.pos; // consume closing "
-						this.tokenValueStart = start;
-						this.tokenValueEnd = this.pos;
-
-						return (this.token = TokenKind.attributeValue);
+						return this.#scanQuotedString();
 					}
 
 					const textNode = this.#scanTextNode();
@@ -236,6 +205,23 @@ export class Scanner {
 		this.tokenValueStart = tokenValueStart;
 		this.tokenValueEnd = tokenValueEnd;
 		return (this.token = TokenKind.identifier);
+	}
+
+	#scanQuotedString(): TokenKind {
+		++this.pos; // consume opening "
+		const start = this.pos;
+		while (
+			this.pos < this.end &&
+			this.text.charCodeAt(this.pos) !== CharCode.doubleQuote
+		) {
+			++this.pos;
+		}
+
+		++this.pos; // consume closing "
+		this.tokenValueStart = start;
+		this.tokenValueEnd = this.pos;
+
+		return (this.token = TokenKind.attributeValue);
 	}
 }
 

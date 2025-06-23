@@ -3,6 +3,7 @@ import { summary, group, bench, run } from "mitata";
 import { XMLParser } from "fast-xml-parser";
 
 import parse from "../src/xml-parser/parse.js";
+import * as s3mini from "./s3mini-xml.ts";
 
 summary(() => {
 	group("xml parsing", () => {
@@ -35,6 +36,12 @@ summary(() => {
 				parse(s);
 			}
 		}).baseline(true);
+
+		bench("xml parser of s3mini", () => {
+			for (let i = 0; i < 10000; ++i) {
+				s3mini.parseXml(s);
+			}
+		});
 	});
 });
 

@@ -102,9 +102,17 @@ export class Scanner {
 				case CharCode.nonBreakingSpace:
 					++this.pos;
 					continue;
-				case CharCode.equals:
-					++this.pos;
-					return (this.token = TokenKind.equals);
+				case CharCode.equals: {
+					if (this.inTag) {
+						++this.pos;
+						return (this.token = TokenKind.equals);
+					}
+					const textNode = this.#scanTextNode();
+					if (textNode === undefined) {
+						continue;
+					}
+					return textNode;
+				}
 				case CharCode.lessThan:
 					++this.pos;
 

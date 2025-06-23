@@ -86,7 +86,7 @@ export class Scanner {
 				return (this.token = TokenKind.eof);
 			}
 
-			let ch = this.text.charCodeAt(this.pos);
+			const ch = this.text.charCodeAt(this.pos);
 			switch (ch) {
 				case CharCode.lineFeed:
 				case CharCode.carriageReturn:
@@ -148,20 +148,7 @@ export class Scanner {
 				default:
 					if (this.inTag) {
 						if (isIdentifierStart(ch)) {
-							const identifierStart = this.pos;
-							++this.pos;
-							while (
-								this.pos < this.end &&
-								isIdentifierPart((ch = this.text.charCodeAt(this.pos)))
-							) {
-								++this.pos;
-							}
-
-							this.tokenValueStart = identifierStart;
-							this.tokenValueEnd = this.pos;
-							// this.tokenValue = this.text.substring(identifierStart, this.pos);
-
-							return (this.token = TokenKind.identifier);
+							return this.#scanIdentifier(ch);
 						}
 						++this.pos;
 						continue;
@@ -222,6 +209,22 @@ export class Scanner {
 		this.tokenValueEnd = this.pos;
 
 		return (this.token = TokenKind.attributeValue);
+	}
+
+	#scanIdentifier(firstChar: number): TokenKind {
+		let ch = firstChar;
+		const identifierStart = this.pos;
+		++this.pos;
+		while (
+			this.pos < this.end &&
+			isIdentifierPart((ch = this.text.charCodeAt(this.pos)))
+		) {
+			++this.pos;
+		}
+
+		this.tokenValueStart = identifierStart;
+		this.tokenValueEnd = this.pos;
+		return (this.token = TokenKind.identifier);
 	}
 }
 

@@ -1,6 +1,6 @@
-import { TokenKind } from "./runtime.ts";
+import * as rt from "./runtime.ts";
 
-function emitParser(
+function emitSpecParser(
 	spec: ParseSpec<string> | RootSpec<string>,
 	tagName: string,
 	globals: Map<unknown, string>,
@@ -18,7 +18,7 @@ function emitParser(
 		case "object":
 			return emitObjectParser(spec, tagName, globals);
 		case "array":
-			return emitParser(spec.item, tagName, globals);
+			return emitSpecParser(spec.item, tagName, globals);
 		case "root":
 			return emitRootParser(spec, globals);
 	}
@@ -51,7 +51,7 @@ function emitChildParsers(
 	let code = "";
 	for (const [childName, childSpec] of Object.entries(spec.children)) {
 		const childTagName = childSpec.tagName ?? childName;
-		code += emitParser(childSpec, childTagName, globals);
+		code += emitSpecParser(childSpec, childTagName, globals);
 	}
 	return code;
 }
@@ -115,14 +115,14 @@ function ${parseFn}(scanner) {
 		${emitChildFieldInit(children)}
 	};
 
-	if (scanner.token === ${TokenKind.preamble}) {
+	if (scanner.token === ${rt.TokenKind.preamble}) {
 		scanner.scan();
 	}
 
 	while (true) {
 		scanner.scan();
 		switch (scanner.token) {
-			case ${TokenKind.eof}: {
+			case ${rt.TokenKind.eof}: {
 				${Object.entries(children)
 					.map(([name, childSpec]) =>
 						childSpec.optional ||
@@ -134,8 +134,8 @@ function ${parseFn}(scanner) {
 					.join("\n\t\t\t\t")}
 				return res;
 			}
-			case ${TokenKind.startTag}: {
-				rt.scanExpected(scanner, ${TokenKind.identifier});
+			case ${rt.TokenKind.startTag}: {
+				rt.scanExpected(scanner, ${rt.TokenKind.identifier});
 				switch (scanner.tokenValue) {
 					${Object.entries(children)
 						.map(
@@ -181,9 +181,9 @@ function ${parseFn}(scanner) {
 		scanner.scan(); // consume >
 
 		switch (scanner.token) {
-			case ${TokenKind.startClosingTag}: {
+			case ${rt.TokenKind.startClosingTag}: {
 				rt.expectIdentifier(scanner, ${asLiteral(tagName)});
-				rt.scanExpected(scanner, ${TokenKind.endTag});
+				rt.scanExpected(scanner, ${rt.TokenKind.endTag});
 				${Object.entries(children)
 					.map(([name, childSpec]) =>
 						childSpec.optional ||
@@ -195,8 +195,8 @@ function ${parseFn}(scanner) {
 					.join("\n\t\t\t\t")}
 				return res;
 			}
-			case ${TokenKind.startTag}: {
-				rt.scanExpected(scanner, ${TokenKind.identifier});
+			case ${rt.TokenKind.startTag}: {
+				rt.scanExpected(scanner, ${rt.TokenKind.identifier});
 				switch (scanner.tokenValue) {
 					${Object.entries(children)
 						.map(
@@ -307,96 +307,45 @@ function buildParser<T extends Record<string, ParseSpec<string>>, V extends T>(
 
 type Parser<T> = (text: string) => T;
 
-export function buildParser<T extends string>(
+export function buildStaticParserSource<T extends string>(
 	rootSpec: RootSpec<T>,
-): Parser<unknown> {
+): string {
 	const globals = new Map();
-	const parsingCode = emitParser(rootSpec, "", globals);
+	const parsingCode = emitSpecParser(rootSpec, "", globals);
 	const rootParseFunctionName = globals.get(rootSpec);
 	globals.clear(); // make sure we clear all references (even though this map won't survive past this function)
 
-	console.log(`
+	return `
 import * as rt from "./runtime.ts";
 ${parsingCode}
 export default function parse(text) {
 	const s = new rt.Scanner(text);
 	s.scan(); // prime scanner
 	return ${rootParseFunctionName}(s);
-}`);
-
-	throw new Error("Not implemented");
 }
-const _parser = buildParser({
-	type: "root",
-	children: {
-		result: {
-			type: "object",
-			tagName: "ListPartsResult",
-			children: {
-				bucket: { type: "string", tagName: "Bucket" },
-				key: { type: "string", tagName: "Key" },
-				uploadId: { type: "string", tagName: "UploadId" },
-				storageClass: { type: "string", tagName: "StorageClass" },
-				checksumAlgorithm: {
-					type: "string",
-					tagName: "ChecksumAlgorithm",
-					optional: true,
-					emptyIsAbsent: true,
-				},
-				checksumType: {
-					type: "string",
-					tagName: "ChecksumType",
-					optional: true,
-					emptyIsAbsent: true,
-				},
-				partNumberMarker: { type: "integer", tagName: "PartNumberMarker" },
-				nextPartNumberMarker: {
-					type: "integer",
-					tagName: "NextPartNumberMarker",
-				},
-				maxParts: { type: "integer", tagName: "MaxParts" },
-				isTruncated: {
-					type: "boolean",
-					tagName: "IsTruncated",
-					defaultValue: false,
-				},
-				initiator: {
-					type: "object",
-					tagName: "Initiator",
-					children: {
-						displayName: { type: "string", tagName: "DisplayName" },
-						id: { type: "string", tagName: "ID" },
-					},
-				},
-				owner: {
-					type: "object",
-					tagName: "Owner",
-					children: {
-						displayName: { type: "string", tagName: "DisplayName" },
-						id: { type: "string", tagName: "ID" },
-					},
-				},
-				parts: {
-					type: "array",
-					tagName: "Part",
-					defaultEmpty: true,
-					item: {
-						type: "object",
-						children: {
-							etag: { type: "string", tagName: "ETag" },
-							lastModified: { type: "date", tagName: "LastModified" },
-							partNumber: { type: "integer", tagName: "PartNumber" },
-							size: { type: "integer", tagName: "Size" },
-						},
-					},
-				},
-			},
-		},
-	},
-});
+`.trimStart();
+}
 
-/*
-const x = emitParseFunction(rootSpec);
-console.log(x);
-console.log(`console.log("parse result:", parse(\`${text}\`))`);
-*/
+export function buildParser<T extends string>(
+	rootSpec: RootSpec<T>,
+): Parser<unknown> {
+	const globals = new Map();
+	const parsingCode = emitSpecParser(rootSpec, "", globals);
+	const rootParseFunctionName = globals.get(rootSpec);
+	globals.clear(); // make sure we clear all references (even though this map won't survive past this function)
+
+	return new Function(
+		"rt",
+		`
+return (() => {
+${parsingCode}
+
+return function parse(text) {
+	const s = new rt.Scanner(text);
+	s.scan(); // prime scanner
+	return ${rootParseFunctionName}(s);
+};
+})()
+`.trim(),
+	)(rt) as Parser<unknown>;
+}

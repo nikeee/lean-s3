@@ -17,7 +17,7 @@ function fn_2_Initiator(scanner) {
 
 	skipAttributes(scanner);
 
-	do {
+	while (true) {
 		scanner.scan(); // consume >
 
 		switch (scanner.token) {
@@ -51,8 +51,7 @@ function fn_2_Initiator(scanner) {
 			default:
 				throw new Error(`Unhandled token kind: ${scanner.token}`);
 		}
-		// biome-ignore lint/correctness/noConstantCondition: generated
-	} while (true);
+	}
 }
 function fn_3_Owner(scanner) {
 	// Init structure entirely, so v8 can create a single hidden class
@@ -63,7 +62,7 @@ function fn_3_Owner(scanner) {
 
 	skipAttributes(scanner);
 
-	do {
+	while (true) {
 		scanner.scan(); // consume >
 
 		switch (scanner.token) {
@@ -97,8 +96,7 @@ function fn_3_Owner(scanner) {
 			default:
 				throw new Error(`Unhandled token kind: ${scanner.token}`);
 		}
-		// biome-ignore lint/correctness/noConstantCondition: generated
-	} while (true);
+	}
 }
 function fn_4_Part(scanner) {
 	// Init structure entirely, so v8 can create a single hidden class
@@ -111,7 +109,7 @@ function fn_4_Part(scanner) {
 
 	skipAttributes(scanner);
 
-	do {
+	while (true) {
 		scanner.scan(); // consume >
 
 		switch (scanner.token) {
@@ -159,8 +157,7 @@ function fn_4_Part(scanner) {
 			default:
 				throw new Error(`Unhandled token kind: ${scanner.token}`);
 		}
-		// biome-ignore lint/correctness/noConstantCondition: generated
-	} while (true);
+	}
 }
 
 function fn_1_ListPartsResult(scanner) {
@@ -183,7 +180,7 @@ function fn_1_ListPartsResult(scanner) {
 
 	skipAttributes(scanner);
 
-	do {
+	while (true) {
 		scanner.scan(); // consume >
 
 		switch (scanner.token) {
@@ -287,8 +284,7 @@ function fn_1_ListPartsResult(scanner) {
 			default:
 				throw new Error(`Unhandled token kind: ${scanner.token}`);
 		}
-		// biome-ignore lint/correctness/noConstantCondition: generated
-	} while (true);
+	}
 }
 
 function root_parse_fn_0(scanner) {
@@ -303,7 +299,7 @@ function root_parse_fn_0(scanner) {
 		scanner.scan();
 	}
 
-	do {
+	while (true) {
 		scanner.scan();
 		switch (scanner.token) {
 			case 0: {
@@ -327,8 +323,7 @@ function root_parse_fn_0(scanner) {
 			default:
 				throw new Error(`Unhandled token kind: ${scanner.token}`);
 		}
-		// biome-ignore lint/correctness/noConstantCondition: generated
-	} while (true);
+	}
 }
 
 export default function parse(text) {

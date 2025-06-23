@@ -1,68 +1,4 @@
-/*
-import { summary, group, bench, run } from "mitata";
-import { XMLParser } from "fast-xml-parser";
-
-const out = process.stdout;
-
-function printToken(scanner: Scanner) {
-	switch (scanner.token) {
-		case TokenKind.eof:
-			out.write("[EOF]\n");
-			break;
-		case TokenKind.startTag:
-			out.write("[<]");
-			break;
-		case TokenKind.endTag:
-			out.write("[>]");
-			break;
-		case TokenKind.endSelfClosing:
-			out.write("[/>]");
-			break;
-		case TokenKind.startClosingTag:
-			out.write("[</]");
-			break;
-		case TokenKind.identifier:
-			out.write("[");
-			out.write(scanner.tokenValue!);
-			out.write("]");
-			break;
-		case TokenKind.equals:
-			out.write("[=]");
-			break;
-		case TokenKind.attributeValue:
-			out.write("[");
-			out.write(scanner.tokenValue!);
-			out.write("]");
-			break;
-		default:
-			throw new Error("Token not supported: " + scanner.token);
-	}
-}
-
-summary(() => {
-	group(() => {
-		bench("parser", () => {
-			for (let i = 0; i < 1000; ++i) {
-				parseListPartsResult(text);
-			}
-		});
-
-		bench("fast-xml-parser", () => {
-			for (let i = 0; i < 1000; ++i) {
-				const x = new XMLParser({
-					ignoreAttributes: true,
-					isArray: tagName => tagName === "Part",
-				});
-				x.parse(text);
-			}
-		});
-	});
-});
-*/
-
 import { TokenKind } from "./runtime.ts";
-
-// await run();
 
 function emitParser(
 	spec: ParseSpec<string> | RootSpec<string>,
@@ -147,7 +83,7 @@ function ${parseFn}(scanner) {
 		scanner.scan();
 	}
 
-	do {
+	while (true) {
 		scanner.scan();
 		switch (scanner.token) {
 			case ${TokenKind.eof}: {
@@ -187,8 +123,7 @@ function ${parseFn}(scanner) {
 			default:
 				throw new Error(\`Unhandled token kind: \${scanner.token}\`);
 		}
-	// biome-ignore lint/correctness/noConstantCondition: generated
-	} while (true);
+	}
 }
 `.trimStart();
 }
@@ -217,7 +152,7 @@ function ${parseFn}(scanner) {
 
 	skipAttributes(scanner);
 
-	do {
+	while (true) {
 		scanner.scan(); // consume >
 
 		switch (scanner.token) {
@@ -260,8 +195,7 @@ function ${parseFn}(scanner) {
 			default:
 				throw new Error(\`Unhandled token kind: \${scanner.token}\`);
 		}
-	// biome-ignore lint/correctness/noConstantCondition: generated
-	} while (true);
+	}
 }
 `.trimStart();
 }

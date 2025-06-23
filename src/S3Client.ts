@@ -3,7 +3,7 @@ import { XMLParser, XMLBuilder } from "fast-xml-parser";
 
 import S3File from "./S3File.ts";
 import S3Error from "./S3Error.ts";
-import S3BucketEntry from "./S3BucketEntry.ts";
+import type S3BucketEntry from "./S3BucketEntry.ts";
 import KeyCache from "./KeyCache.ts";
 import * as amzDate from "./AmzDate.ts";
 import * as sign from "./sign.ts";
@@ -32,7 +32,7 @@ import {
 	type ObjectKey,
 } from "./branded.ts";
 
-import { parseListPartsResult } from "./parsers.ts";
+import { parseListPartsResult, parseListBucketResult } from "./parsers.ts";
 
 export const write = Symbol("write");
 export const stream = Symbol("stream");
@@ -1041,25 +1041,15 @@ export default class S3Client {
 		}
 
 		const text = await response.body.text();
-
-		const res = ensureParsedXml(text).ListBucketResult ?? {};
-		if (!res) {
+		try {
+			// biome-ignore lint/suspicious/noExplicitAny: PoC
+			return (parseListBucketResult(text) as any).result;
+		} catch (cause) {
 			throw new S3Error("Unknown", "", {
 				message: "Could not read bucket contents.",
+				cause,
 			});
 		}
-
-		return {
-			name: res.Name,
-			prefix: res.Prefix,
-			startAfter: res.StartAfter,
-			isTruncated: res.IsTruncated,
-			continuationToken: res.ContinuationToken,
-			maxKeys: res.MaxKeys,
-			keyCount: res.KeyCount,
-			nextContinuationToken: res.NextContinuationToken,
-			contents: res.Contents?.map(S3BucketEntry.parse) ?? [],
-		};
 	}
 
 	//#endregion

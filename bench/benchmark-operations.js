@@ -7,7 +7,9 @@ import { XMLParser } from "fast-xml-parser";
 import parse from "../src/xml-parser/parse.js";
 
 /**
- * @module Case study whether to use URLSearchParams or manual string concat for simple search params.
+ * @module Case study whether to use URLSearchParams or manual string concat for simple search params and some other micro benchmarks to determine how we should do things.
+ *
+ * benchmarks marked with `.baseline(true)` are the ones that mark methods that we use in the code.
  */
 
 summary(() => {
@@ -156,7 +158,7 @@ summary(() => {
 					undefined,
 				);
 			}
-		});
+		}).baseline(true);
 	});
 
 	group(() => {
@@ -224,7 +226,9 @@ summary(() => {
 				s += `&continuation-token=${encodeURIComponent(options.continuationToken)}`;
 			}
 			const _ = s;
-		}).gc("once");
+		})
+			.gc("once")
+			.baseline(true);
 	});
 
 	group(() => {
@@ -249,30 +253,72 @@ summary(() => {
 		}
 
 		bench("large string", () => {
-			for(let i = 0; i < 1000; ++i) {
-				signLargeString("GET", "/test.json", "a=b&c=d&x-amazon-whatever=public-read", "fsn1.your-objectstorage.com");
-				signLargeString("PUT", "/some/long/pathtest.json", "a=b&c=d&x-amazon-whatever=private&wat=wut", "localhost:1337");
-				signLargeString("DELETE", "/some/long/pathtest.json", "a=b&c=d&x-amazon-whatever=private&wat=wut", "localhost:1337");
+			for (let i = 0; i < 1000; ++i) {
+				signLargeString(
+					"GET",
+					"/test.json",
+					"a=b&c=d&x-amazon-whatever=public-read",
+					"fsn1.your-objectstorage.com",
+				);
+				signLargeString(
+					"PUT",
+					"/some/long/pathtest.json",
+					"a=b&c=d&x-amazon-whatever=private&wat=wut",
+					"localhost:1337",
+				);
+				signLargeString(
+					"DELETE",
+					"/some/long/pathtest.json",
+					"a=b&c=d&x-amazon-whatever=private&wat=wut",
+					"localhost:1337",
+				);
 			}
-		});
+		}).baseline(true);
 		bench("update calls", () => {
-			for(let i = 0; i < 1000; ++i) {
-				signUpdate("GET", "/test.json", "a=b&c=d&x-amazon-whatever=public-read", "fsn1.your-objectstorage.com");
-				signUpdate("PUT", "/some/long/pathtest.json", "a=b&c=d&x-amazon-whatever=private&wat=wut", "localhost:1337");
-				signUpdate("DELETE", "/some/long/pathtest.json", "a=b&c=d&x-amazon-whatever=private&wat=wut", "localhost:1337");
+			for (let i = 0; i < 1000; ++i) {
+				signUpdate(
+					"GET",
+					"/test.json",
+					"a=b&c=d&x-amazon-whatever=public-read",
+					"fsn1.your-objectstorage.com",
+				);
+				signUpdate(
+					"PUT",
+					"/some/long/pathtest.json",
+					"a=b&c=d&x-amazon-whatever=private&wat=wut",
+					"localhost:1337",
+				);
+				signUpdate(
+					"DELETE",
+					"/some/long/pathtest.json",
+					"a=b&c=d&x-amazon-whatever=private&wat=wut",
+					"localhost:1337",
+				);
 			}
 		});
 	});
 
 	group(() => {
-
 		const headers = [
 			["host"].sort(),
 			["host", "x-amz-date"].sort(),
 			["host", "x-amz-date", "x-amz-content-sha256"].sort(),
 			["host", "x-amz-date", "x-amz-content-sha256", "range"].sort(),
-			["host", "x-amz-date", "x-amz-content-sha256", "range", "content-type"].sort(),
-			["host", "x-amz-date", "x-amz-content-sha256", "range", "content-type", "content-length"].sort(),
+			[
+				"host",
+				"x-amz-date",
+				"x-amz-content-sha256",
+				"range",
+				"content-type",
+			].sort(),
+			[
+				"host",
+				"x-amz-date",
+				"x-amz-content-sha256",
+				"range",
+				"content-type",
+				"content-length",
+			].sort(),
 		];
 
 		function join(h) {
@@ -288,24 +334,23 @@ summary(() => {
 		}
 
 		bench("string concat join", () => {
-			for(let i = 0; i < headers.length; ++i){
+			for (let i = 0; i < headers.length; ++i) {
 				const x = concat(headers[i]);
 			}
-		});
+		}).baseline(true);
 
 		bench("array string join", () => {
-			for(let i = 0; i < headers.length; ++i){
+			for (let i = 0; i < headers.length; ++i) {
 				const x = join(headers[i]);
 			}
 		});
 	});
 
 	group(() => {
-
 		// Which is faster, always adding a & and substring(1) or check if we need a preceeding & on every append?
 
 		bench("substring", () => {
-			for (let i = 0 ; i < 1000; ++i) {
+			for (let i = 0; i < 1000; ++i) {
 				let a = "";
 				if (Math.random() > 0.5) {
 					a += "&qwert=asdf";
@@ -321,23 +366,23 @@ summary(() => {
 
 				const q = a.substring(1);
 			}
-		});
+		}).baseline(true);
 		bench("conditional", () => {
-			for (let i = 0 ; i < 1000; ++i) {
+			for (let i = 0; i < 1000; ++i) {
 				let a = "";
 				if (Math.random() > 0.5) {
 					a += "&qwert=asdf";
 				}
 				if (Math.random() > 0.5) {
-					if (a.length > 0) a += "&"
+					if (a.length > 0) a += "&";
 					a += "asdsadfsadf=dsljfhsjdkfh";
 				}
 				if (Math.random() > 0.5) {
-					if (a.length > 0)  a += "&"
+					if (a.length > 0) a += "&";
 					a += "kflkfdjglkfdjg=dslkfdsjf";
 				}
 
-				if (a.length > 0)  a += "&"
+				if (a.length > 0) a += "&";
 				a += "uploadId=12323456432";
 			}
 		});
@@ -383,18 +428,18 @@ summary(() => {
 			bench("allocation", () => {
 				for (let i = 0; i < 1000; ++i) {
 					do_not_optimize(fnWithDefaultParam());
-					do_not_optimize(fnWithDefaultParam({a: true}));
-					do_not_optimize(fnWithDefaultParam({a: true, b: true}));
+					do_not_optimize(fnWithDefaultParam({ a: true }));
+					do_not_optimize(fnWithDefaultParam({ a: true, b: true }));
 					do_not_optimize(fnWithDefaultParam());
 					do_not_optimize(fnWithDefaultParam());
 					do_not_optimize(fnWithDefaultParam());
 				}
-			});
+			}).baseline(true);
 			bench("conditional", () => {
 				for (let i = 0; i < 1000; ++i) {
 					do_not_optimize(fnWithOptionalParam());
-					do_not_optimize(fnWithOptionalParam({a: true}));
-					do_not_optimize(fnWithOptionalParam({a: true, b: true}));
+					do_not_optimize(fnWithOptionalParam({ a: true }));
+					do_not_optimize(fnWithOptionalParam({ a: true, b: true }));
 					do_not_optimize(fnWithOptionalParam());
 					do_not_optimize(fnWithOptionalParam());
 					do_not_optimize(fnWithOptionalParam());
@@ -405,7 +450,6 @@ summary(() => {
 		group(() => {
 			// Do we want to pass a buffer to our XML parser? Undici offers a buffer directly, which could
 			// improve throughput due to an encoding step getting skipped
-
 
 			const s = `<?xml version="1.0" encoding="UTF-8"?><ListPartsResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Bucket>test-bucket</Bucket><Key>583ea250-5016-48e5-8b26-b3ce0d9e5822/foo-key-9000</Key><UploadId>tWA7cuzMIElE_sIi8weNVQJdxXnxZI9mhRT3hi9Xuaeqv4DjyteO64y_o4SuJP_E0Uf-D4Mzqeno7eWIakTtmlgabUjQ3uko2TE9Qv5BpztLPVqqJKEQnhulwkgLzcOs</UploadId><PartNumberMarker>0</PartNumberMarker><NextPartNumberMarker>3</NextPartNumberMarker><MaxParts>1000</MaxParts><IsTruncated>false</IsTruncated><Part><ETag>"4715e35cf900ae14837e3c098e87d522"</ETag><LastModified>2025-06-20T13:58:01.000Z</LastModified><PartNumber>1</PartNumber><Size>6291456</Size></Part><Part><ETag>"ce1b200f8c97447474929b722ed93b00"</ETag><LastModified>2025-06-20T13:58:02.000Z</LastModified><PartNumber>2</PartNumber><Size>6291456</Size></Part><Part><ETag>"3bc3be0b850eacf461ec036374616058"</ETag><LastModified>2025-06-20T13:58:02.000Z</LastModified><PartNumber>3</PartNumber><Size>1048576</Size></Part><Initiator><DisplayName>webfile</DisplayName><ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID></Initiator><Owner><DisplayName>webfile</DisplayName><ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID></Owner><StorageClass>STANDARD</StorageClass></ListPartsResult>`;
 			const b = Buffer.from(s, "ascii");
@@ -424,15 +468,15 @@ summary(() => {
 			});
 
 			bench("parse string with fxp", () => {
-				for(let i = 0; i < 10000; ++i) {
+				for (let i = 0; i < 10000; ++i) {
 					xmlParser.parse(s);
 				}
 			});
 			bench("custom parser", () => {
-				for(let i = 0; i < 10000; ++i) {
+				for (let i = 0; i < 10000; ++i) {
 					parse(s);
 				}
-			});
+			}).baseline(true);
 		});
 	});
 });

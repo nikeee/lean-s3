@@ -115,6 +115,7 @@ export class Scanner {
 								++this.pos;
 								return (this.token = TokenKind.startClosingTag);
 							case CharCode.questionMark:
+								this.inTag = false;
 								return this.#scanPreamble(this.pos - 1);
 							default:
 								break;
@@ -234,15 +235,17 @@ export class Scanner {
 	#scanPreamble(tokenValueStart: number): TokenKind {
 		++this.pos; // consume ?
 		while (
-			this.pos < this.end &&
+			this.pos + 1 < this.end &&
 			this.text.charCodeAt(this.pos) !== CharCode.questionMark &&
-			this.text.charCodeAt(this.pos) !== CharCode.greaterThan
+			this.text.charCodeAt(this.pos + 1) !== CharCode.greaterThan
 		) {
 			++this.pos;
 		}
+		++this.pos; // consume >
+
 		this.tokenValueStart = tokenValueStart;
 		this.tokenValueEnd = this.pos;
-		return (this.token = TokenKind.identifier);
+		return (this.token = TokenKind.preamble);
 	}
 }
 

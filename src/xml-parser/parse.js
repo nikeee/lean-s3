@@ -296,7 +296,12 @@ function root_parse_fn_0(scanner) {
 	const res = {
 		result: undefined,
 	};
-	scanner.skipPreamble();
+
+	scanner.scan(); // prime scanner
+
+	if (scanner.token === 9) {
+		scanner.scan();
+	}
 
 	do {
 		scanner.scan();

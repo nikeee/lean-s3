@@ -140,7 +140,12 @@ function ${parseFn}(scanner) {
 			)
 			.join("\n\t\t")}
 	};
-	scanner.skipPreamble();
+
+	scanner.scan(); // prime scanner
+
+	if (scanner.token === ${TokenKind.preamble}) {
+		scanner.scan();
+	}
 
 	do {
 		scanner.scan();

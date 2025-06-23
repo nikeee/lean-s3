@@ -150,7 +150,7 @@ export class Scanner {
 				default:
 					if (this.inTag) {
 						if (isIdentifierStart(ch)) {
-							return this.#scanIdentifier(ch);
+							return this.#scanIdentifier();
 						}
 						++this.pos;
 						continue;
@@ -213,13 +213,12 @@ export class Scanner {
 		return (this.token = TokenKind.attributeValue);
 	}
 
-	#scanIdentifier(firstChar: number): TokenKind {
-		let ch = firstChar;
+	#scanIdentifier(): TokenKind {
 		const identifierStart = this.pos;
 		++this.pos;
 		while (
 			this.pos < this.end &&
-			isIdentifierPart((ch = this.text.charCodeAt(this.pos)))
+			isIdentifierPart(this.text.charCodeAt(this.pos))
 		) {
 			++this.pos;
 		}

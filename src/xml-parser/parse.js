@@ -27,7 +27,7 @@ function fn_2_Initiator(scanner) {
 			}
 			case 1: {
 				rt.scanExpected(scanner, 5);
-				switch (scanner.tokenValue) {
+				switch (scanner.getTokenValue()) {
 					case "DisplayName":
 						res.displayName = rt.parseStringTag(scanner, "DisplayName");
 						break;
@@ -35,7 +35,9 @@ function fn_2_Initiator(scanner) {
 						res.id = rt.parseStringTag(scanner, "ID");
 						break;
 					default:
-						throw new Error(`Unexpected tag identifier: ${scanner.tokenValue}`);
+						throw new Error(
+							`Unexpected tag identifier: ${scanner.getTokenValue()}`,
+						);
 				}
 				break;
 			}
@@ -72,7 +74,7 @@ function fn_3_Owner(scanner) {
 			}
 			case 1: {
 				rt.scanExpected(scanner, 5);
-				switch (scanner.tokenValue) {
+				switch (scanner.getTokenValue()) {
 					case "DisplayName":
 						res.displayName = rt.parseStringTag(scanner, "DisplayName");
 						break;
@@ -80,7 +82,9 @@ function fn_3_Owner(scanner) {
 						res.id = rt.parseStringTag(scanner, "ID");
 						break;
 					default:
-						throw new Error(`Unexpected tag identifier: ${scanner.tokenValue}`);
+						throw new Error(
+							`Unexpected tag identifier: ${scanner.getTokenValue()}`,
+						);
 				}
 				break;
 			}
@@ -127,7 +131,7 @@ function fn_4_Part(scanner) {
 			}
 			case 1: {
 				rt.scanExpected(scanner, 5);
-				switch (scanner.tokenValue) {
+				switch (scanner.getTokenValue()) {
 					case "ETag":
 						res.etag = rt.parseStringTag(scanner, "ETag");
 						break;
@@ -141,7 +145,9 @@ function fn_4_Part(scanner) {
 						res.size = rt.parseIntegerTag(scanner, "Size");
 						break;
 					default:
-						throw new Error(`Unexpected tag identifier: ${scanner.tokenValue}`);
+						throw new Error(
+							`Unexpected tag identifier: ${scanner.getTokenValue()}`,
+						);
 				}
 				break;
 			}
@@ -210,19 +216,11 @@ function fn_1_ListPartsResult(scanner) {
 					throw new TypeError(
 						`Value for field "isTruncated" was required but not present (expected as tag name "IsTruncated").`,
 					);
-				if (res.initiator === undefined)
-					throw new TypeError(
-						`Value for field "initiator" was required but not present (expected as tag name "Initiator").`,
-					);
-				if (res.owner === undefined)
-					throw new TypeError(
-						`Value for field "owner" was required but not present (expected as tag name "Owner").`,
-					);
 				return res;
 			}
 			case 1: {
 				rt.scanExpected(scanner, 5);
-				switch (scanner.tokenValue) {
+				switch (scanner.getTokenValue()) {
 					case "Bucket":
 						res.bucket = rt.parseStringTag(scanner, "Bucket");
 						break;
@@ -271,7 +269,9 @@ function fn_1_ListPartsResult(scanner) {
 						res.parts.push(fn_4_Part(scanner));
 						break;
 					default:
-						throw new Error(`Unexpected tag identifier: ${scanner.tokenValue}`);
+						throw new Error(
+							`Unexpected tag identifier: ${scanner.getTokenValue()}`,
+						);
 				}
 				break;
 			}
@@ -303,12 +303,14 @@ function root_parse_fn_0(scanner) {
 			}
 			case 1: {
 				rt.scanExpected(scanner, 5);
-				switch (scanner.tokenValue) {
+				switch (scanner.getTokenValue()) {
 					case "ListPartsResult":
 						res.result = fn_1_ListPartsResult(scanner);
 						break;
 					default:
-						throw new Error(`Unexpected tag identifier: ${scanner.tokenValue}`);
+						throw new Error(
+							`Unexpected tag identifier: ${scanner.getTokenValue()}`,
+						);
 				}
 				break;
 			}

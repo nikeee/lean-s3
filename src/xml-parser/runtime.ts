@@ -63,9 +63,6 @@ export class Scanner {
 
 	tokenValueStart = -1;
 	tokenValueEnd = -1;
-	get tokenValue() {
-		return this.text.substring(this.tokenValueStart, this.tokenValueEnd);
-	}
 	getTokenValue() {
 		// TODO: boolean / separate method to entity escape
 		return this.text.substring(this.tokenValueStart, this.tokenValueEnd);
@@ -175,7 +172,6 @@ export class Scanner {
 		while (isWhitespace(this.text.charCodeAt(this.pos))) {
 			++tokenValueStart;
 		}
-		// TODO: First element gets cut off
 
 		while (
 			this.pos < this.end &&
@@ -309,9 +305,9 @@ export function skipAttributes(scanner: Scanner): void {
 
 export function expectIdentifier(scanner: Scanner, identifier: string): void {
 	scanExpected(scanner, TokenKind.identifier);
-	if (scanner.tokenValue !== identifier) {
+	if (scanner.getTokenValue() !== identifier) {
 		throw new Error(
-			`Expected closing tag for identifier: ${identifier}, got: ${scanner.tokenValue}`,
+			`Expected closing tag for identifier: ${identifier}, got: ${scanner.getTokenValue()}`,
 		);
 	}
 }
@@ -329,7 +325,7 @@ export function parseStringTag(scanner: Scanner, tagName: string): string {
 		return "";
 	}
 
-	const value = scanner.tokenValue;
+	const value = scanner.getTokenValue();
 	expectClosingTag(scanner, tagName);
 	return value;
 }
@@ -344,7 +340,7 @@ export function parseDateTag(scanner: Scanner, tagName: string): Date {
 export function parseIntegerTag(scanner: Scanner, tagName: string): number {
 	skipAttributes(scanner);
 	scanner.scan(); // consume >
-	const value = scanner.tokenValue;
+	const value = scanner.getTokenValue();
 	const n = Number(value);
 	if (!Number.isInteger(n)) {
 		throw new Error(`Value is not an integer: "${value}"`);
@@ -356,7 +352,7 @@ export function parseBooleanTag(scanner: Scanner, tagName: string): boolean {
 	skipAttributes(scanner);
 	scanner.scan(); // consume >
 
-	const stringValue = scanner.tokenValue;
+	const stringValue = scanner.getTokenValue();
 
 	let value: boolean;
 	if (stringValue === "true") {

@@ -136,7 +136,7 @@ function ${parseFn}(scanner) {
 			}
 			case ${rt.TokenKind.startTag}: {
 				rt.scanExpected(scanner, ${rt.TokenKind.identifier});
-				switch (scanner.tokenValue) {
+				switch (scanner.getTokenValue()) {
 					${Object.entries(children)
 						.map(
 							([name, childSpec]) =>
@@ -146,7 +146,7 @@ function ${parseFn}(scanner) {
 						)
 						.join("\n\t\t\t\t\t")}
 					default:
-						throw new Error(\`Unexpected tag identifier: \${scanner.tokenValue}\`);
+						throw new Error(\`Unexpected tag identifier: \${scanner.getTokenValue()}\`);
 				}
 				break;
 			}
@@ -197,7 +197,7 @@ function ${parseFn}(scanner) {
 			}
 			case ${rt.TokenKind.startTag}: {
 				rt.scanExpected(scanner, ${rt.TokenKind.identifier});
-				switch (scanner.tokenValue) {
+				switch (scanner.getTokenValue()) {
 					${Object.entries(children)
 						.map(
 							([name, childSpec]) =>
@@ -207,7 +207,7 @@ function ${parseFn}(scanner) {
 						)
 						.join("\n\t\t\t\t\t")}
 					default:
-						throw new Error(\`Unexpected tag identifier: \${scanner.tokenValue}\`);
+						throw new Error(\`Unexpected tag identifier: \${scanner.getTokenValue()}\`);
 				}
 				break;
 			}

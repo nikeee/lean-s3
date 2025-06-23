@@ -1,5 +1,24 @@
 import { buildParser } from "./xml-parser/generator.ts";
 
+const initiator = {
+	type: "object",
+	tagName: "Initiator",
+	optional: true,
+	children: {
+		displayName: { type: "string", tagName: "DisplayName" },
+		id: { type: "string", tagName: "ID" },
+	},
+} as const;
+const owner = {
+	type: "object",
+	tagName: "Owner",
+	optional: true,
+	children: {
+		displayName: { type: "string", tagName: "DisplayName" },
+		id: { type: "string", tagName: "ID" },
+	},
+} as const;
+
 export const listPartsResultSpec = {
 	type: "root",
 	children: {
@@ -34,24 +53,8 @@ export const listPartsResultSpec = {
 					tagName: "IsTruncated",
 					defaultValue: false,
 				},
-				initiator: {
-					type: "object",
-					tagName: "Initiator",
-					optional: true,
-					children: {
-						displayName: { type: "string", tagName: "DisplayName" },
-						id: { type: "string", tagName: "ID" },
-					},
-				},
-				owner: {
-					type: "object",
-					tagName: "Owner",
-					optional: true,
-					children: {
-						displayName: { type: "string", tagName: "DisplayName" },
-						id: { type: "string", tagName: "ID" },
-					},
-				},
+				initiator,
+				owner,
 				parts: {
 					type: "array",
 					tagName: "Part",
@@ -140,6 +143,94 @@ export const parseInitiateMultipartUploadResult = buildParser({
 				bucket: { type: "string", tagName: "Bucket" },
 				key: { type: "string", tagName: "Key" },
 				uploadId: { type: "string", tagName: "UploadId" },
+			},
+		},
+	},
+});
+
+export const parseListMultipartUploadsResult = buildParser({
+	type: "root",
+	children: {
+		result: {
+			type: "object",
+			tagName: "ListMultipartUploadsResult",
+			children: {
+				bucket: { type: "string", tagName: "Bucket" },
+				keyMarker: {
+					type: "string",
+					tagName: "KeyMarker",
+					optional: true,
+					emptyIsAbsent: true,
+				},
+				uploadIdMarker: {
+					type: "string",
+					tagName: "UploadIdMarker",
+					optional: true,
+					emptyIsAbsent: true,
+				},
+				nextKeyMarker: {
+					type: "string",
+					tagName: "NextKeyMarker",
+					optional: true,
+				},
+				prefix: {
+					type: "string",
+					tagName: "Prefix",
+					optional: true,
+					emptyIsAbsent: true,
+				},
+				delimiter: {
+					type: "string",
+					tagName: "Delimiter",
+					optional: true,
+					emptyIsAbsent: true,
+				},
+				nextUploadIdMarker: {
+					type: "string",
+					tagName: "NextUploadIdMarker",
+					optional: true,
+					emptyIsAbsent: true,
+				},
+				maxUploads: {
+					type: "integer",
+					tagName: "MaxUploads",
+					defaultValue: 1000,
+				},
+				isTruncated: {
+					type: "boolean",
+					tagName: "IsTruncated",
+					defaultValue: false,
+				},
+
+				uploads: {
+					type: "array",
+					tagName: "Upload",
+					defaultEmpty: true,
+					item: {
+						type: "object",
+						children: {
+							checksumAlgorithm: {
+								type: "string",
+								tagName: "ChecksumAlgorithm",
+								optional: true,
+							},
+							checksumType: {
+								type: "string",
+								tagName: "ChecksumType",
+								optional: true,
+							},
+							initiated: {
+								type: "date",
+								tagName: "Initiated",
+							},
+							initiator,
+							owner,
+							storageClass: { type: "string", tagName: "StorageClass" },
+							key: { type: "string", tagName: "Key" },
+							uploadId: { type: "string", tagName: "UploadId" },
+						},
+					},
+				},
 			},
 		},
 	},

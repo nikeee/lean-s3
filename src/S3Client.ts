@@ -36,6 +36,7 @@ import {
 	parseListPartsResult,
 	parseListBucketResult,
 	parseInitiateMultipartUploadResult,
+	parseListMultipartUploadsResult,
 } from "./parsers.ts";
 
 export const write = Symbol("write");
@@ -553,34 +554,9 @@ export default class S3Client {
 		}
 
 		const text = await response.body.text();
-		const root = ensureParsedXml(text).ListMultipartUploadsResult ?? {};
-
-		return {
-			bucket: root.Bucket || undefined,
-			delimiter: root.Delimiter || undefined,
-			prefix: root.Prefix || undefined,
-			keyMarker: root.KeyMarker || undefined,
-			uploadIdMarker: root.UploadIdMarker || undefined,
-			nextKeyMarker: root.NextKeyMarker || undefined,
-			nextUploadIdMarker: root.NextUploadIdMarker || undefined,
-			maxUploads: root.MaxUploads ?? 1000, // not using || to not override 0; caution: minio supports 10000(!)
-			isTruncated: root.IsTruncated === "true",
-			uploads:
-				root.Upload?.map(
-					// biome-ignore lint/suspicious/noExplicitAny: we're parsing here
-					(u: any) =>
-						({
-							key: u.Key || undefined,
-							uploadId: u.UploadId || undefined,
-							// TODO: Initiator
-							// TODO: Owner
-							storageClass: u.StorageClass || undefined,
-							checksumAlgorithm: u.ChecksumAlgorithm || undefined,
-							checksumType: u.ChecksumType || undefined,
-							initiated: u.Initiated ? new Date(u.Initiated) : undefined,
-						}) satisfies MultipartUpload,
-				) ?? [],
-		};
+		// biome-ignore lint/suspicious/noExplicitAny: PoC
+		return (parseListMultipartUploadsResult(text) as any)
+			.result as ListMultipartUploadsResult;
 	}
 
 	/**

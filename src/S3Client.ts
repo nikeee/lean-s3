@@ -37,6 +37,7 @@ import {
 	parseListBucketResult,
 	parseInitiateMultipartUploadResult,
 	parseListMultipartUploadsResult,
+	parseCompleteMultipartUploadResult,
 } from "./parsers.ts";
 
 export const write = Symbol("write");
@@ -639,20 +640,9 @@ export default class S3Client {
 			throw await getResponseError(response, path);
 		}
 		const text = await response.body.text();
-		const res = ensureParsedXml(text).CompleteMultipartUploadResult ?? {};
 
-		return {
-			location: res.Location || undefined,
-			bucket: res.Bucket || undefined,
-			key: res.Key || undefined,
-			etag: res.ETag || undefined,
-			checksumCRC32: res.ChecksumCRC32 || undefined,
-			checksumCRC32C: res.ChecksumCRC32C || undefined,
-			checksumCRC64NVME: res.ChecksumCRC64NVME || undefined,
-			checksumSHA1: res.ChecksumSHA1 || undefined,
-			checksumSHA256: res.ChecksumSHA256 || undefined,
-			checksumType: res.ChecksumType || undefined,
-		};
+		// biome-ignore lint/suspicious/noExplicitAny: PoC
+		return (parseCompleteMultipartUploadResult(text) as any).result;
 	}
 
 	/**

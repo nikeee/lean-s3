@@ -122,16 +122,9 @@ function ${parseFn}(scanner) {
 	while (true) {
 		scanner.scan();
 		switch (scanner.token) {
+			case ${rt.TokenKind.endSelfClosing}:
 			case ${rt.TokenKind.eof}: {
-				${Object.entries(children)
-					.map(([name, childSpec]) =>
-						childSpec.optional ||
-						(childSpec.type === "array" && childSpec.defaultEmpty)
-							? undefined
-							: `if (res.${name} === undefined) throw new TypeError(\`Value for field "${name}" was required but not present (expected as tag name "${childSpec.tagName ?? name}").\`);`,
-					)
-					.filter(s => !!s)
-					.join("\n\t\t\t\t")}
+				${getObjectPropertyChecks(children).join("\n\t\t\t\t")}
 				return res;
 			}
 			case ${rt.TokenKind.startTag}: {
@@ -157,6 +150,20 @@ function ${parseFn}(scanner) {
 }
 `.trimStart();
 }
+
+function getObjectPropertyChecks(
+	children: (ObjectSpec<string> | RootSpec<string>)["children"],
+): string[] {
+	return Object.entries(children)
+		.map(([name, childSpec]) =>
+			childSpec.optional ||
+			(childSpec.type === "array" && childSpec.defaultEmpty)
+				? undefined
+				: `if (res.${name} === undefined) throw new TypeError(\`Value for field "${name}" was required but not present (expected as tag name "${childSpec.tagName ?? name}").\`);`,
+		)
+		.filter(s => s !== undefined);
+}
+
 function emitObjectParser(
 	spec: ObjectSpec<string>,
 	tagName: string,
@@ -181,20 +188,15 @@ function ${parseFn}(scanner) {
 		scanner.scan(); // consume >
 
 		switch (scanner.token) {
-			case ${rt.TokenKind.startClosingTag}: {
+			case ${rt.TokenKind.endSelfClosing}:
+			case ${rt.TokenKind.startClosingTag}:
 				rt.expectIdentifier(scanner, ${asLiteral(tagName)});
 				rt.scanExpected(scanner, ${rt.TokenKind.endTag});
-				${Object.entries(children)
-					.map(([name, childSpec]) =>
-						childSpec.optional ||
-						(childSpec.type === "array" && childSpec.defaultEmpty)
-							? undefined
-							: `if (res.${name} === undefined) throw new TypeError(\`Value for field "${name}" was required but not present (expected as tag name "${childSpec.tagName ?? name}").\`);`,
-					)
-					.filter(s => !!s)
-					.join("\n\t\t\t\t")}
+				${getObjectPropertyChecks(children).join("\n\t\t\t\t")}
 				return res;
-			}
+			case ${rt.TokenKind.eof}:
+				${getObjectPropertyChecks(children).join("\n\t\t\t\t")}
+				return res;
 			case ${rt.TokenKind.startTag}: {
 				rt.scanExpected(scanner, ${rt.TokenKind.identifier});
 				switch (scanner.getTokenValueEncoded()) {

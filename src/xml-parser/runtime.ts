@@ -1,4 +1,4 @@
-export class Scanner2 {}
+/** biome-ignore-all lint/suspicious/noAssignInExpressions: ok here */
 
 /**
  * biome-ignore lint/suspicious/noConstEnum: Normally, we'd avoid using TS enums due to its incompability with JS.
@@ -100,7 +100,6 @@ export class Scanner {
 
 		while (true) {
 			if (this.pos >= this.end) {
-				// biome-ignore lint/suspicious/noAssignInExpressions: ok here
 				return (this.token = TokenKind.eof);
 			}
 
@@ -120,34 +119,9 @@ export class Scanner {
 					continue;
 				case CharCode.equals:
 					++this.pos;
-					// biome-ignore lint/suspicious/noAssignInExpressions: ok here
 					return (this.token = TokenKind.equals);
 				case CharCode.lessThan:
 					++this.pos;
-
-					// TODO: Enable/disable comment handling
-					/*
-					if (
-						(this.pos + 3) < this.end
-						this.text.charCodeAt(this.pos + 1) === charCode.exclamationMark &&
-						this.text.charCodeAt(this.pos + 2) === charCode.minus &&
-						this.text.charCodeAt(this.pos + 3) === charCode.minus
-					) {
-						this.pos += 3;
-						while (
-							this.pos + 2 < this.end &&
-							!(
-								this.text.charCodeAt(this.pos) === CharCode.dash &&
-								this.text.charCodeAt(this.pos + 1) === CharCode.dash &&
-								this.text.charCodeAt(this.pos + 2) === CharCode.greaterThan
-							)
-						) {
-							this.pos++;
-						}
-						this.pos += 3; // Skip -->
-						continue;
-					}
-					*/
 
 					this.inTag = true;
 
@@ -155,16 +129,13 @@ export class Scanner {
 						const nextChar = this.text.charCodeAt(this.pos);
 						if (nextChar === CharCode.slash) {
 							++this.pos;
-							// biome-ignore lint/suspicious/noAssignInExpressions: ok here
 							return (this.token = TokenKind.startClosingTag);
 						}
 					}
-					// biome-ignore lint/suspicious/noAssignInExpressions: ok here
 					return (this.token = TokenKind.startTag);
 				case CharCode.greaterThan:
 					++this.pos;
 					this.inTag = false;
-					// biome-ignore lint/suspicious/noAssignInExpressions: ok here
 					return (this.token = TokenKind.endTag);
 				case CharCode.slash:
 					++this.pos;
@@ -172,11 +143,9 @@ export class Scanner {
 						const nextChar = this.text.charCodeAt(this.pos);
 						if (nextChar === CharCode.greaterThan) {
 							++this.pos;
-							// biome-ignore lint/suspicious/noAssignInExpressions: ok here
 							return (this.token = TokenKind.endSelfClosing);
 						}
 					}
-					// biome-ignore lint/suspicious/noAssignInExpressions: ok here
 					return (this.token = TokenKind.endTag);
 
 				case CharCode.doubleQuote: {
@@ -195,7 +164,6 @@ export class Scanner {
 						this.tokenValueEnd = this.pos;
 						// this.tokenValue = this.text.substring(start, this.pos);
 
-						// biome-ignore lint/suspicious/noAssignInExpressions: ok here
 						return (this.token = TokenKind.attributeValue);
 					} else {
 						// Read text node
@@ -232,7 +200,6 @@ export class Scanner {
 						// }
 						// this.tokenValue = value;
 
-						// biome-ignore lint/suspicious/noAssignInExpressions: ok here
 						return (this.token = TokenKind.identifier);
 					}
 				}
@@ -243,7 +210,6 @@ export class Scanner {
 							++this.pos;
 							while (
 								this.pos < this.end &&
-								// biome-ignore lint/suspicious/noAssignInExpressions: ok here
 								isIdentifierPart((ch = this.text.charCodeAt(this.pos)))
 							) {
 								++this.pos;
@@ -253,7 +219,6 @@ export class Scanner {
 							this.tokenValueEnd = this.pos;
 							// this.tokenValue = this.text.substring(identifierStart, this.pos);
 
-							// biome-ignore lint/suspicious/noAssignInExpressions: ok here
 							return (this.token = TokenKind.identifier);
 						}
 						++this.pos;
@@ -293,7 +258,6 @@ export class Scanner {
 						// }
 						// this.tokenValue = value;
 
-						// biome-ignore lint/suspicious/noAssignInExpressions: ok here
 						return (this.token = TokenKind.identifier);
 					}
 			}

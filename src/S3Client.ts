@@ -70,6 +70,15 @@ export type DeleteObjectsOptions = {
 	bucket?: string;
 	signal?: AbortSignal;
 };
+export type DeleteObjectsResult = {
+	errors: DeleteObjectsError[];
+};
+export type DeleteObjectsError = {
+	code: string;
+	key: string;
+	message: string;
+	versionId: string;
+};
 
 export interface S3FilePresignOptions {
 	contentHash: Buffer;
@@ -1100,7 +1109,7 @@ export default class S3Client {
 	async deleteObjects(
 		objects: readonly S3BucketEntry[] | readonly string[],
 		options: DeleteObjectsOptions = {},
-	) {
+	): Promise<DeleteObjectsResult> {
 		const body = xmlBuilder.build({
 			Delete: {
 				Quiet: true,
@@ -1149,7 +1158,7 @@ export default class S3Client {
 					versionId: e.VersionId,
 				})) ?? [];
 
-			return errors.length > 0 ? { errors } : null;
+			return { errors };
 		}
 
 		if (400 <= response.statusCode && response.statusCode < 500) {

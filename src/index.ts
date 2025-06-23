@@ -10,6 +10,8 @@ export {
 	default as S3Client,
 	type CreateMultipartUploadOptions,
 	type CreateMultipartUploadResult,
+	type DeleteObjectsResult,
+	type DeleteObjectsError,
 	type ListObjectsOptions,
 	type ListObjectsIteratingOptions,
 	type ListObjectsResult,

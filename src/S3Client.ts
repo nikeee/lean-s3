@@ -32,7 +32,7 @@ import {
 	type ObjectKey,
 } from "./branded.ts";
 
-import parseListPartsResult from "./xml-parser/parse.js";
+import { parseListPartsResult } from "./parsers.ts";
 
 export const write = Symbol("write");
 export const stream = Symbol("stream");
@@ -786,28 +786,7 @@ export default class S3Client {
 		if (response.statusCode === 200) {
 			const text = await response.body.text();
 			// biome-ignore lint/suspicious/noExplicitAny: POC
-			return parseListPartsResult(text).result as any;
-			/*
-			return {
-				bucket: root.Bucket,
-				key: root.Key,
-				uploadId: root.UploadId,
-				partNumberMarker: root.PartNumberMarker ?? undefined,
-				nextPartNumberMarker: root.NextPartNumberMarker ?? undefined,
-				maxParts: root.MaxParts ?? 1000,
-				isTruncated: root.IsTruncated ?? false,
-				parts:
-					// biome-ignore lint/suspicious/noExplicitAny: parsing code
-					root.Part?.map((part: any) => ({
-						etag: part.ETag,
-						lastModified: part.LastModified
-							? new Date(part.LastModified)
-							: undefined,
-						partNumber: part.PartNumber ?? undefined,
-						size: part.Size ?? undefined,
-					})) ?? [],
-			};
-			*/
+			return (parseListPartsResult(text) as any).result;
 		}
 
 		throw await getResponseError(response, path);

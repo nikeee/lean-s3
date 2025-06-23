@@ -1,13 +1,4 @@
-import {
-	Scanner,
-	scanExpected,
-	skipAttributes,
-	expectIdentifier,
-	parseStringTag,
-	parseDateTag,
-	parseIntegerTag,
-	parseBooleanTag,
-} from "./runtime.ts";
+import * as rt from "./runtime.ts";
 function fn_2_Initiator(scanner) {
 	// Init structure entirely, so v8 can create a single hidden class
 	const res = {
@@ -15,15 +6,15 @@ function fn_2_Initiator(scanner) {
 		id: undefined,
 	};
 
-	skipAttributes(scanner);
+	rt.skipAttributes(scanner);
 
 	while (true) {
 		scanner.scan(); // consume >
 
 		switch (scanner.token) {
 			case 3: {
-				expectIdentifier(scanner, "Initiator");
-				scanExpected(scanner, 2);
+				rt.expectIdentifier(scanner, "Initiator");
+				rt.scanExpected(scanner, 2);
 				if (res.displayName === undefined)
 					throw new TypeError(
 						`Value for field "displayName" was required but not present (expected as tag name "DisplayName").`,
@@ -35,13 +26,13 @@ function fn_2_Initiator(scanner) {
 				return res;
 			}
 			case 1: {
-				scanExpected(scanner, 5);
+				rt.scanExpected(scanner, 5);
 				switch (scanner.tokenValue) {
 					case "DisplayName":
-						res.displayName = parseStringTag(scanner, "DisplayName");
+						res.displayName = rt.parseStringTag(scanner, "DisplayName");
 						break;
 					case "ID":
-						res.id = parseStringTag(scanner, "ID");
+						res.id = rt.parseStringTag(scanner, "ID");
 						break;
 					default:
 						throw new Error(`Unexpected tag identifier: ${scanner.tokenValue}`);
@@ -60,15 +51,15 @@ function fn_3_Owner(scanner) {
 		id: undefined,
 	};
 
-	skipAttributes(scanner);
+	rt.skipAttributes(scanner);
 
 	while (true) {
 		scanner.scan(); // consume >
 
 		switch (scanner.token) {
 			case 3: {
-				expectIdentifier(scanner, "Owner");
-				scanExpected(scanner, 2);
+				rt.expectIdentifier(scanner, "Owner");
+				rt.scanExpected(scanner, 2);
 				if (res.displayName === undefined)
 					throw new TypeError(
 						`Value for field "displayName" was required but not present (expected as tag name "DisplayName").`,
@@ -80,13 +71,13 @@ function fn_3_Owner(scanner) {
 				return res;
 			}
 			case 1: {
-				scanExpected(scanner, 5);
+				rt.scanExpected(scanner, 5);
 				switch (scanner.tokenValue) {
 					case "DisplayName":
-						res.displayName = parseStringTag(scanner, "DisplayName");
+						res.displayName = rt.parseStringTag(scanner, "DisplayName");
 						break;
 					case "ID":
-						res.id = parseStringTag(scanner, "ID");
+						res.id = rt.parseStringTag(scanner, "ID");
 						break;
 					default:
 						throw new Error(`Unexpected tag identifier: ${scanner.tokenValue}`);
@@ -107,15 +98,15 @@ function fn_4_Part(scanner) {
 		size: undefined,
 	};
 
-	skipAttributes(scanner);
+	rt.skipAttributes(scanner);
 
 	while (true) {
 		scanner.scan(); // consume >
 
 		switch (scanner.token) {
 			case 3: {
-				expectIdentifier(scanner, "Part");
-				scanExpected(scanner, 2);
+				rt.expectIdentifier(scanner, "Part");
+				rt.scanExpected(scanner, 2);
 				if (res.etag === undefined)
 					throw new TypeError(
 						`Value for field "etag" was required but not present (expected as tag name "ETag").`,
@@ -135,19 +126,19 @@ function fn_4_Part(scanner) {
 				return res;
 			}
 			case 1: {
-				scanExpected(scanner, 5);
+				rt.scanExpected(scanner, 5);
 				switch (scanner.tokenValue) {
 					case "ETag":
-						res.etag = parseStringTag(scanner, "ETag");
+						res.etag = rt.parseStringTag(scanner, "ETag");
 						break;
 					case "LastModified":
-						res.lastModified = parseDateTag(scanner, "LastModified");
+						res.lastModified = rt.parseDateTag(scanner, "LastModified");
 						break;
 					case "PartNumber":
-						res.partNumber = parseIntegerTag(scanner, "PartNumber");
+						res.partNumber = rt.parseIntegerTag(scanner, "PartNumber");
 						break;
 					case "Size":
-						res.size = parseIntegerTag(scanner, "Size");
+						res.size = rt.parseIntegerTag(scanner, "Size");
 						break;
 					default:
 						throw new Error(`Unexpected tag identifier: ${scanner.tokenValue}`);
@@ -178,15 +169,15 @@ function fn_1_ListPartsResult(scanner) {
 		parts: [],
 	};
 
-	skipAttributes(scanner);
+	rt.skipAttributes(scanner);
 
 	while (true) {
 		scanner.scan(); // consume >
 
 		switch (scanner.token) {
 			case 3: {
-				expectIdentifier(scanner, "ListPartsResult");
-				scanExpected(scanner, 2);
+				rt.expectIdentifier(scanner, "ListPartsResult");
+				rt.scanExpected(scanner, 2);
 				if (res.bucket === undefined)
 					throw new TypeError(
 						`Value for field "bucket" was required but not present (expected as tag name "Bucket").`,
@@ -230,42 +221,45 @@ function fn_1_ListPartsResult(scanner) {
 				return res;
 			}
 			case 1: {
-				scanExpected(scanner, 5);
+				rt.scanExpected(scanner, 5);
 				switch (scanner.tokenValue) {
 					case "Bucket":
-						res.bucket = parseStringTag(scanner, "Bucket");
+						res.bucket = rt.parseStringTag(scanner, "Bucket");
 						break;
 					case "Key":
-						res.key = parseStringTag(scanner, "Key");
+						res.key = rt.parseStringTag(scanner, "Key");
 						break;
 					case "UploadId":
-						res.uploadId = parseStringTag(scanner, "UploadId");
+						res.uploadId = rt.parseStringTag(scanner, "UploadId");
 						break;
 					case "StorageClass":
-						res.storageClass = parseStringTag(scanner, "StorageClass");
+						res.storageClass = rt.parseStringTag(scanner, "StorageClass");
 						break;
 					case "ChecksumAlgorithm":
 						res.checksumAlgorithm =
-							parseStringTag(scanner, "ChecksumAlgorithm") || undefined;
+							rt.parseStringTag(scanner, "ChecksumAlgorithm") || undefined;
 						break;
 					case "ChecksumType":
 						res.checksumType =
-							parseStringTag(scanner, "ChecksumType") || undefined;
+							rt.parseStringTag(scanner, "ChecksumType") || undefined;
 						break;
 					case "PartNumberMarker":
-						res.partNumberMarker = parseIntegerTag(scanner, "PartNumberMarker");
+						res.partNumberMarker = rt.parseIntegerTag(
+							scanner,
+							"PartNumberMarker",
+						);
 						break;
 					case "NextPartNumberMarker":
-						res.nextPartNumberMarker = parseIntegerTag(
+						res.nextPartNumberMarker = rt.parseIntegerTag(
 							scanner,
 							"NextPartNumberMarker",
 						);
 						break;
 					case "MaxParts":
-						res.maxParts = parseIntegerTag(scanner, "MaxParts");
+						res.maxParts = rt.parseIntegerTag(scanner, "MaxParts");
 						break;
 					case "IsTruncated":
-						res.isTruncated = parseBooleanTag(scanner, "IsTruncated");
+						res.isTruncated = rt.parseBooleanTag(scanner, "IsTruncated");
 						break;
 					case "Initiator":
 						res.initiator = fn_2_Initiator(scanner);
@@ -308,7 +302,7 @@ function root_parse_fn_0(scanner) {
 				return res;
 			}
 			case 1: {
-				scanExpected(scanner, 5);
+				rt.scanExpected(scanner, 5);
 				switch (scanner.tokenValue) {
 					case "ListPartsResult":
 						res.result = fn_1_ListPartsResult(scanner);
@@ -325,7 +319,7 @@ function root_parse_fn_0(scanner) {
 }
 
 export default function parse(text) {
-	const s = new Scanner(text);
+	const s = new rt.Scanner(text);
 	s.scan(); // prime scanner
 	return root_parse_fn_0(s);
 }

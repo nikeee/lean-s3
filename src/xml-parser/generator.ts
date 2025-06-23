@@ -30,13 +30,13 @@ function emitParserCall(
 ): string {
 	switch (spec.type) {
 		case "string":
-			return `(parseStringTag(scanner, ${asLiteral(tagName)})${spec.emptyIsAbsent ? " || undefined" : ""})`;
+			return `(rt.parseStringTag(scanner, ${asLiteral(tagName)})${spec.emptyIsAbsent ? " || undefined" : ""})`;
 		case "integer":
-			return `parseIntegerTag(scanner, ${asLiteral(tagName)})`;
+			return `rt.parseIntegerTag(scanner, ${asLiteral(tagName)})`;
 		case "boolean":
-			return `parseBooleanTag(scanner, ${asLiteral(tagName)})`;
+			return `rt.parseBooleanTag(scanner, ${asLiteral(tagName)})`;
 		case "date":
-			return `parseDateTag(scanner, ${asLiteral(tagName)})`;
+			return `rt.parseDateTag(scanner, ${asLiteral(tagName)})`;
 		case "object":
 			return `${globals.get(spec)}(scanner)`;
 		case "array":
@@ -135,7 +135,7 @@ function ${parseFn}(scanner) {
 				return res;
 			}
 			case ${TokenKind.startTag}: {
-				scanExpected(scanner, ${TokenKind.identifier});
+				rt.scanExpected(scanner, ${TokenKind.identifier});
 				switch (scanner.tokenValue) {
 					${Object.entries(children)
 						.map(
@@ -175,15 +175,15 @@ function ${parseFn}(scanner) {
 		${emitChildFieldInit(children)}
 	};
 
-	skipAttributes(scanner);
+	rt.skipAttributes(scanner);
 
 	while (true) {
 		scanner.scan(); // consume >
 
 		switch (scanner.token) {
 			case ${TokenKind.startClosingTag}: {
-				expectIdentifier(scanner, ${asLiteral(tagName)});
-				scanExpected(scanner, ${TokenKind.endTag});
+				rt.expectIdentifier(scanner, ${asLiteral(tagName)});
+				rt.scanExpected(scanner, ${TokenKind.endTag});
 				${Object.entries(children)
 					.map(([name, childSpec]) =>
 						childSpec.optional ||
@@ -196,7 +196,7 @@ function ${parseFn}(scanner) {
 				return res;
 			}
 			case ${TokenKind.startTag}: {
-				scanExpected(scanner, ${TokenKind.identifier});
+				rt.scanExpected(scanner, ${TokenKind.identifier});
 				switch (scanner.tokenValue) {
 					${Object.entries(children)
 						.map(
@@ -307,17 +307,19 @@ function buildParser<T extends Record<string, ParseSpec<string>>, V extends T>(
 
 type Parser<T> = (text: string) => T;
 
-function buildParser<T extends string>(rootSpec: RootSpec<T>): Parser<unknown> {
+export function buildParser<T extends string>(
+	rootSpec: RootSpec<T>,
+): Parser<unknown> {
 	const globals = new Map();
 	const parsingCode = emitParser(rootSpec, "", globals);
 	const rootParseFunctionName = globals.get(rootSpec);
 	globals.clear(); // make sure we clear all references (even though this map won't survive past this function)
 
 	console.log(`
-import { Scanner, scanExpected, skipAttributes, expectIdentifier, parseStringTag, parseDateTag, parseIntegerTag, parseBooleanTag} from "./runtime.ts";
+import * as rt from "./runtime.ts";
 ${parsingCode}
 export default function parse(text) {
-	const s = new Scanner(text);
+	const s = new rt.Scanner(text);
 	s.scan(); // prime scanner
 	return ${rootParseFunctionName}(s);
 }`);

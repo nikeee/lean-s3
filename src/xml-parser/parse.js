@@ -1,6 +1,6 @@
 import {
 	Scanner,
-	tokenKind,
+	TokenKind,
 	scanExpected,
 	skipAttributes,
 	expectIdentifier,
@@ -22,9 +22,9 @@ function fn_2_Initiator(scanner) {
 		scanner.scan(); // consume >
 
 		switch (scanner.token) {
-			case tokenKind.startClosingTag: {
+			case TokenKind.startClosingTag: {
 				expectIdentifier(scanner, "Initiator");
-				scanExpected(scanner, tokenKind.endTag);
+				scanExpected(scanner, TokenKind.endTag);
 				if (res.displayName === undefined)
 					throw new TypeError(
 						`Value for field "displayName" was required but not present (expected as tag name "DisplayName").`,
@@ -35,8 +35,8 @@ function fn_2_Initiator(scanner) {
 					);
 				return res;
 			}
-			case tokenKind.startTag: {
-				scanExpected(scanner, tokenKind.identifier);
+			case TokenKind.startTag: {
+				scanExpected(scanner, TokenKind.identifier);
 				switch (scanner.tokenValue) {
 					case "DisplayName":
 						res.displayName = parseStringTag(scanner, "DisplayName");
@@ -68,9 +68,9 @@ function fn_3_Owner(scanner) {
 		scanner.scan(); // consume >
 
 		switch (scanner.token) {
-			case tokenKind.startClosingTag: {
+			case TokenKind.startClosingTag: {
 				expectIdentifier(scanner, "Owner");
-				scanExpected(scanner, tokenKind.endTag);
+				scanExpected(scanner, TokenKind.endTag);
 				if (res.displayName === undefined)
 					throw new TypeError(
 						`Value for field "displayName" was required but not present (expected as tag name "DisplayName").`,
@@ -81,8 +81,8 @@ function fn_3_Owner(scanner) {
 					);
 				return res;
 			}
-			case tokenKind.startTag: {
-				scanExpected(scanner, tokenKind.identifier);
+			case TokenKind.startTag: {
+				scanExpected(scanner, TokenKind.identifier);
 				switch (scanner.tokenValue) {
 					case "DisplayName":
 						res.displayName = parseStringTag(scanner, "DisplayName");
@@ -116,9 +116,9 @@ function fn_4_Part(scanner) {
 		scanner.scan(); // consume >
 
 		switch (scanner.token) {
-			case tokenKind.startClosingTag: {
+			case TokenKind.startClosingTag: {
 				expectIdentifier(scanner, "Part");
-				scanExpected(scanner, tokenKind.endTag);
+				scanExpected(scanner, TokenKind.endTag);
 				if (res.etag === undefined)
 					throw new TypeError(
 						`Value for field "etag" was required but not present (expected as tag name "ETag").`,
@@ -137,8 +137,8 @@ function fn_4_Part(scanner) {
 					);
 				return res;
 			}
-			case tokenKind.startTag: {
-				scanExpected(scanner, tokenKind.identifier);
+			case TokenKind.startTag: {
+				scanExpected(scanner, TokenKind.identifier);
 				switch (scanner.tokenValue) {
 					case "ETag":
 						res.etag = parseStringTag(scanner, "ETag");
@@ -188,9 +188,9 @@ function fn_1_ListPartsResult(scanner) {
 		scanner.scan(); // consume >
 
 		switch (scanner.token) {
-			case tokenKind.startClosingTag: {
+			case TokenKind.startClosingTag: {
 				expectIdentifier(scanner, "ListPartsResult");
-				scanExpected(scanner, tokenKind.endTag);
+				scanExpected(scanner, TokenKind.endTag);
 				if (res.bucket === undefined)
 					throw new TypeError(
 						`Value for field "bucket" was required but not present (expected as tag name "Bucket").`,
@@ -233,8 +233,8 @@ function fn_1_ListPartsResult(scanner) {
 					);
 				return res;
 			}
-			case tokenKind.startTag: {
-				scanExpected(scanner, tokenKind.identifier);
+			case TokenKind.startTag: {
+				scanExpected(scanner, TokenKind.identifier);
 				switch (scanner.tokenValue) {
 					case "Bucket":
 						res.bucket = parseStringTag(scanner, "Bucket");
@@ -302,15 +302,15 @@ function root_parse_fn_0(scanner) {
 	do {
 		scanner.scan();
 		switch (scanner.token) {
-			case tokenKind.eof: {
+			case TokenKind.eof: {
 				if (res.result === undefined)
 					throw new TypeError(
 						`Value for field "result" was required but not present (expected as tag name "ListPartsResult").`,
 					);
 				return res;
 			}
-			case tokenKind.startTag: {
-				scanExpected(scanner, tokenKind.identifier);
+			case TokenKind.startTag: {
+				scanExpected(scanner, TokenKind.identifier);
 				switch (scanner.tokenValue) {
 					case "ListPartsResult":
 						res.result = fn_1_ListPartsResult(scanner);

@@ -6,30 +6,30 @@ const out = process.stdout;
 
 function printToken(scanner: Scanner) {
 	switch (scanner.token) {
-		case tokenKind.eof:
+		case TokenKind.eof:
 			out.write("[EOF]\n");
 			break;
-		case tokenKind.startTag:
+		case TokenKind.startTag:
 			out.write("[<]");
 			break;
-		case tokenKind.endTag:
+		case TokenKind.endTag:
 			out.write("[>]");
 			break;
-		case tokenKind.endSelfClosing:
+		case TokenKind.endSelfClosing:
 			out.write("[/>]");
 			break;
-		case tokenKind.startClosingTag:
+		case TokenKind.startClosingTag:
 			out.write("[</]");
 			break;
-		case tokenKind.identifier:
+		case TokenKind.identifier:
 			out.write("[");
 			out.write(scanner.tokenValue!);
 			out.write("]");
 			break;
-		case tokenKind.equals:
+		case TokenKind.equals:
 			out.write("[=]");
 			break;
-		case tokenKind.attributeValue:
+		case TokenKind.attributeValue:
 			out.write("[");
 			out.write(scanner.tokenValue!);
 			out.write("]");
@@ -143,7 +143,7 @@ function ${parseFn}(scanner) {
 	do {
 		scanner.scan();
 		switch (scanner.token) {
-			case tokenKind.eof: {
+			case TokenKind.eof: {
 				${Object.entries(children)
 					.map(([name, childSpec]) =>
 						childSpec.optional ||
@@ -155,8 +155,8 @@ function ${parseFn}(scanner) {
 					.join("\n\t\t\t\t")}
 				return res;
 			}
-			case tokenKind.startTag: {
-				scanExpected(scanner, tokenKind.identifier);
+			case TokenKind.startTag: {
+				scanExpected(scanner, TokenKind.identifier);
 				switch (scanner.tokenValue) {
 					${Object.entries(children)
 						.map(
@@ -214,9 +214,9 @@ function ${parseFn}(scanner) {
 		scanner.scan(); // consume >
 
 		switch (scanner.token) {
-			case tokenKind.startClosingTag: {
+			case TokenKind.startClosingTag: {
 				expectIdentifier(scanner, ${asLiteral(tagName)});
-				scanExpected(scanner, tokenKind.endTag);
+				scanExpected(scanner, TokenKind.endTag);
 				${Object.entries(children)
 					.map(([name, childSpec]) =>
 						childSpec.optional ||
@@ -228,8 +228,8 @@ function ${parseFn}(scanner) {
 					.join("\n\t\t\t\t")}
 				return res;
 			}
-			case tokenKind.startTag: {
-				scanExpected(scanner, tokenKind.identifier);
+			case TokenKind.startTag: {
+				scanExpected(scanner, TokenKind.identifier);
 				switch (scanner.tokenValue) {
 					${Object.entries(children)
 						.map(
@@ -350,7 +350,7 @@ function buildParser<T extends string>(rootSpec: RootSpec<T>): Parser<unknown> {
 	globals.clear(); // make sure we clear all references (even though this map won't survive past this function)
 
 	console.log(`
-import { Scanner, tokenKind, scanExpected, skipAttributes, expectIdentifier, parseStringTag, parseDateTag, parseIntegerTag, parseBooleanTag} from "./runtime.ts";
+import { Scanner, TokenKind, scanExpected, skipAttributes, expectIdentifier, parseStringTag, parseDateTag, parseIntegerTag, parseBooleanTag} from "./runtime.ts";
 ${parsingCode}
 export default function parse(text) {
 	return ${rootParseFunctionName}(new Scanner(text));

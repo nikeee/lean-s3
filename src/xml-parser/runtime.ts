@@ -32,6 +32,22 @@ const enum CharCode {
 	minus = 0x2d,
 }
 
+/**
+ * We cannot make this `const` because it is referenced in the generated parser.
+ * TODO: Reverse-lookup value and inline on code-gen level, so we can skip an object deref
+ */
+export enum TokenKind {
+	eof = 0,
+	startTag = 1,
+	endTag = 2,
+	startClosingTag = 3, // </
+	endSelfClosing = 4, // />
+	identifier = 5,
+	equals = 6, // =
+	attributeValue = 7,
+	textContent = 8,
+}
+
 export class Scanner {
 	startPos: number;
 	pos: number;
@@ -83,7 +99,7 @@ export class Scanner {
 		while (true) {
 			if (this.pos >= this.end) {
 				// biome-ignore lint/suspicious/noAssignInExpressions: ok here
-				return (this.token = tokenKind.eof);
+				return (this.token = TokenKind.eof);
 			}
 
 			let ch = this.text.charCodeAt(this.pos);
@@ -103,7 +119,7 @@ export class Scanner {
 				case CharCode.equals:
 					++this.pos;
 					// biome-ignore lint/suspicious/noAssignInExpressions: ok here
-					return (this.token = tokenKind.equals);
+					return (this.token = TokenKind.equals);
 				case CharCode.lessThan:
 					++this.pos;
 
@@ -138,16 +154,16 @@ export class Scanner {
 						if (nextChar === CharCode.slash) {
 							++this.pos;
 							// biome-ignore lint/suspicious/noAssignInExpressions: ok here
-							return (this.token = tokenKind.startClosingTag);
+							return (this.token = TokenKind.startClosingTag);
 						}
 					}
 					// biome-ignore lint/suspicious/noAssignInExpressions: ok here
-					return (this.token = tokenKind.startTag);
+					return (this.token = TokenKind.startTag);
 				case CharCode.greaterThan:
 					++this.pos;
 					this.inTag = false;
 					// biome-ignore lint/suspicious/noAssignInExpressions: ok here
-					return (this.token = tokenKind.endTag);
+					return (this.token = TokenKind.endTag);
 				case CharCode.slash:
 					++this.pos;
 					if (this.pos < this.end) {
@@ -155,11 +171,11 @@ export class Scanner {
 						if (nextChar === CharCode.greaterThan) {
 							++this.pos;
 							// biome-ignore lint/suspicious/noAssignInExpressions: ok here
-							return (this.token = tokenKind.endSelfClosing);
+							return (this.token = TokenKind.endSelfClosing);
 						}
 					}
 					// biome-ignore lint/suspicious/noAssignInExpressions: ok here
-					return (this.token = tokenKind.endTag);
+					return (this.token = TokenKind.endTag);
 
 				case CharCode.doubleQuote: {
 					if (this.inTag) {
@@ -178,7 +194,7 @@ export class Scanner {
 						// this.tokenValue = this.text.substring(start, this.pos);
 
 						// biome-ignore lint/suspicious/noAssignInExpressions: ok here
-						return (this.token = tokenKind.attributeValue);
+						return (this.token = TokenKind.attributeValue);
 					} else {
 						// Read text node
 						let tokenValueStart = this.pos;
@@ -215,7 +231,7 @@ export class Scanner {
 						// this.tokenValue = value;
 
 						// biome-ignore lint/suspicious/noAssignInExpressions: ok here
-						return (this.token = tokenKind.identifier);
+						return (this.token = TokenKind.identifier);
 					}
 				}
 				default:
@@ -236,7 +252,7 @@ export class Scanner {
 							// this.tokenValue = this.text.substring(identifierStart, this.pos);
 
 							// biome-ignore lint/suspicious/noAssignInExpressions: ok here
-							return (this.token = tokenKind.identifier);
+							return (this.token = TokenKind.identifier);
 						}
 						++this.pos;
 						continue;
@@ -276,7 +292,7 @@ export class Scanner {
 						// this.tokenValue = value;
 
 						// biome-ignore lint/suspicious/noAssignInExpressions: ok here
-						return (this.token = tokenKind.identifier);
+						return (this.token = TokenKind.identifier);
 					}
 			}
 		}
@@ -314,18 +330,6 @@ function isWhitespace(ch: number): boolean {
 	);
 }
 
-export const tokenKind = {
-	eof: 0,
-	startTag: 1,
-	endTag: 2,
-	startClosingTag: 3, // </
-	endSelfClosing: 4, // />
-	identifier: 5,
-	equals: 6, // =
-	attributeValue: 7,
-	textContent: 8,
-};
-
 export function scanExpected(scanner: Scanner, expected: number): void {
 	if (scanner.scan() !== expected) {
 		throw new Error(
@@ -340,12 +344,12 @@ export function skipAttributes(scanner: Scanner): void {
 		scanner.scan();
 
 		// skip attributes
-		if (scanner.token === tokenKind.identifier) {
-			scanExpected(scanner, tokenKind.equals);
-			scanExpected(scanner, tokenKind.attributeValue);
+		if (scanner.token === TokenKind.identifier) {
+			scanExpected(scanner, TokenKind.equals);
+			scanExpected(scanner, TokenKind.attributeValue);
 			continue;
 		}
-		if (scanner.token === tokenKind.endTag) {
+		if (scanner.token === TokenKind.endTag) {
 			break;
 		}
 		throw new Error(`Unexpected token: ${scanner.token}`);
@@ -354,7 +358,7 @@ export function skipAttributes(scanner: Scanner): void {
 }
 
 export function expectIdentifier(scanner: Scanner, identifier: string): void {
-	scanExpected(scanner, tokenKind.identifier);
+	scanExpected(scanner, TokenKind.identifier);
 	if (scanner.tokenValue !== identifier) {
 		throw new Error(
 			`Expected closing tag for identifier: ${identifier}, got: ${scanner.tokenValue}`,
@@ -362,16 +366,16 @@ export function expectIdentifier(scanner: Scanner, identifier: string): void {
 	}
 }
 export function expectClosingTag(scanner: Scanner, tagName: string): void {
-	scanExpected(scanner, tokenKind.startClosingTag);
+	scanExpected(scanner, TokenKind.startClosingTag);
 	expectIdentifier(scanner, tagName);
-	scanExpected(scanner, tokenKind.endTag);
+	scanExpected(scanner, TokenKind.endTag);
 }
 export function parseStringTag(scanner: Scanner, tagName: string): string {
 	skipAttributes(scanner);
 	scanner.scan(); // consume >
-	if (scanner.token === tokenKind.startClosingTag) {
+	if (scanner.token === TokenKind.startClosingTag) {
 		expectIdentifier(scanner, tagName);
-		scanExpected(scanner, tokenKind.endTag);
+		scanExpected(scanner, TokenKind.endTag);
 		return "";
 	}
 

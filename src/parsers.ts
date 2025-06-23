@@ -37,6 +37,7 @@ export const listPartsResultSpec = {
 				initiator: {
 					type: "object",
 					tagName: "Initiator",
+					optional: true,
 					children: {
 						displayName: { type: "string", tagName: "DisplayName" },
 						id: { type: "string", tagName: "ID" },
@@ -45,6 +46,7 @@ export const listPartsResultSpec = {
 				owner: {
 					type: "object",
 					tagName: "Owner",
+					optional: true,
 					children: {
 						displayName: { type: "string", tagName: "DisplayName" },
 						id: { type: "string", tagName: "ID" },

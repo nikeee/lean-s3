@@ -217,20 +217,6 @@ export type ListPartsResult = {
 	storageClass?: StorageClass;
 	checksumAlgorithm?: ChecksumAlgorithm;
 	checksumType?: ChecksumType;
-
-	// TODO
-	// initiator: unknown;
-	// <Initiator>
-	// 	<DisplayName>string</DisplayName>
-	// 	<ID>string</ID>
-	// </Initiator>
-
-	// TODO
-	// owner: unknown;
-	// <Owner>
-	// 	<DisplayName>string</DisplayName>
-	// 	<ID>string</ID>
-	// </Owner>
 };
 
 export type ListObjectsResult = {

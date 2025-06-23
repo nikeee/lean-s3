@@ -1,3 +1,37 @@
+export class Scanner2 {}
+
+/**
+ * biome-ignore lint/suspicious/noConstEnum: Normally, we'd avoid using TS enums due to its incompability with JS.
+ * But we want to inline its values into the switch-cases and still have readable code.
+ */
+const enum CharCode {
+	lessThan = 0x3c,
+	greaterThan = 0x3e,
+	slash = 0x2f,
+	equals = 0x3d,
+	doubleQuote = 0x22,
+	A = 0x41,
+	Z = 0x5a,
+	a = 0x61,
+	z = 0x7a,
+	_ = 0x5f,
+	_0 = 0x30,
+	_9 = 0x39,
+	tab = 0x09,
+	space = 0x20,
+	lineFeed = 0x0a,
+	carriageReturn = 0x0d,
+	verticalTab = 0x0b, // \v
+	formFeed = 0x0c, // \f
+	nonBreakingSpace = 0xa0, //
+	lineSeparator = 0x2028,
+	paragraphSeparator = 0x2029,
+	nextLine = 0x85,
+	exclamationMark = 0x21,
+	questionMark = 0x3f,
+	minus = 0x2d,
+}
+
 export class Scanner {
 	startPos: number;
 	pos: number;
@@ -29,10 +63,10 @@ export class Scanner {
 			const ch = this.text.charCodeAt(this.pos);
 			++this.pos;
 			switch (ch) {
-				case charCode.lessThan:
+				case CharCode.lessThan:
 					inPreamble = true;
 					break;
-				case charCode.greaterThan:
+				case CharCode.greaterThan:
 					if (inPreamble) {
 						return;
 					}
@@ -54,23 +88,23 @@ export class Scanner {
 
 			let ch = this.text.charCodeAt(this.pos);
 			switch (ch) {
-				case charCode.lineFeed:
-				case charCode.carriageReturn:
-				case charCode.lineSeparator:
-				case charCode.paragraphSeparator:
-				case charCode.nextLine:
-				case charCode.tab:
-				case charCode.verticalTab:
-				case charCode.formFeed:
-				case charCode.space:
-				case charCode.nonBreakingSpace:
+				case CharCode.lineFeed:
+				case CharCode.carriageReturn:
+				case CharCode.lineSeparator:
+				case CharCode.paragraphSeparator:
+				case CharCode.nextLine:
+				case CharCode.tab:
+				case CharCode.verticalTab:
+				case CharCode.formFeed:
+				case CharCode.space:
+				case CharCode.nonBreakingSpace:
 					++this.pos;
 					continue;
-				case charCode.equals:
+				case CharCode.equals:
 					++this.pos;
 					// biome-ignore lint/suspicious/noAssignInExpressions: ok here
 					return (this.token = tokenKind.equals);
-				case charCode.lessThan:
+				case CharCode.lessThan:
 					++this.pos;
 
 					// TODO: Enable/disable comment handling
@@ -101,7 +135,7 @@ export class Scanner {
 
 					if (this.pos < this.end) {
 						const nextChar = this.text.charCodeAt(this.pos);
-						if (nextChar === charCode.slash) {
+						if (nextChar === CharCode.slash) {
 							++this.pos;
 							// biome-ignore lint/suspicious/noAssignInExpressions: ok here
 							return (this.token = tokenKind.startClosingTag);
@@ -109,16 +143,16 @@ export class Scanner {
 					}
 					// biome-ignore lint/suspicious/noAssignInExpressions: ok here
 					return (this.token = tokenKind.startTag);
-				case charCode.greaterThan:
+				case CharCode.greaterThan:
 					++this.pos;
 					this.inTag = false;
 					// biome-ignore lint/suspicious/noAssignInExpressions: ok here
 					return (this.token = tokenKind.endTag);
-				case charCode.slash:
+				case CharCode.slash:
 					++this.pos;
 					if (this.pos < this.end) {
 						const nextChar = this.text.charCodeAt(this.pos);
-						if (nextChar === charCode.greaterThan) {
+						if (nextChar === CharCode.greaterThan) {
 							++this.pos;
 							// biome-ignore lint/suspicious/noAssignInExpressions: ok here
 							return (this.token = tokenKind.endSelfClosing);
@@ -127,13 +161,13 @@ export class Scanner {
 					// biome-ignore lint/suspicious/noAssignInExpressions: ok here
 					return (this.token = tokenKind.endTag);
 
-				case charCode.doubleQuote: {
+				case CharCode.doubleQuote: {
 					if (this.inTag) {
 						++this.pos; // consume opening "
 						const start = this.pos;
 						while (
 							this.pos < this.end &&
-							this.text.charCodeAt(this.pos) !== charCode.doubleQuote
+							this.text.charCodeAt(this.pos) !== CharCode.doubleQuote
 						) {
 							++this.pos;
 						}
@@ -155,7 +189,7 @@ export class Scanner {
 
 						while (
 							this.pos < this.end &&
-							this.text.charCodeAt(this.pos) !== charCode.lessThan
+							this.text.charCodeAt(this.pos) !== CharCode.lessThan
 						) {
 							++this.pos;
 						}
@@ -216,7 +250,7 @@ export class Scanner {
 
 						while (
 							this.pos < this.end &&
-							this.text.charCodeAt(this.pos) !== charCode.lessThan
+							this.text.charCodeAt(this.pos) !== CharCode.lessThan
 						) {
 							++this.pos;
 						}
@@ -251,31 +285,32 @@ export class Scanner {
 
 function isIdentifierStart(ch: number) {
 	return (
-		(ch >= charCode.A && ch <= charCode.Z) ||
-		(ch >= charCode.a && ch <= charCode.z) ||
-		ch === charCode._
+		(ch >= CharCode.A && ch <= CharCode.Z) ||
+		(ch >= CharCode.a && ch <= CharCode.z) ||
+		ch === CharCode._
 	);
 }
 
 function isIdentifierPart(ch: number) {
 	return (
-		(ch >= charCode.A && ch <= charCode.Z) ||
-		(ch >= charCode.a && ch <= charCode.z) ||
-		ch === charCode._
+		(ch >= CharCode.A && ch <= CharCode.Z) ||
+		(ch >= CharCode.a && ch <= CharCode.z) ||
+		ch === CharCode._ ||
+		(ch >= CharCode._0 && ch <= CharCode._0)
 	);
 }
 function isWhitespace(ch: number) {
 	return (
-		ch === charCode.space ||
-		ch === charCode.tab ||
-		ch === charCode.lineFeed ||
-		ch === charCode.carriageReturn ||
-		ch === charCode.verticalTab ||
-		ch === charCode.formFeed ||
-		ch === charCode.nonBreakingSpace ||
-		ch === charCode.lineSeparator ||
-		ch === charCode.paragraphSeparator ||
-		ch === charCode.nextLine
+		ch === CharCode.space ||
+		ch === CharCode.tab ||
+		ch === CharCode.lineFeed ||
+		ch === CharCode.carriageReturn ||
+		ch === CharCode.verticalTab ||
+		ch === CharCode.formFeed ||
+		ch === CharCode.nonBreakingSpace ||
+		ch === CharCode.lineSeparator ||
+		ch === CharCode.paragraphSeparator ||
+		ch === CharCode.nextLine
 	);
 }
 
@@ -289,35 +324,6 @@ export const tokenKind = {
 	equals: 6, // =
 	attributeValue: 7,
 	textContent: 8,
-};
-
-const charCode = {
-	lineFeed: 0x0a, // \n
-	carriageReturn: 0x0d, // \r
-	lineSeparator: 0x2028,
-	paragraphSeparator: 0x2029,
-	nextLine: 0x85,
-	tab: 0x09, // \t
-	verticalTab: 0x0b, // \v
-	formFeed: 0x0c, // \f
-	space: 0x0020, // " "
-	nonBreakingSpace: 0x00a0, //
-
-	greaterThan: 0x3e, // >
-	lessThan: 0x3c, // <
-	slash: 0x2f, // /
-	exclamationMark: 33,
-	questionMark: 63,
-	minus: 0x2d,
-
-	equals: 0x3d, // =
-	doubleQuote: 0x22, // "
-
-	A: 0x41,
-	Z: 0x5a,
-	a: 0x61,
-	z: 0x7a,
-	_: 0x5f,
 };
 
 export function scanExpected(scanner: Scanner, expected: number) {

@@ -72,6 +72,20 @@ function emitChildFieldInit(children: Record<string, ParseSpec<string>>) {
 		)
 		.join("\n\t\t");
 }
+
+function emitResultAssignment(
+	resultField: string,
+	spec: ParseSpec<string>,
+	fieldName: string,
+	globals: Map<unknown, string>,
+) {
+	return spec.type === "array"
+		? spec.defaultEmpty
+			? `${resultField}.${fieldName}.push(${emitParserCall(spec.item, spec.tagName ?? fieldName, globals)})`
+			: `(${resultField}.${fieldName} ??= []).push(${emitParserCall(spec.item, spec.tagName ?? fieldName, globals)})`
+		: `${resultField}.${fieldName} = ${emitParserCall(spec, spec.tagName ?? fieldName, globals)}`;
+}
+
 function emitRootParser(
 	spec: RootSpec<string>,
 	globals: Map<unknown, string>,
@@ -117,13 +131,7 @@ function ${parseFn}(scanner) {
 						.map(
 							([name, childSpec]) =>
 								`case ${asLiteral(childSpec.tagName ?? name)}:
-						${
-							childSpec.type === "array"
-								? childSpec.defaultEmpty
-									? `res.${name}.push(${emitParserCall(childSpec.item, childSpec.tagName ?? name, globals)})`
-									: `(res.${name} ??= []).push(${emitParserCall(childSpec.item, childSpec.tagName ?? name, globals)})`
-								: `res.${name} = ${emitParserCall(childSpec, childSpec.tagName ?? name, globals)}`
-						};
+						${emitResultAssignment("res", childSpec, name, globals)};
 						break;`,
 						)
 						.join("\n\t\t\t\t\t")}
@@ -184,13 +192,7 @@ function ${parseFn}(scanner) {
 						.map(
 							([name, childSpec]) =>
 								`case ${asLiteral(childSpec.tagName ?? name)}:
-						${
-							childSpec.type === "array"
-								? childSpec.defaultEmpty
-									? `res.${name}.push(${emitParserCall(childSpec.item, childSpec.tagName ?? name, globals)})`
-									: `(res.${name} ??= []).push(${emitParserCall(childSpec.item, childSpec.tagName ?? name, globals)})`
-								: `res.${name} = ${emitParserCall(childSpec, childSpec.tagName ?? name, globals)}`
-						};
+						${emitResultAssignment("res", childSpec, name, globals)};
 						break;`,
 						)
 						.join("\n\t\t\t\t\t")}

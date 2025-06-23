@@ -65,6 +65,10 @@ export class Scanner {
 	get tokenValue() {
 		return this.text.substring(this.tokenValueStart, this.tokenValueEnd);
 	}
+	getTokenValue() {
+		// TODO: boolean / separate method to entity escape
+		return this.text.substring(this.tokenValueStart, this.tokenValueEnd);
+	}
 
 	constructor(text: string) {
 		// Number(text); // collapse rope structure of V8
@@ -95,7 +99,7 @@ export class Scanner {
 		}
 	}
 
-	scan(): number {
+	scan(): TokenKind {
 		this.startPos = this.pos;
 
 		while (true) {

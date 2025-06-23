@@ -63,8 +63,12 @@ export class Scanner {
 
 	tokenValueStart = -1;
 	tokenValueEnd = -1;
-	getTokenValue() {
-		// TODO: boolean / separate method to entity escape
+
+	/**
+	 * Doesn't do entity decoding for stuff like &amp;
+	 * TODO: separate method that does decoding
+	 */
+	getTokenValueEncoded() {
 		return this.text.substring(this.tokenValueStart, this.tokenValueEnd);
 	}
 
@@ -308,9 +312,9 @@ export function skipAttributes(scanner: Scanner): void {
 
 export function expectIdentifier(scanner: Scanner, identifier: string): void {
 	scanExpected(scanner, TokenKind.identifier);
-	if (scanner.getTokenValue() !== identifier) {
+	if (scanner.getTokenValueEncoded() !== identifier) {
 		throw new Error(
-			`Expected closing tag for identifier: ${identifier}, got: ${scanner.getTokenValue()}`,
+			`Expected closing tag for identifier: ${identifier}, got: ${scanner.getTokenValueEncoded()}`,
 		);
 	}
 }
@@ -335,7 +339,7 @@ export function parseStringTag(
 		return "";
 	}
 
-	const value = scanner.getTokenValue();
+	const value = scanner.getTokenValueEncoded();
 	expectClosingTag(scanner, tagName);
 	return value;
 }
@@ -365,7 +369,7 @@ export function parseIntegerTag(
 	}
 
 	scanner.scan(); // consume >
-	const value = scanner.getTokenValue();
+	const value = scanner.getTokenValueEncoded();
 	const n = Number(value);
 	if (!Number.isInteger(n)) {
 		throw new Error(`Value is not an integer: "${value}"`);
@@ -384,7 +388,7 @@ export function parseBooleanTag(
 
 	scanner.scan(); // consume >
 
-	const stringValue = scanner.getTokenValue();
+	const stringValue = scanner.getTokenValueEncoded();
 
 	let value: boolean;
 	if (stringValue === "true") {

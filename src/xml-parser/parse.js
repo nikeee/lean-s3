@@ -27,7 +27,7 @@ function fn_2_Initiator(scanner) {
 			}
 			case 1: {
 				rt.scanExpected(scanner, 5);
-				switch (scanner.getTokenValue()) {
+				switch (scanner.getTokenValueEncoded()) {
 					case "DisplayName":
 						res.displayName = rt.parseStringTag(scanner, "DisplayName");
 						break;
@@ -36,7 +36,7 @@ function fn_2_Initiator(scanner) {
 						break;
 					default:
 						throw new Error(
-							`Unexpected tag identifier: ${scanner.getTokenValue()}`,
+							`Unexpected tag identifier: ${scanner.getTokenValueEncoded()}`,
 						);
 				}
 				break;
@@ -74,7 +74,7 @@ function fn_3_Owner(scanner) {
 			}
 			case 1: {
 				rt.scanExpected(scanner, 5);
-				switch (scanner.getTokenValue()) {
+				switch (scanner.getTokenValueEncoded()) {
 					case "DisplayName":
 						res.displayName = rt.parseStringTag(scanner, "DisplayName");
 						break;
@@ -83,7 +83,7 @@ function fn_3_Owner(scanner) {
 						break;
 					default:
 						throw new Error(
-							`Unexpected tag identifier: ${scanner.getTokenValue()}`,
+							`Unexpected tag identifier: ${scanner.getTokenValueEncoded()}`,
 						);
 				}
 				break;
@@ -131,7 +131,7 @@ function fn_4_Part(scanner) {
 			}
 			case 1: {
 				rt.scanExpected(scanner, 5);
-				switch (scanner.getTokenValue()) {
+				switch (scanner.getTokenValueEncoded()) {
 					case "ETag":
 						res.etag = rt.parseStringTag(scanner, "ETag");
 						break;
@@ -146,7 +146,7 @@ function fn_4_Part(scanner) {
 						break;
 					default:
 						throw new Error(
-							`Unexpected tag identifier: ${scanner.getTokenValue()}`,
+							`Unexpected tag identifier: ${scanner.getTokenValueEncoded()}`,
 						);
 				}
 				break;
@@ -220,7 +220,7 @@ function fn_1_ListPartsResult(scanner) {
 			}
 			case 1: {
 				rt.scanExpected(scanner, 5);
-				switch (scanner.getTokenValue()) {
+				switch (scanner.getTokenValueEncoded()) {
 					case "Bucket":
 						res.bucket = rt.parseStringTag(scanner, "Bucket");
 						break;
@@ -270,7 +270,7 @@ function fn_1_ListPartsResult(scanner) {
 						break;
 					default:
 						throw new Error(
-							`Unexpected tag identifier: ${scanner.getTokenValue()}`,
+							`Unexpected tag identifier: ${scanner.getTokenValueEncoded()}`,
 						);
 				}
 				break;
@@ -303,13 +303,13 @@ function root_parse_fn_0(scanner) {
 			}
 			case 1: {
 				rt.scanExpected(scanner, 5);
-				switch (scanner.getTokenValue()) {
+				switch (scanner.getTokenValueEncoded()) {
 					case "ListPartsResult":
 						res.result = fn_1_ListPartsResult(scanner);
 						break;
 					default:
 						throw new Error(
-							`Unexpected tag identifier: ${scanner.getTokenValue()}`,
+							`Unexpected tag identifier: ${scanner.getTokenValueEncoded()}`,
 						);
 				}
 				break;

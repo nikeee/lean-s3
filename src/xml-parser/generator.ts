@@ -30,7 +30,7 @@ function emitParserCall(
 ): string {
 	switch (spec.type) {
 		case "string":
-			return `parseStringTag(scanner, ${asLiteral(tagName)})${spec.emptyIsAbsent ? " || undefined" : ""}`;
+			return `(parseStringTag(scanner, ${asLiteral(tagName)})${spec.emptyIsAbsent ? " || undefined" : ""})`;
 		case "integer":
 			return `parseIntegerTag(scanner, ${asLiteral(tagName)})`;
 		case "boolean":
@@ -55,6 +55,23 @@ function emitChildParsers(
 	}
 	return code;
 }
+
+function emitChildFieldInit(children: Record<string, ParseSpec<string>>) {
+	return Object.entries(children)
+		.map(
+			([n, childSpec]) =>
+				`${n}: ${
+					childSpec.type === "array" && childSpec.defaultEmpty
+						? "[]"
+						: childSpec.type === "boolean" &&
+								typeof childSpec.defaultValue === "boolean" &&
+								!childSpec.optional
+							? childSpec.defaultValue.toString()
+							: "undefined"
+				},`,
+		)
+		.join("\n\t\t");
+}
 function emitRootParser(
 	spec: RootSpec<string>,
 	globals: Map<unknown, string>,
@@ -69,12 +86,7 @@ ${emitChildParsers(spec, globals)}
 function ${parseFn}(scanner) {
 	// Init structure entirely, so v8 can create a single hidden class
 	const res = {
-		${Object.entries(children)
-			.map(
-				([n, childSpec]) =>
-					`${n}: ${childSpec.type === "array" && childSpec.defaultEmpty ? "[]" : undefined},`,
-			)
-			.join("\n\t\t")}
+		${emitChildFieldInit(children)}
 	};
 
 	scanner.scan(); // prime scanner
@@ -142,12 +154,7 @@ ${emitChildParsers(spec, globals)}
 function ${parseFn}(scanner) {
 	// Init structure entirely, so v8 can create a single hidden class
 	const res = {
-		${Object.entries(children)
-			.map(
-				([n, childSpec]) =>
-					`${n}: ${childSpec.type === "array" && childSpec.defaultEmpty ? "[]" : undefined},`,
-			)
-			.join("\n\t\t")}
+		${emitChildFieldInit(children)}
 	};
 
 	skipAttributes(scanner);
@@ -242,6 +249,7 @@ type BooleanSpec = {
 	type: "boolean";
 	tagName?: string;
 	optional?: boolean;
+	defaultValue?: boolean;
 };
 type IntegerSpec = {
 	type: "integer";
@@ -328,7 +336,11 @@ const _parser = buildParser({
 					tagName: "NextPartNumberMarker",
 				},
 				maxParts: { type: "integer", tagName: "MaxParts" },
-				isTruncated: { type: "boolean", tagName: "IsTruncated" },
+				isTruncated: {
+					type: "boolean",
+					tagName: "IsTruncated",
+					defaultValue: false,
+				},
 				initiator: {
 					type: "object",
 					tagName: "Initiator",

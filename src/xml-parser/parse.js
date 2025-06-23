@@ -172,7 +172,7 @@ function fn_1_ListPartsResult(scanner) {
 		partNumberMarker: undefined,
 		nextPartNumberMarker: undefined,
 		maxParts: undefined,
-		isTruncated: undefined,
+		isTruncated: false,
 		initiator: undefined,
 		owner: undefined,
 		parts: [],

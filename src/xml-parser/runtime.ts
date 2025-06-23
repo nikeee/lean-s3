@@ -56,7 +56,7 @@ export class Scanner {
 		this.text = text;
 	}
 
-	skipPreamble() {
+	skipPreamble(): void {
 		// TODO: Make this optional
 		let inPreamble = false;
 		while (true) {
@@ -283,7 +283,7 @@ export class Scanner {
 	}
 }
 
-function isIdentifierStart(ch: number) {
+function isIdentifierStart(ch: number): boolean {
 	return (
 		(ch >= CharCode.A && ch <= CharCode.Z) ||
 		(ch >= CharCode.a && ch <= CharCode.z) ||
@@ -291,7 +291,7 @@ function isIdentifierStart(ch: number) {
 	);
 }
 
-function isIdentifierPart(ch: number) {
+function isIdentifierPart(ch: number): boolean {
 	return (
 		(ch >= CharCode.A && ch <= CharCode.Z) ||
 		(ch >= CharCode.a && ch <= CharCode.z) ||
@@ -299,7 +299,7 @@ function isIdentifierPart(ch: number) {
 		(ch >= CharCode._0 && ch <= CharCode._0)
 	);
 }
-function isWhitespace(ch: number) {
+function isWhitespace(ch: number): boolean {
 	return (
 		ch === CharCode.space ||
 		ch === CharCode.tab ||
@@ -326,7 +326,7 @@ export const tokenKind = {
 	textContent: 8,
 };
 
-export function scanExpected(scanner: Scanner, expected: number) {
+export function scanExpected(scanner: Scanner, expected: number): void {
 	if (scanner.scan() !== expected) {
 		throw new Error(
 			`Wrong token, expected: ${expected}, got: ${scanner.token}`,
@@ -334,7 +334,7 @@ export function scanExpected(scanner: Scanner, expected: number) {
 	}
 }
 
-export function skipAttributes(scanner: Scanner) {
+export function skipAttributes(scanner: Scanner): void {
 	// parse until opening tag is terminated
 	do {
 		scanner.scan();
@@ -353,7 +353,7 @@ export function skipAttributes(scanner: Scanner) {
 	} while (true);
 }
 
-export function expectIdentifier(scanner: Scanner, identifier: string) {
+export function expectIdentifier(scanner: Scanner, identifier: string): void {
 	scanExpected(scanner, tokenKind.identifier);
 	if (scanner.tokenValue !== identifier) {
 		throw new Error(
@@ -361,7 +361,7 @@ export function expectIdentifier(scanner: Scanner, identifier: string) {
 		);
 	}
 }
-export function expectClosingTag(scanner: Scanner, tagName: string) {
+export function expectClosingTag(scanner: Scanner, tagName: string): void {
 	scanExpected(scanner, tokenKind.startClosingTag);
 	expectIdentifier(scanner, tagName);
 	scanExpected(scanner, tokenKind.endTag);

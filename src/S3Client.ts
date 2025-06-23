@@ -32,7 +32,11 @@ import {
 	type ObjectKey,
 } from "./branded.ts";
 
-import { parseListPartsResult, parseListBucketResult } from "./parsers.ts";
+import {
+	parseListPartsResult,
+	parseListBucketResult,
+	parseInitiateMultipartUploadResult,
+} from "./parsers.ts";
 
 export const write = Symbol("write");
 export const stream = Symbol("stream");
@@ -474,13 +478,10 @@ export default class S3Client {
 		}
 
 		const text = await response.body.text();
-		const res = ensureParsedXml(text).InitiateMultipartUploadResult ?? {};
 
-		return {
-			bucket: res.Bucket,
-			key: res.Key,
-			uploadId: res.UploadId,
-		};
+		// biome-ignore lint/suspicious/noExplicitAny: PoC
+		return (parseInitiateMultipartUploadResult(text) as any)
+			.result as CreateMultipartUploadResult;
 	}
 
 	/**

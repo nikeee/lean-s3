@@ -129,3 +129,18 @@ export const parseListBucketResult = buildParser({
 		},
 	},
 });
+
+export const parseInitiateMultipartUploadResult = buildParser({
+	type: "root",
+	children: {
+		result: {
+			type: "object",
+			tagName: "InitiateMultipartUploadResult",
+			children: {
+				bucket: { type: "string", tagName: "Bucket" },
+				key: { type: "string", tagName: "Key" },
+				uploadId: { type: "string", tagName: "UploadId" },
+			},
+		},
+	},
+});

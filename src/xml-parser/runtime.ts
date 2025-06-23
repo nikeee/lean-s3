@@ -109,10 +109,12 @@ export class Scanner {
 					this.inTag = true;
 
 					if (this.pos < this.end) {
-						const nextChar = this.text.charCodeAt(this.pos);
-						if (nextChar === CharCode.slash) {
-							++this.pos;
-							return (this.token = TokenKind.startClosingTag);
+						switch (this.text.charCodeAt(this.pos)) {
+							case CharCode.slash:
+								++this.pos;
+								return (this.token = TokenKind.startClosingTag);
+							default:
+								break;
 						}
 					}
 					return (this.token = TokenKind.startTag);

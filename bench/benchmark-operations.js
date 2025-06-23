@@ -2,9 +2,6 @@
 import { createHash } from "node:crypto";
 
 import { summary, group, bench, run, do_not_optimize } from "mitata";
-import { XMLParser } from "fast-xml-parser";
-
-import parse from "../src/xml-parser/parse.js";
 
 /**
  * @module Case study whether to use URLSearchParams or manual string concat for simple search params and some other micro benchmarks to determine how we should do things.
@@ -13,7 +10,7 @@ import parse from "../src/xml-parser/parse.js";
  */
 
 summary(() => {
-	group(() => {
+	group("building search params", () => {
 		function buildSearchParamsURLSP(
 			amzCredential,
 			date,
@@ -161,7 +158,7 @@ summary(() => {
 		}).baseline(true);
 	});
 
-	group(() => {
+	group("building search params v2", () => {
 		const options = {
 			prefix: "/",
 			maxKeys: 100,
@@ -190,20 +187,19 @@ summary(() => {
 			let s = "list-type=2";
 
 			if (options.prefix) {
-				// biome-ignore lint/style/useTemplate: <explanation>
+				// biome-ignore lint/style/useTemplate: this is what we're benchmarking
 				s += "&prefix=" + encodeURIComponent(options.prefix);
 			}
 			if (options.startAfter) {
-				// biome-ignore lint/style/useTemplate: <explanation>
+				// biome-ignore lint/style/useTemplate: this is what we're benchmarking
 				s += "&start-after=" + encodeURIComponent(options.startAfter);
 			}
 			if (options.maxKeys) {
-				// biome-ignore lint/style/useTemplate: <explanation>
+				// biome-ignore lint/style/useTemplate: this is what we're benchmarking
 				s += "&max-keys=" + options.maxKeys; // no encoding needed, since it's a number
 			}
 			if (options.continuationToken) {
 				s +=
-					// biome-ignore lint/style/useTemplate: <explanation>
 					"&continuation-token=" +
 					encodeURIComponent(options.continuationToken);
 			}
@@ -231,7 +227,7 @@ summary(() => {
 			.baseline(true);
 	});
 
-	group(() => {
+	group("computing sha256 of parts", () => {
 		function signUpdate(method, path, query, host) {
 			return createHash("sha256")
 				.update(method)
@@ -274,7 +270,8 @@ summary(() => {
 				);
 			}
 		}).baseline(true);
-		bench("update calls", () => {
+
+		bench("consecutive update calls", () => {
 			for (let i = 0; i < 1000; ++i) {
 				signUpdate(
 					"GET",
@@ -298,7 +295,7 @@ summary(() => {
 		});
 	});
 
-	group(() => {
+	group("joining strings", () => {
 		const headers = [
 			["host"].sort(),
 			["host", "x-amz-date"].sort(),
@@ -325,6 +322,7 @@ summary(() => {
 			return h.join(";");
 		}
 
+		/** @param {string[]} h */
 		function concat(h) {
 			let res = h.length > 0 ? h[0] : "";
 			for (let i = 1; i < h.length; ++i) {
@@ -335,18 +333,18 @@ summary(() => {
 
 		bench("string concat join", () => {
 			for (let i = 0; i < headers.length; ++i) {
-				const x = concat(headers[i]);
+				const _ = concat(headers[i]);
 			}
 		}).baseline(true);
 
 		bench("array string join", () => {
 			for (let i = 0; i < headers.length; ++i) {
-				const x = join(headers[i]);
+				const _ = join(headers[i]);
 			}
 		});
 	});
 
-	group(() => {
+	group("substring vs check if string is empty before append", () => {
 		// Which is faster, always adding a & and substring(1) or check if we need a preceeding & on every append?
 
 		bench("substring", () => {
@@ -364,9 +362,10 @@ summary(() => {
 
 				a += "&uploadId=12323456432";
 
-				const q = a.substring(1);
+				const _ = a.substring(1);
 			}
 		}).baseline(true);
+
 		bench("conditional", () => {
 			for (let i = 0; i < 1000; ++i) {
 				let a = "";
@@ -424,60 +423,31 @@ summary(() => {
 		// What is faster, passing an empty object as a default or accepting undefined and use safe-navigation?
 		// -> This is probably hard to benchmark and the results are pretty close -> we don't care
 
-		group(() => {
-			bench("allocation", () => {
-				for (let i = 0; i < 1000; ++i) {
-					do_not_optimize(fnWithDefaultParam());
-					do_not_optimize(fnWithDefaultParam({ a: true }));
-					do_not_optimize(fnWithDefaultParam({ a: true, b: true }));
-					do_not_optimize(fnWithDefaultParam());
-					do_not_optimize(fnWithDefaultParam());
-					do_not_optimize(fnWithDefaultParam());
-				}
-			}).baseline(true);
-			bench("conditional", () => {
-				for (let i = 0; i < 1000; ++i) {
-					do_not_optimize(fnWithOptionalParam());
-					do_not_optimize(fnWithOptionalParam({ a: true }));
-					do_not_optimize(fnWithOptionalParam({ a: true, b: true }));
-					do_not_optimize(fnWithOptionalParam());
-					do_not_optimize(fnWithOptionalParam());
-					do_not_optimize(fnWithOptionalParam());
-				}
-			});
-		});
-
-		group(() => {
-			// Do we want to pass a buffer to our XML parser? Undici offers a buffer directly, which could
-			// improve throughput due to an encoding step getting skipped
-
-			const s = `<?xml version="1.0" encoding="UTF-8"?><ListPartsResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Bucket>test-bucket</Bucket><Key>583ea250-5016-48e5-8b26-b3ce0d9e5822/foo-key-9000</Key><UploadId>tWA7cuzMIElE_sIi8weNVQJdxXnxZI9mhRT3hi9Xuaeqv4DjyteO64y_o4SuJP_E0Uf-D4Mzqeno7eWIakTtmlgabUjQ3uko2TE9Qv5BpztLPVqqJKEQnhulwkgLzcOs</UploadId><PartNumberMarker>0</PartNumberMarker><NextPartNumberMarker>3</NextPartNumberMarker><MaxParts>1000</MaxParts><IsTruncated>false</IsTruncated><Part><ETag>"4715e35cf900ae14837e3c098e87d522"</ETag><LastModified>2025-06-20T13:58:01.000Z</LastModified><PartNumber>1</PartNumber><Size>6291456</Size></Part><Part><ETag>"ce1b200f8c97447474929b722ed93b00"</ETag><LastModified>2025-06-20T13:58:02.000Z</LastModified><PartNumber>2</PartNumber><Size>6291456</Size></Part><Part><ETag>"3bc3be0b850eacf461ec036374616058"</ETag><LastModified>2025-06-20T13:58:02.000Z</LastModified><PartNumber>3</PartNumber><Size>1048576</Size></Part><Initiator><DisplayName>webfile</DisplayName><ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID></Initiator><Owner><DisplayName>webfile</DisplayName><ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID></Owner><StorageClass>STANDARD</StorageClass></ListPartsResult>`;
-			const b = Buffer.from(s, "ascii");
-
-			// -> buffer and string perform basically the same
-			// maybe we should use a buffer via undici, because undici could skip the string decoding
-
-			const xmlParser = new XMLParser({
-				ignoreAttributes: true,
-				isArray: (_, jPath) =>
-					jPath === "ListMultipartUploadsResult.Upload" ||
-					jPath === "ListBucketResult.Contents" ||
-					jPath === "ListPartsResult.Part" ||
-					jPath === "DeleteResult.Deleted" ||
-					jPath === "DeleteResult.Error",
-			});
-
-			bench("parse string with fxp", () => {
-				for (let i = 0; i < 10000; ++i) {
-					xmlParser.parse(s);
-				}
-			});
-			bench("custom parser", () => {
-				for (let i = 0; i < 10000; ++i) {
-					parse(s);
-				}
-			}).baseline(true);
-		});
+		group(
+			"empty object as default param vs undefined param + safe navigation",
+			() => {
+				bench("allocation (param = {})", () => {
+					for (let i = 0; i < 1000; ++i) {
+						do_not_optimize(fnWithDefaultParam());
+						do_not_optimize(fnWithDefaultParam({ a: true }));
+						do_not_optimize(fnWithDefaultParam({ a: true, b: true }));
+						do_not_optimize(fnWithDefaultParam());
+						do_not_optimize(fnWithDefaultParam());
+						do_not_optimize(fnWithDefaultParam());
+					}
+				}).baseline(true);
+				bench("conditional (safe navigation, param?.value)", () => {
+					for (let i = 0; i < 1000; ++i) {
+						do_not_optimize(fnWithOptionalParam());
+						do_not_optimize(fnWithOptionalParam({ a: true }));
+						do_not_optimize(fnWithOptionalParam({ a: true, b: true }));
+						do_not_optimize(fnWithOptionalParam());
+						do_not_optimize(fnWithOptionalParam());
+						do_not_optimize(fnWithOptionalParam());
+					}
+				});
+			},
+		);
 	});
 });
 

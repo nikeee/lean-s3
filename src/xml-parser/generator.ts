@@ -115,8 +115,6 @@ function ${parseFn}(scanner) {
 		${emitChildFieldInit(children)}
 	};
 
-	scanner.scan(); // prime scanner
-
 	if (scanner.token === ${TokenKind.preamble}) {
 		scanner.scan();
 	}
@@ -319,7 +317,9 @@ function buildParser<T extends string>(rootSpec: RootSpec<T>): Parser<unknown> {
 import { Scanner, scanExpected, skipAttributes, expectIdentifier, parseStringTag, parseDateTag, parseIntegerTag, parseBooleanTag} from "./runtime.ts";
 ${parsingCode}
 export default function parse(text) {
-	return ${rootParseFunctionName}(new Scanner(text));
+	const s = new Scanner(text);
+	s.scan(); // prime scanner
+	return ${rootParseFunctionName}(s);
 }`);
 
 	throw new Error("Not implemented");

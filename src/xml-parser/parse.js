@@ -293,8 +293,6 @@ function root_parse_fn_0(scanner) {
 		result: undefined,
 	};
 
-	scanner.scan(); // prime scanner
-
 	if (scanner.token === 9) {
 		scanner.scan();
 	}
@@ -327,5 +325,7 @@ function root_parse_fn_0(scanner) {
 }
 
 export default function parse(text) {
-	return root_parse_fn_0(new Scanner(text));
+	const s = new Scanner(text);
+	s.scan(); // prime scanner
+	return root_parse_fn_0(s);
 }

@@ -262,7 +262,7 @@ function isIdentifierPart(ch: number): boolean {
 		(ch >= CharCode.A && ch <= CharCode.Z) ||
 		(ch >= CharCode.a && ch <= CharCode.z) ||
 		ch === CharCode._ ||
-		(ch >= CharCode._0 && ch <= CharCode._0)
+		(ch >= CharCode._0 && ch <= CharCode._9)
 	);
 }
 function isWhitespace(ch: number): boolean {

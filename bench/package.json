@@ -6,7 +6,8 @@
   "scripts": {
     "bench:crud": "tsx ./crud.ts",
     "bench:presign": "tsx ./presign.ts",
-    "bench:presign:bun": "bun run ./presign.ts"
+    "bench:presign:bun": "bun run ./presign.ts",
+    "bench:ops": "tsx ./benchmark-operations.js"
   },
   "license": "MIT",
   "type": "module",

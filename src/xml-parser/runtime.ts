@@ -295,7 +295,10 @@ export function skipAttributes(scanner: Scanner): void {
 			scanExpected(scanner, TokenKind.attributeValue);
 			continue;
 		}
-		if (scanner.token === TokenKind.endTag) {
+		if (
+			scanner.token === TokenKind.endTag ||
+			scanner.token === TokenKind.endSelfClosing
+		) {
 			break;
 		}
 		throw new Error(`Unexpected token: ${scanner.token}`);
@@ -316,8 +319,15 @@ export function expectClosingTag(scanner: Scanner, tagName: string): void {
 	expectIdentifier(scanner, tagName);
 	scanExpected(scanner, TokenKind.endTag);
 }
-export function parseStringTag(scanner: Scanner, tagName: string): string {
+export function parseStringTag(
+	scanner: Scanner,
+	tagName: string,
+): string | undefined {
 	skipAttributes(scanner);
+	if (scanner.token === TokenKind.endSelfClosing) {
+		return undefined;
+	}
+
 	scanner.scan(); // consume >
 	if (scanner.token === TokenKind.startClosingTag) {
 		expectIdentifier(scanner, tagName);
@@ -329,16 +339,31 @@ export function parseStringTag(scanner: Scanner, tagName: string): string {
 	expectClosingTag(scanner, tagName);
 	return value;
 }
-export function parseDateTag(scanner: Scanner, tagName: string): Date {
+export function parseDateTag(
+	scanner: Scanner,
+	tagName: string,
+): Date | undefined {
 	const value = parseStringTag(scanner, tagName);
+	if (value === undefined) {
+		return undefined;
+	}
+
 	const r = new Date(value);
 	if (Number.isNaN(r.getTime())) {
 		throw new Error(`Expected valid date time: "${value}"`);
 	}
 	return r;
 }
-export function parseIntegerTag(scanner: Scanner, tagName: string): number {
+export function parseIntegerTag(
+	scanner: Scanner,
+	tagName: string,
+): number | undefined {
 	skipAttributes(scanner);
+
+	if (scanner.token === TokenKind.endSelfClosing) {
+		return undefined;
+	}
+
 	scanner.scan(); // consume >
 	const value = scanner.getTokenValue();
 	const n = Number(value);
@@ -348,8 +373,15 @@ export function parseIntegerTag(scanner: Scanner, tagName: string): number {
 	expectClosingTag(scanner, tagName);
 	return n;
 }
-export function parseBooleanTag(scanner: Scanner, tagName: string): boolean {
+export function parseBooleanTag(
+	scanner: Scanner,
+	tagName: string,
+): boolean | undefined {
 	skipAttributes(scanner);
+	if (scanner.token === TokenKind.endSelfClosing) {
+		return undefined;
+	}
+
 	scanner.scan(); // consume >
 
 	const stringValue = scanner.getTokenValue();

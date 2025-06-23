@@ -166,46 +166,15 @@ export class Scanner {
 						++this.pos; // consume closing "
 						this.tokenValueStart = start;
 						this.tokenValueEnd = this.pos;
-						// this.tokenValue = this.text.substring(start, this.pos);
 
 						return (this.token = TokenKind.attributeValue);
-					} else {
-						// Read text node
-						let tokenValueStart = this.pos;
-						while (isWhitespace(this.text.charCodeAt(this.pos))) {
-							++tokenValueStart;
-						}
-						// TODO: First element gets cut off
-
-						while (
-							this.pos < this.end &&
-							this.text.charCodeAt(this.pos) !== CharCode.lessThan
-						) {
-							++this.pos;
-						}
-
-						let tokenValueEnd = this.pos;
-						do {
-							--tokenValueEnd;
-						} while (isWhitespace(this.text.charCodeAt(tokenValueEnd)));
-						++tokenValueEnd;
-
-						if (tokenValueStart === tokenValueEnd) {
-							// no text content, next token
-							continue;
-						}
-
-						this.tokenValueStart = tokenValueStart;
-						this.tokenValueEnd = tokenValueEnd;
-
-						// const value = this.text.substring(tokenValueStart, this.pos).trim();
-						// if (value === "") {
-						// 	continue;
-						// }
-						// this.tokenValue = value;
-
-						return (this.token = TokenKind.identifier);
 					}
+
+					const textNode = this.#scanTextNode();
+					if (textNode === undefined) {
+						continue;
+					}
+					return textNode;
 				}
 				default:
 					if (this.inTag) {
@@ -228,44 +197,45 @@ export class Scanner {
 						++this.pos;
 						continue;
 					} else {
-						// Read text node
-						let tokenValueStart = this.pos;
-						while (isWhitespace(this.text.charCodeAt(this.pos))) {
-							++tokenValueStart;
-						}
-						// TODO: First element gets cut off
-
-						while (
-							this.pos < this.end &&
-							this.text.charCodeAt(this.pos) !== CharCode.lessThan
-						) {
-							++this.pos;
-						}
-
-						let tokenValueEnd = this.pos;
-						do {
-							--tokenValueEnd;
-						} while (isWhitespace(this.text.charCodeAt(tokenValueEnd)));
-						++tokenValueEnd;
-
-						if (tokenValueStart === tokenValueEnd) {
-							// no text content, next token
+						const textNode = this.#scanTextNode();
+						if (textNode === undefined) {
 							continue;
 						}
-
-						this.tokenValueStart = tokenValueStart;
-						this.tokenValueEnd = tokenValueEnd;
-
-						// const value = this.text.substring(tokenValueStart, this.pos).trim();
-						// if (value === "") {
-						// 	continue;
-						// }
-						// this.tokenValue = value;
-
-						return (this.token = TokenKind.identifier);
+						return textNode;
 					}
 			}
 		}
+	}
+
+	#scanTextNode(): TokenKind | undefined {
+		// Read text node
+		let tokenValueStart = this.pos;
+		while (isWhitespace(this.text.charCodeAt(this.pos))) {
+			++tokenValueStart;
+		}
+		// TODO: First element gets cut off
+
+		while (
+			this.pos < this.end &&
+			this.text.charCodeAt(this.pos) !== CharCode.lessThan
+		) {
+			++this.pos;
+		}
+
+		let tokenValueEnd = this.pos;
+		do {
+			--tokenValueEnd;
+		} while (isWhitespace(this.text.charCodeAt(tokenValueEnd)));
+		++tokenValueEnd;
+
+		if (tokenValueStart === tokenValueEnd) {
+			// no text content, next token
+			return undefined;
+		}
+
+		this.tokenValueStart = tokenValueStart;
+		this.tokenValueEnd = tokenValueEnd;
+		return (this.token = TokenKind.identifier);
 	}
 }
 

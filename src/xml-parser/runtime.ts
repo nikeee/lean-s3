@@ -33,10 +33,12 @@ const enum CharCode {
 }
 
 /**
- * We cannot make this `const` because it is referenced in the generated parser.
- * TODO: Reverse-lookup value and inline on code-gen level, so we can skip an object deref
+ * biome-ignore lint/suspicious/noConstEnum: Normally, we'd avoid using TS enums due to its incompability with JS.
+ * But we want to inline its values into the switch-cases and still have readable code.
+ *
+ * @remarks This enum cannot be used in runtime code, since it's `const` and will not exist in the parsing stage. Values have to be inlined by the generator
  */
-export enum TokenKind {
+export const enum TokenKind {
 	eof = 0,
 	startTag = 1,
 	endTag = 2,

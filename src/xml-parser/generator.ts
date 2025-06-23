@@ -60,6 +60,8 @@ summary(() => {
 });
 */
 
+import { TokenKind } from "./runtime.ts";
+
 // await run();
 
 function emitParser(
@@ -143,7 +145,7 @@ function ${parseFn}(scanner) {
 	do {
 		scanner.scan();
 		switch (scanner.token) {
-			case TokenKind.eof: {
+			case ${TokenKind.eof}: {
 				${Object.entries(children)
 					.map(([name, childSpec]) =>
 						childSpec.optional ||
@@ -155,8 +157,8 @@ function ${parseFn}(scanner) {
 					.join("\n\t\t\t\t")}
 				return res;
 			}
-			case TokenKind.startTag: {
-				scanExpected(scanner, TokenKind.identifier);
+			case ${TokenKind.startTag}: {
+				scanExpected(scanner, ${TokenKind.identifier});
 				switch (scanner.tokenValue) {
 					${Object.entries(children)
 						.map(
@@ -214,9 +216,9 @@ function ${parseFn}(scanner) {
 		scanner.scan(); // consume >
 
 		switch (scanner.token) {
-			case TokenKind.startClosingTag: {
+			case ${TokenKind.startClosingTag}: {
 				expectIdentifier(scanner, ${asLiteral(tagName)});
-				scanExpected(scanner, TokenKind.endTag);
+				scanExpected(scanner, ${TokenKind.endTag});
 				${Object.entries(children)
 					.map(([name, childSpec]) =>
 						childSpec.optional ||
@@ -228,8 +230,8 @@ function ${parseFn}(scanner) {
 					.join("\n\t\t\t\t")}
 				return res;
 			}
-			case TokenKind.startTag: {
-				scanExpected(scanner, TokenKind.identifier);
+			case ${TokenKind.startTag}: {
+				scanExpected(scanner, ${TokenKind.identifier});
 				switch (scanner.tokenValue) {
 					${Object.entries(children)
 						.map(
@@ -350,7 +352,7 @@ function buildParser<T extends string>(rootSpec: RootSpec<T>): Parser<unknown> {
 	globals.clear(); // make sure we clear all references (even though this map won't survive past this function)
 
 	console.log(`
-import { Scanner, TokenKind, scanExpected, skipAttributes, expectIdentifier, parseStringTag, parseDateTag, parseIntegerTag, parseBooleanTag} from "./runtime.ts";
+import { Scanner, scanExpected, skipAttributes, expectIdentifier, parseStringTag, parseDateTag, parseIntegerTag, parseBooleanTag} from "./runtime.ts";
 ${parsingCode}
 export default function parse(text) {
 	return ${rootParseFunctionName}(new Scanner(text));

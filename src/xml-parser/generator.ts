@@ -71,7 +71,15 @@ function emitChildFieldInit(children: Record<string, ParseSpec<string>>) {
 									typeof childSpec.defaultValue === "string" &&
 									!childSpec.optional
 								? childSpec.defaultValue
-								: "undefined"
+								: childSpec.type === "integer" &&
+										typeof childSpec.defaultValue === "number" &&
+										!childSpec.optional
+									? childSpec.defaultValue.toString()
+									: childSpec.type === "date" &&
+											childSpec.defaultValue instanceof Date &&
+											!childSpec.optional
+										? `new Date("${childSpec.defaultValue.toISOString()}")`
+										: "undefined"
 				},`,
 		)
 		.join("\n\t\t");
@@ -262,11 +270,13 @@ type IntegerSpec = {
 	type: "integer";
 	tagName?: string;
 	optional?: boolean;
+	defaultValue?: number;
 };
 type DateSpec = {
 	type: "date";
 	tagName?: string;
 	optional?: boolean;
+	defaultValue?: Date;
 };
 
 /*

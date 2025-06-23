@@ -67,7 +67,11 @@ function emitChildFieldInit(children: Record<string, ParseSpec<string>>) {
 								typeof childSpec.defaultValue === "boolean" &&
 								!childSpec.optional
 							? childSpec.defaultValue.toString()
-							: "undefined"
+							: childSpec.type === "string" &&
+									typeof childSpec.defaultValue === "string" &&
+									!childSpec.optional
+								? childSpec.defaultValue
+								: "undefined"
 				},`,
 		)
 		.join("\n\t\t");
@@ -245,6 +249,7 @@ type StringSpec = {
 	type: "string";
 	tagName?: string;
 	optional?: boolean;
+	defaultValue?: string;
 	emptyIsAbsent?: boolean;
 };
 type BooleanSpec = {

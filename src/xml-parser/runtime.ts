@@ -48,6 +48,7 @@ export const enum TokenKind {
 	equals = 6, // =
 	attributeValue = 7,
 	textContent = 8,
+	preamble = 9, // <?xml ?>
 }
 
 export class Scanner {
@@ -113,6 +114,8 @@ export class Scanner {
 							case CharCode.slash:
 								++this.pos;
 								return (this.token = TokenKind.startClosingTag);
+							case CharCode.questionMark:
+								return this.#scanPreamble(this.pos - 1);
 							default:
 								break;
 						}
@@ -224,6 +227,20 @@ export class Scanner {
 		}
 
 		this.tokenValueStart = identifierStart;
+		this.tokenValueEnd = this.pos;
+		return (this.token = TokenKind.identifier);
+	}
+
+	#scanPreamble(tokenValueStart: number): TokenKind {
+		++this.pos; // consume ?
+		while (
+			this.pos < this.end &&
+			this.text.charCodeAt(this.pos) !== CharCode.questionMark &&
+			this.text.charCodeAt(this.pos) !== CharCode.greaterThan
+		) {
+			++this.pos;
+		}
+		this.tokenValueStart = tokenValueStart;
 		this.tokenValueEnd = this.pos;
 		return (this.token = TokenKind.identifier);
 	}

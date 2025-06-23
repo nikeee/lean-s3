@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "main": "presign.ts",
   "scripts": {
-    "bench:crud": "node ./crud.ts",
-    "bench:presign": "node ./presign.ts",
+    "bench:crud": "tsx ./crud.ts",
+    "bench:presign": "tsx ./presign.ts",
     "bench:presign:bun": "bun run ./presign.ts"
   },
   "license": "MIT",
@@ -21,6 +21,7 @@
     "minio": "^8.0.5",
     "mitata": "^1.0.34",
     "s3mini": "^0.3.0",
-    "tinybench": "^4.0.1"
+    "tinybench": "^4.0.1",
+    "tsx": "^4.20.3"
   }
 }

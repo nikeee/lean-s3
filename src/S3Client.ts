@@ -38,6 +38,7 @@ import {
 	parseInitiateMultipartUploadResult,
 	parseListMultipartUploadsResult,
 	parseCompleteMultipartUploadResult,
+	parseDeleteResult,
 } from "./parsers.ts";
 
 export const write = Symbol("write");
@@ -1063,11 +1064,12 @@ export default class S3Client {
 		if (response.statusCode === 200) {
 			const text = await response.body.text();
 
-			// biome-ignore lint/suspicious/noExplicitAny: parsing
+			// biome-ignore lint/suspicious/noExplicitAny: PoC
 			let deleteResult: any;
 			try {
 				// Quite mode omits all deleted elements, so it will be parsed as "", wich we need to coalasce to null/undefined
-				deleteResult = ensureParsedXml(text).DeleteResult ?? {};
+				// biome-ignore lint/suspicious/noExplicitAny: PoC
+				deleteResult = (parseDeleteResult(text) as any).result;
 			} catch (cause) {
 				// Possible according to AWS docs
 				throw new S3Error("Unknown", "", {
@@ -1076,16 +1078,7 @@ export default class S3Client {
 				});
 			}
 
-			const errors =
-				// biome-ignore lint/suspicious/noExplicitAny: parsing
-				deleteResult.Error?.map((e: any) => ({
-					code: e.Code,
-					key: e.Key,
-					message: e.Message,
-					versionId: e.VersionId,
-				})) ?? [];
-
-			return { errors };
+			return { errors: deleteResult.errors };
 		}
 
 		if (400 <= response.statusCode && response.statusCode < 500) {
@@ -1447,23 +1440,4 @@ export function buildSearchParams(
 		res += `&X-Amz-Storage-Class=${storageClass}`;
 	}
 	return res;
-}
-
-// biome-ignore lint/suspicious/noExplicitAny: parsing result is just unknown
-function ensureParsedXml(text: string): any {
-	try {
-		const r = xmlParser.parse(text);
-		if (!r) {
-			throw new S3Error("Unknown", "", {
-				message: "S3 service responded with empty XML.",
-			});
-		}
-		return r;
-	} catch (cause) {
-		// Possible according to AWS docs
-		throw new S3Error("Unknown", "", {
-			message: "S3 service responded with invalid XML.",
-			cause,
-		});
-	}
 }

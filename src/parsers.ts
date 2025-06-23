@@ -286,3 +286,36 @@ export const parseCompleteMultipartUploadResult = buildParser({
 		},
 	},
 });
+
+export const parseDeleteResult = (e: string) => {
+	console.log("e", e);
+
+	const r = buildParser({
+		type: "root",
+		children: {
+			result: {
+				type: "object",
+				tagName: "DeleteResult",
+				children: {
+					errors: {
+						type: "array",
+						optional: true,
+						defaultEmpty: true,
+						item: {
+							type: "object",
+							children: {
+								code: { type: "string", tagName: "Code" },
+								message: { type: "string", tagName: "Message" },
+								key: { type: "string", tagName: "Key" },
+								etag: { type: "string", tagName: "ETag" },
+								versionId: { type: "string", tagName: "VersionId" },
+							},
+						},
+					},
+				},
+			},
+		},
+	})(e);
+	console.log("r", r);
+	return r;
+};

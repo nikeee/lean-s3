@@ -34,7 +34,7 @@
   "type": "module",
   "scripts": {
     "build": "tsup",
-    "test": "tsgo && tsx --test src/*.test.ts",
+    "test": "tsgo && tsx --test src/**/*.test.ts",
     "test:integration": "tsgo && tsx --test src/test.integration.ts",
     "ci": "biome ci ./src",
     "docs": "typedoc",

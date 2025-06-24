@@ -51,7 +51,7 @@
     "@testcontainers/localstack": "^11.0.3",
     "@testcontainers/minio": "^11.0.3",
     "@types/node": "^24.0.3",
-    "@typescript/native-preview": "^7.0.0-dev.20250623.1",
+    "@typescript/native-preview": "^7.0.0-dev.20250624.1",
     "expect": "^30.0.2",
     "lefthook": "^1.11.14",
     "tsup": "^8.5.0",

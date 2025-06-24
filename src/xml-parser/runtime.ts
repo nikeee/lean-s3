@@ -51,6 +51,14 @@ export const enum TokenKind {
 	preamble = 9, // <?xml ?>
 }
 
+const entityMap = {
+	"&quot;": '"',
+	"&apos;": "'",
+	"&lt;": "<",
+	"&gt;": ">",
+	"&amp;": "&",
+} as const;
+
 export class Scanner {
 	startPos: number;
 	pos: number;
@@ -70,6 +78,12 @@ export class Scanner {
 	 */
 	getTokenValueEncoded() {
 		return this.text.substring(this.tokenValueStart, this.tokenValueEnd);
+	}
+	getTokenValueDecoded() {
+		return this.getTokenValueEncoded().replace(
+			/&(quot|apos|lt|gt|amp);/g,
+			m => entityMap[m as keyof typeof entityMap] ?? m,
+		);
 	}
 
 	constructor(text: string) {
@@ -347,7 +361,7 @@ export function parseStringTag(
 		return "";
 	}
 
-	const value = scanner.getTokenValueEncoded();
+	const value = scanner.getTokenValueDecoded();
 	expectClosingTag(scanner, tagName);
 	return value;
 }

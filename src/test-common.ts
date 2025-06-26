@@ -513,7 +513,7 @@ export function runTests(
 		test(".write() with weird keys", async () => {
 			const testId = crypto.randomUUID();
 
-			const key = "Sun Jun 15 2025 00:57:03 GMT+0200 (test)";
+			const key = "Sun Jun 15 2025 00:57:03 GMT+0200 , (test)";
 			const f = client.file(`${runId}/${testId}/${key}`);
 			const content = crypto.randomUUID();
 			await f.write(content);

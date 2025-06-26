@@ -25,7 +25,8 @@ export function buildRequestUrl(
 			.replaceAll(":", "%3A") // See: https://github.com/nikeee/lean-s3/issues/61
 			.replaceAll("+", "%2B")
 			.replaceAll("(", "%28")
-			.replaceAll(")", "%29");
+			.replaceAll(")", "%29")
+			.replaceAll(",", "%2C");
 
 	return result;
 }

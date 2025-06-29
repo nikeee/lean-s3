@@ -1,11 +1,18 @@
 import { Readable } from "node:stream";
 
-import S3Error from "./S3Error.ts";
-import S3Stat from "./S3Stat.ts";
 import type S3Client from "./S3Client.ts";
-import { write, stream, type OverridableS3ClientOptions } from "./S3Client.ts";
-import { sha256 } from "./sign.ts";
 import type { ByteSource } from "./index.ts";
+import S3Stat from "./S3Stat.ts";
+import {
+	write,
+	stream,
+	type OverridableS3ClientOptions,
+	signedRequest,
+} from "./S3Client.ts";
+import { sha256 } from "./sign.ts";
+import { fromStatusCode, getResponseError } from "./error.ts";
+import assertNever from "./assertNever.ts";
+import type { ObjectKey } from "./branded.ts";
 
 // TODO: If we want to hack around, we can use this to access the private implementation of the "get stream" algorithm used by Node.js's blob internally
 // We probably have to do this some day if the fetch implementation is moved to internals.
@@ -16,17 +23,15 @@ import type { ByteSource } from "./index.ts";
 // const kHandle = Object.getOwnPropertySymbols(new Blob).find(s => s.toString() === 'Symbol(kHandle)');
 export default class S3File {
 	#client: S3Client;
-	#path: string;
+	#path: ObjectKey;
 	#start: number | undefined;
 	#end: number | undefined;
 	#contentType: string;
 
-	/**
-	 * @internal
-	 */
+	/** @internal */
 	constructor(
 		client: S3Client,
-		path: string,
+		path: ObjectKey,
 		start: number | undefined,
 		end: number | undefined,
 		contentType: string | undefined,
@@ -67,111 +72,152 @@ export default class S3File {
 	 *  Get the stat of a file in the bucket. Uses `HEAD` request to check existence.
 	 *
 	 * @remarks Uses [`HeadObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html).
-	 * @throws {Error} If the file does not exist.
+	 * @throws {S3Error} If the file does not exist or the server has some other issues.
+	 * @throws {Error} If the server returns an invalid response.
 	 */
-	async stat({ signal }: Partial<S3StatOptions> = {}): Promise<S3Stat> {
+	async stat(options: Partial<S3StatOptions> = {}): Promise<S3Stat> {
 		// TODO: Support all options
 
-		// TODO: Don't use presign here
-		const url = this.#client.presign(this.#path, { method: "HEAD" });
-		const response = await fetch(url, { method: "HEAD", signal }); // TODO: Use undici
+		const response = await this.#client[signedRequest](
+			"HEAD",
+			this.#path,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			options.signal,
+		);
 
-		if (!response.ok) {
-			switch (response.status) {
-				case 404:
-					// TODO: Process response body
-					throw new S3Error("NoSuchKey", this.#path);
-				default:
-					// TODO: Process response body
-					throw new S3Error("Unknown", this.#path);
+		// Heads don't have a body, but we still need to consume it to avoid leaks
+		// undici docs state that we should dump the body if not used
+		response.body.dump(); // dump's floating promise should not throw
+
+		if (200 <= response.statusCode && response.statusCode < 300) {
+			const result = S3Stat.tryParseFromHeaders(response.headers);
+			if (!result) {
+				throw new Error(
+					"S3 server returned an invalid response for `HeadObject`",
+				);
 			}
+			return result;
 		}
 
-		const result = S3Stat.tryParseFromHeaders(response.headers);
-		if (!result) {
-			throw new Error("S3 server returned an invalid response for HEAD");
-		}
-		return result;
+		throw (
+			fromStatusCode(response.statusCode, this.#path) ??
+			new Error(
+				`S3 server returned an unsupported status code for \`HeadObject\`: ${response.statusCode}`,
+			)
+		);
 	}
+
 	/**
 	 * Check if a file exists in the bucket. Uses `HEAD` request to check existence.
 	 *
 	 * @remarks Uses [`HeadObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html).
 	 */
-	async exists({
-		signal,
-	}: Partial<S3FileExistsOptions> = {}): Promise<boolean> {
+	async exists(options: Partial<S3FileExistsOptions> = {}): Promise<boolean> {
 		// TODO: Support all options
 
-		// TODO: Don't use presign here
-		const url = this.#client.presign(this.#path, { method: "HEAD" });
-		const res = await fetch(url, { method: "HEAD", signal }); // TODO: Use undici
-		return res.ok;
+		const response = await this.#client[signedRequest](
+			"HEAD",
+			this.#path,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			options.signal,
+		);
+
+		// Heads don't have a body, but we still need to consume it to avoid leaks
+		// undici docs state that we should dump the body if not used
+		response.body.dump(); // dump's floating promise should not throw
+
+		if (200 <= response.statusCode && response.statusCode < 300) {
+			return true;
+		}
+
+		if (response.statusCode === 404) {
+			return false;
+		}
+
+		throw (
+			fromStatusCode(response.statusCode, this.#path) ??
+			new Error(
+				`S3 server returned an unsupported status code for \`HeadObject\`: ${response.statusCode}`,
+			)
+		);
 	}
 
 	/**
 	 * Delete a file from the bucket.
 	 *
-	 * @remarks Uses [`DeleteObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html).
+	 * @remarks - Uses [`DeleteObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html).
+	 *          - `versionId` not supported.
 	 *
 	 * @param {Partial<S3FileDeleteOptions>} [options]
 	 *
 	 * @example
 	 * ```js
 	 * // Simple delete
-	 * await client.unlink("old-file.txt");
+	 * await client.delete("old-file.txt");
 	 *
 	 * // With error handling
 	 * try {
-	 *   await client.unlink("file.dat");
+	 *   await client.delete("file.dat");
 	 *   console.log("File deleted");
 	 * } catch (err) {
 	 *   console.error("Delete failed:", err);
 	 * }
 	 * ```
 	 */
-	async delete({ signal }: Partial<S3FileDeleteOptions> = {}): Promise<void> {
+	async delete(options: Partial<S3FileDeleteOptions> = {}): Promise<void> {
 		// TODO: Support all options
 
-		// TODO: Don't use presign here
-		const url = this.#client.presign(this.#path, { method: "DELETE" });
-		const response = await fetch(url, { method: "DELETE", signal }); // TODO: Use undici
-		if (!response.ok) {
-			switch (response.status) {
-				case 404:
-					// TODO: Process response body
-					throw new S3Error("NoSuchKey", this.#path);
-				default:
-					// TODO: Process response body
-					throw new S3Error("Unknown", this.#path);
-			}
+		const response = await this.#client[signedRequest](
+			"DELETE",
+			this.#path,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			options.signal,
+		);
+
+		if (response.statusCode === 204) {
+			// undici docs state that we should dump the body if not used
+			response.body.dump(); // dump's floating promise should not throw
+			return;
 		}
+
+		throw await getResponseError(response, this.#path);
 	}
 
 	toString() {
 		return `S3File { path: "${this.#path}" }`;
 	}
 
-	/** @returns {Promise<unknown>} */
 	json(): Promise<unknown> {
 		// Not using JSON.parse(await this.text()), so the env can parse json while loading
 		// Also, see TODO note above this class
 		return new Response(this.stream()).json();
 	}
-	// TODO
-	// /** @returns {Promise<Uint8Array>} */
-	// bytes() {
-	// 	return new Response(this.stream()).bytes(); // TODO: Does this exist?
-	// }
-	/** @returns {Promise<ArrayBuffer>} */
+	bytes(): Promise<Uint8Array> {
+		return new Response(this.stream())
+			.arrayBuffer()
+			.then(ab => new Uint8Array(ab));
+	}
 	arrayBuffer(): Promise<ArrayBuffer> {
 		return new Response(this.stream()).arrayBuffer();
 	}
-	/** @returns {Promise<string>} */
 	text(): Promise<string> {
 		return new Response(this.stream()).text();
 	}
-	/** @returns {Promise<Blob>} */
 	blob(): Promise<Blob> {
 		return new Response(this.stream()).blob();
 	}
@@ -255,30 +301,18 @@ export default class S3File {
 
 	/*
 	// Future API?
-	/** @returns {WritableStream<ArrayBufferLike | ArrayBufferView>} *
-	writer() {
+	setTags(): Promise<void> {
 		throw new Error("Not implemented");
 	}
-	// Future API?
-	/** @returns {Promise<void>} *
-	setTags() {
-		throw new Error("Not implemented");
-	}
-	/** @returns {Promise<unknown>} *
-	getTags() {
+	getTags(): Promise<unknown> {
 		throw new Error("Not implemented");
 	}
 	*/
 }
 
-function assertNever(v: never): never {
-	throw new TypeError(`Expected value not to have type ${typeof v}`);
-}
-
 export interface S3FileDeleteOptions extends OverridableS3ClientOptions {
 	signal: AbortSignal;
 }
-
 export interface S3StatOptions extends OverridableS3ClientOptions {
 	signal: AbortSignal;
 }

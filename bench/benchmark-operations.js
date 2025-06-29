@@ -1,7 +1,8 @@
 //@ts-check
 import { createHash } from "node:crypto";
 
-import { summary, group, bench, run } from "mitata";
+import { summary, group, bench, run, do_not_optimize } from "mitata";
+import { XMLParser } from "fast-xml-parser";
 
 /**
  * @module Case study whether to use URLSearchParams or manual string concat for simple search params.
@@ -294,6 +295,142 @@ summary(() => {
 			for(let i = 0; i < headers.length; ++i){
 				const x = join(headers[i]);
 			}
+		});
+	});
+
+	group(() => {
+
+		// Which is faster, always adding a & and substring(1) or check if we need a preceeding & on every append?
+
+		bench("substring", () => {
+			for (let i = 0 ; i < 1000; ++i) {
+				let a = "";
+				if (Math.random() > 0.5) {
+					a += "&qwert=asdf";
+				}
+				if (Math.random() > 0.5) {
+					a += "&asdsadfsadf=dsljfhsjdkfh";
+				}
+				if (Math.random() > 0.5) {
+					a += "&kflkfdjglkfdjg=dslkfdsjf";
+				}
+
+				a += "&uploadId=12323456432";
+
+				const q = a.substring(1);
+			}
+		});
+		bench("conditional", () => {
+			for (let i = 0 ; i < 1000; ++i) {
+				let a = "";
+				if (Math.random() > 0.5) {
+					a += "&qwert=asdf";
+				}
+				if (Math.random() > 0.5) {
+					if (a.length > 0) a += "&"
+					a += "asdsadfsadf=dsljfhsjdkfh";
+				}
+				if (Math.random() > 0.5) {
+					if (a.length > 0)  a += "&"
+					a += "kflkfdjglkfdjg=dslkfdsjf";
+				}
+
+				if (a.length > 0)  a += "&"
+				a += "uploadId=12323456432";
+			}
+		});
+
+		function fnWithDefaultParam(options = {}) {
+			let s = 0;
+			if (options.a) {
+				s += 1;
+			}
+			if (options.b) {
+				s += 10;
+			}
+			if (options.c) {
+				s += 100;
+			}
+			if (options.d) {
+				s += 1000;
+			}
+			return s;
+		}
+
+		function fnWithOptionalParam(options) {
+			let s = 0;
+			if (options?.a) {
+				s += 1;
+			}
+			if (options?.b) {
+				s += 10;
+			}
+			if (options?.c) {
+				s += 100;
+			}
+			if (options?.d) {
+				s += 1000;
+			}
+			return s;
+		}
+
+		// What is faster, passing an empty object as a default or accepting undefined and use safe-navigation?
+		// -> This is probably hard to benchmark and the results are pretty close -> we don't care
+
+		group(() => {
+			bench("allocation", () => {
+				for (let i = 0; i < 1000; ++i) {
+					do_not_optimize(fnWithDefaultParam());
+					do_not_optimize(fnWithDefaultParam({a: true}));
+					do_not_optimize(fnWithDefaultParam({a: true, b: true}));
+					do_not_optimize(fnWithDefaultParam());
+					do_not_optimize(fnWithDefaultParam());
+					do_not_optimize(fnWithDefaultParam());
+				}
+			});
+			bench("conditional", () => {
+				for (let i = 0; i < 1000; ++i) {
+					do_not_optimize(fnWithOptionalParam());
+					do_not_optimize(fnWithOptionalParam({a: true}));
+					do_not_optimize(fnWithOptionalParam({a: true, b: true}));
+					do_not_optimize(fnWithOptionalParam());
+					do_not_optimize(fnWithOptionalParam());
+					do_not_optimize(fnWithOptionalParam());
+				}
+			});
+		});
+
+		group(() => {
+			// Do we want to pass a buffer to our XML parser? Undici offers a buffer directly, which could
+			// improve throughput due to an encoding step getting skipped
+
+
+			const s = `<ListPartsResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Bucket>test-bucket</Bucket><Key>583ea250-5016-48e5-8b26-b3ce0d9e5822/foo-key-9000</Key><UploadId>tWA7cuzMIElE_sIi8weNVQJdxXnxZI9mhRT3hi9Xuaeqv4DjyteO64y_o4SuJP_E0Uf-D4Mzqeno7eWIakTtmlgabUjQ3uko2TE9Qv5BpztLPVqqJKEQnhulwkgLzcOs</UploadId><PartNumberMarker>0</PartNumberMarker><NextPartNumberMarker>3</NextPartNumberMarker><MaxParts>1000</MaxParts><IsTruncated>false</IsTruncated><Part><ETag>"4715e35cf900ae14837e3c098e87d522"</ETag><LastModified>2025-06-20T13:58:01.000Z</LastModified><PartNumber>1</PartNumber><Size>6291456</Size></Part><Part><ETag>"ce1b200f8c97447474929b722ed93b00"</ETag><LastModified>2025-06-20T13:58:02.000Z</LastModified><PartNumber>2</PartNumber><Size>6291456</Size></Part><Part><ETag>"3bc3be0b850eacf461ec036374616058"</ETag><LastModified>2025-06-20T13:58:02.000Z</LastModified><PartNumber>3</PartNumber><Size>1048576</Size></Part><Initiator><DisplayName>webfile</DisplayName><ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID></Initiator><Owner><DisplayName>webfile</DisplayName><ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID></Owner><StorageClass>STANDARD</StorageClass></ListPartsResult>`;
+			const b = Buffer.from(s, "ascii");
+
+			// -> buffer and string perform basically the same
+			// maybe we should use a buffer via undici, because undici could skip the string decoding
+
+			const xmlParser = new XMLParser({
+				ignoreAttributes: true,
+				isArray: (_, jPath) =>
+					jPath === "ListMultipartUploadsResult.Upload" ||
+					jPath === "ListBucketResult.Contents" ||
+					jPath === "ListPartsResult.Part" ||
+					jPath === "DeleteResult.Deleted" ||
+					jPath === "DeleteResult.Error",
+			});
+
+			bench("parse string with fxp", () => {
+				for(let i = 0; i < 10000; ++i) {
+					xmlParser.parse(s);
+				}
+			});
+			bench("parse buffer with fxp", () => {
+				for(let i = 0; i < 10000; ++i) {
+					xmlParser.parse(b);
+				}
+			});
 		});
 	});
 });

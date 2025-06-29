@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 
 import { expect } from "expect";
 
-import * as sign from "./sign.js";
+import * as sign from "./sign.ts";
 import { getAmzDate } from "./AmzDate.ts";
 
 describe("deriveSigningKey", () => {
@@ -196,7 +196,7 @@ describe("signCanonicalDataHash", () => {
 });
 
 describe("createCanonicalData", () => {
-	test("equvalence of secpialized", () => {
+	test("equivalence of specialized", () => {
 		const general = sign.createCanonicalDataDigest(
 			"GET",
 			"/test.json",

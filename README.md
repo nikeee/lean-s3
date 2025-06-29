@@ -1,6 +1,6 @@
 # lean-s3 [![npm badge](https://img.shields.io/npm/v/lean-s3)](https://www.npmjs.com/package/lean-s3)
 
-A server-side S3 API for the regular user. lean-s3 tries to provide the 80% of S3 that most people use. It is heavily inspired by [Bun's S3 API](https://bun.sh/docs/api/s3). Requires a Node.js version that supports `fetch`.
+A server-side S3 API for the regular user. lean-s3 tries to provide the 80% of S3 that most people use. It is heavily inspired by [Bun's S3 API](https://bun.sh/docs/api/s3). Requires a supported Node.js version.
 
 ## Elevator Pitch
 ```js
@@ -79,7 +79,7 @@ BUT...
 
 Due to the scalability, portability and AWS integrations of @aws-sdk/client-s3, pre-signing URLs is `async` and performs poorly in high-performance scenarios. By taking different trade-offs, lean-s3 can presign URLs much faster. I promise! This is the reason you cannot use lean-s3 in the browser.
 
-lean-s3 is currently about 30x faster than AWS SDK when it comes to pre-signing URLs[^1]:
+lean-s3 is currently about 30x faster than AWS SDK when it comes to pre-signing URLs:
 ```
 benchmark                    avg (min … max) p75 / p99
 -------------------------------------------- ---------
@@ -106,7 +106,9 @@ summary
    30.99x faster than @aws-sdk/s3-request-presigner
 ```
 
-Don't trust this benchmark and run it yourself[^2]. I am just some random internet guy trying to tell you [how much better this s3 client is](https://xkcd.com/927/). For `PUT` operations, it is ~1.45x faster than `@aws-sdk/client-s3`. We still work on improving these numbers.
+Don't trust this benchmark and [run it yourself](./BENCHMARKS.md). I am just some random internet guy trying to tell you [how much better this s3 client is](https://xkcd.com/927/). For `PUT` operations, it is ~1.5x faster than `@aws-sdk/client-s3`. We still work on improving these numbers.
+
+See [BENCHMARKS.md](./BENCHMARKS.md) for more numbers and how to run it yourself. PRs for improving the benchmarks are welcome!
 
 ## Why not lean-s3?
 Don't use lean-s3 if you
@@ -134,6 +136,11 @@ See [DESIGN_DECISIONS.md](./DESIGN_DECISIONS.md) to read about why this library 
 - ✅ [`DeleteObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html) via `S3File.delete`
 - ✅ [`PutObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html) via `S3File.write`
 - ✅ [`HeadObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html) via `S3File.exists`/`S3File.stat`
+- ✅ [`ListMultipartUploads`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html) via `.listMultipartUploads`
+- ✅ [`ListParts`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListParts.html) via `.listParts`
+- ✅ [`UploadPart`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPart.html) via `.uploadPart`
+- ✅ [`CompleteMultipartUpload`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html) via `.completeMultipartUpload`
+- ✅ [`AbortMultipartUpload`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_AbortMultipartUpload.html) via `.abortMultipartUpload`
 
 ## Example Configurations
 ### Hetzner Object Storage
@@ -171,6 +178,3 @@ const client = new S3Client({
 ```
 
 Popular S3 provider missing? Open an issue or file a PR!
-
-[^1]: Benchmark ran on a `13th Gen Intel(R) Core(TM) i7-1370P` using Node.js `23.11.0`. See `bench/` directory for the used benchmark.
-[^2]: `git clone git@github.com:nikeee/lean-s3.git && cd lean-s3 && npm ci && npm run build && cd bench && npm ci && npm start`

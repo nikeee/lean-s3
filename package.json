@@ -2,11 +2,25 @@
   "name": "lean-s3",
   "author": "Niklas Mollenhauer",
   "license": "MIT",
-  "version": "0.2.1",
+  "version": "0.6.2",
   "description": "A server-side S3 API for the regular user.",
   "keywords": [
     "s3",
-    "client"
+    "client",
+    "s3 client",
+    "s3 sdk",
+    "b2",
+    "b2 client",
+    "r2",
+    "r2 client",
+    "cloudflare",
+    "cloudflare r2",
+    "AWS S3",
+    "Azure Blob Storage",
+    "Google Cloud Storage",
+    "Ceph",
+    "mibion",
+    "backblaze"
   ],
   "repository": {
     "type": "git",
@@ -19,32 +33,32 @@
   "types": "./dist/index.d.ts",
   "type": "module",
   "scripts": {
-    "build": "tsc",
-    "clean": "rimraf dist",
-    "test": "tsc && node --test dist/*.test.js",
-    "test:integration": "tsc && node --test dist/test.integration.js",
+    "build": "tsup",
+    "test": "tsgo && tsx --test src/*.test.ts",
+    "test:integration": "tsgo && tsx --test src/test.integration.ts",
     "ci": "biome ci ./src",
     "docs": "typedoc",
     "lint": "biome lint ./src",
     "format": "biome format --write ./src && biome lint --write ./src && biome check --write ./src",
-    "prepublishOnly": "npm run clean && npm run build"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
-    "@testcontainers/localstack": "^11.0.3",
-    "@testcontainers/minio": "^11.0.3",
-    "@types/node": "^24.0.1",
-    "expect": "^30.0.0",
-    "lefthook": "^1.11.13",
-    "rimraf": "^6.0.1",
-    "typedoc": "^0.28.5",
-    "typescript": "^5.8.3"
-  },
-  "engines": {
-    "node": "^20.19.0 || ^22.14.0 || ^24.0.0"
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "fast-xml-parser": "^5.2.5",
-    "undici": "^7.10.0"
+    "undici": "^7.11.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.0.6",
+    "@testcontainers/localstack": "^11.0.3",
+    "@testcontainers/minio": "^11.0.3",
+    "@types/node": "^24.0.7",
+    "@typescript/native-preview": "^7.0.0-dev.20250629.1",
+    "expect": "^30.0.3",
+    "lefthook": "^1.11.14",
+    "tsup": "^8.5.0",
+    "tsx": "^4.20.3",
+    "typedoc": "^0.28.6"
+  },
+  "engines": {
+    "node": "^20.19.2 || ^22.16.0 || ^24.2.0"
   }
 }

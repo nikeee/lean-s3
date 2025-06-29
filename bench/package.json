@@ -2,20 +2,25 @@
   "name": "lean-s3-benchmark",
   "private": true,
   "version": "1.0.0",
-  "main": "benchmark.js",
+  "main": "presign.ts",
   "scripts": {
-    "start": "node ./benchmark.js",
-    "start:bun": "bun run ./benchmark.js"
+    "bench:crud": "node ./crud.ts",
+    "bench:presign": "node ./presign.ts",
+    "bench:presign:bun": "bun run ./presign.ts"
   },
   "license": "MIT",
   "type": "module",
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.826.0",
-    "@aws-sdk/s3-request-presigner": "^3.826.0",
-    "@testcontainers/localstack": "^11.0.2",
+    "@aws-sdk/client-s3": "^3.839.0",
+    "@aws-sdk/s3-request-presigner": "^3.839.0",
+    "@monstermann/tinybench-pretty-printer": "^0.1.0",
+    "@testcontainers/minio": "^11.0.3",
     "aws4fetch": "^1.0.20",
-    "bun": "^1.2.15",
+    "bun": "^1.2.17",
+    "fast-xml-parser": "^5.2.5",
     "minio": "^8.0.5",
-    "mitata": "^1.0.34"
+    "mitata": "^1.0.34",
+    "s3mini": "^0.3.0",
+    "tinybench": "^4.0.1"
   }
 }

@@ -19,6 +19,10 @@ describe("minio", async () => {
 			region: "us-east-1",
 			bucket: "none", // intentionally set to a non-existent one, so we catch cases where the bucket is not passed correctly
 		});
+		before(async () => {
+			const res = await client.createBucket("test-bucket");
+			expect(res).toBeUndefined();
+		});
 		after(async () => {
 			// you can use this to debug leftover files:
 			// for await (const f of client.listIterating({
@@ -33,16 +37,11 @@ describe("minio", async () => {
 			expect(await client.bucketExists("test-bucket")).toBe(false);
 			await s3.stop();
 		});
-		before(async () => {
-			const res = await client.createBucket("test-bucket");
-			expect(res).toBeUndefined();
-		});
 	}
 
 	runTests(
 		runId,
 		s3.getConnectionUrl(),
-		true,
 		"minioadmin",
 		"minioadmin",
 		"us-east-1",
@@ -62,22 +61,21 @@ describe("localstack", async () => {
 			bucket: "none", // intentionally set to a non-existent one, so we catch cases where the bucket is not passed correctly
 		});
 
+		before(async () => {
+			const res = await client.createBucket("test-bucket");
+			expect(res).toBeUndefined();
+		});
 		after(async () => {
 			expect(await client.bucketExists("test-bucket")).toBe(true);
 			await client.deleteBucket("test-bucket");
 			expect(await client.bucketExists("test-bucket")).toBe(false);
 			await s3.stop();
 		});
-		before(async () => {
-			const res = await client.createBucket("test-bucket");
-			expect(res).toBeUndefined();
-		});
 	}
 
 	runTests(
 		runId,
 		s3.getConnectionUri(),
-		true,
 		"test",
 		"test",
 		"us-east-1",

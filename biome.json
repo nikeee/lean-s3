@@ -1,25 +1,32 @@
 {
-    "$schema": "https://biomejs.dev/schemas/2.0.6/schema.json",
-    "organizeImports": {
-        "enabled": false
-    },
-    "formatter": {
-        "enabled": true
-    },
-    "vcs": {
-        "enabled": true,
-        "clientKind": "git",
-        "defaultBranch": "main"
-    },
-    "linter": {
-        "enabled": true,
-        "rules": {
-            "recommended": true
-        }
-    },
-    "javascript": {
-        "formatter": {
-            "arrowParentheses": "asNeeded"
-        }
-    }
+	"$schema": "https://biomejs.dev/schemas/2.0.6/schema.json",
+	"assist": {
+		"actions": {
+			"source": {
+				"organizeImports": "off"
+			}
+		}
+	},
+	"formatter": {
+		"enabled": true
+	},
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"defaultBranch": "main"
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true,
+			"nursery": {
+				"noFloatingPromises": "error"
+			}
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"arrowParentheses": "asNeeded"
+		}
+	}
 }

@@ -8,15 +8,32 @@ export {
 } from "./S3File.ts";
 export {
 	default as S3Client,
+	type CreateMultipartUploadOptions,
+	type CreateMultipartUploadResult,
+	type DeleteObjectsResult,
+	type DeleteObjectsError,
 	type ListObjectsOptions,
 	type ListObjectsIteratingOptions,
-	type ListObjectsResponse,
+	type ListObjectsResult,
+	type ListMultipartUploadsOptions,
+	type ListMultipartUploadsResult,
+	type ListPartsOptions,
+	type ListPartsResult,
+	type AbortMultipartUploadOptions,
+	type UploadPartOptions,
+	type UploadPartResult,
+	type CompleteMultipartUploadOptions,
+	type CompleteMultipartUploadResult,
+	type MultipartUpload,
+	type MultipartUploadPart,
 	type CreateFileInstanceOptions,
 	type OverridableS3ClientOptions,
 	type S3ClientOptions,
 	type S3FilePresignOptions,
 	type BucketCreationOptions,
 	type DeleteObjectsOptions,
+	type BucketExistsOptions,
+	type BucketDeletionOptions,
 } from "./S3Client.ts";
 export { default as S3Error, type S3ErrorOptions } from "./S3Error.ts";
 export { default as S3Stat } from "./S3Stat.ts";

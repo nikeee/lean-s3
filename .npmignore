@@ -9,7 +9,6 @@ node_modules
 lefthook.yaml
 jsconfig.json
 tsconfig.json
-*.test.js
 *.md
 *.json
 *.0x
@@ -18,4 +17,4 @@ tsconfig.json
 *.tgz
 *.tap
 
-test-common.js
+tsup.config.ts

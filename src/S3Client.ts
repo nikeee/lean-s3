@@ -103,6 +103,19 @@ export type BucketExistsOptions = {
 	signal?: AbortSignal;
 };
 
+export type BucketCorsRules = readonly BucketCorsRule[];
+export type BucketCorsRule = {
+	allowedMethods: readonly HttpMethod[];
+	allowedOrigins: readonly string[];
+	allowedHeaders?: readonly string[];
+	/** One or more headers in the response that you want customers to be able to access from their applications. */
+	exposeHeaders?: readonly string[];
+	/** Unique identifier for the rule. The value cannot be longer than 255 characters. */
+	id?: string;
+	/** The time in seconds that your browser is to cache the preflight response for the specified resource. */
+	maxAgeSeconds?: number;
+};
+
 /**
  * A configured S3 bucket instance for managing files.
  *
@@ -517,7 +530,15 @@ export default class S3Client {
 		throw new Error(`Response code not supported: ${response.statusCode}`);
 	}
 
-	//#region list
+	//#region bucket cors
+
+	putBucketCors(_rules: BucketCorsRules) {
+		throw new Error("Not implemented");
+	}
+
+	//#endregion
+
+	//#region list objects
 
 	/**
 	 * Uses [`ListObjectsV2`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html) to iterate over all keys. Pagination and continuation is handled internally.

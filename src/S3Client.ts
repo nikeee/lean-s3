@@ -268,7 +268,9 @@ export type BucketExistsOptions = {
 export type BucketCorsRules = readonly BucketCorsRule[];
 export type BucketCorsRule = {
 	allowedMethods: readonly HttpMethod[];
+	/** One or more origins you want customers to be able to access the bucket from. */
 	allowedOrigins: readonly string[];
+	/** Headers that are specified in the `Access-Control-Request-Headers` header. These headers are allowed in a preflight `OPTIONS` request. */
 	allowedHeaders?: readonly string[];
 	/** One or more headers in the response that you want customers to be able to access from their applications. */
 	exposeHeaders?: readonly string[];

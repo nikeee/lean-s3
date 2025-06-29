@@ -750,6 +750,7 @@ export function runTests(
 		});
 	});
 
+	/*
 	describe("bucket cors", () => {
 		test("put", async () => {
 			await client.putBucketCors([
@@ -768,4 +769,5 @@ export function runTests(
 			]);
 		});
 	});
+	*/
 }

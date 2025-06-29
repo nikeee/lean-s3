@@ -20,7 +20,7 @@ describe("minio", async () => {
 			bucket: "none", // intentionally set to a non-existent one, so we catch cases where the bucket is not passed correctly
 		});
 		before(async () => {
-			const res = await client.createBucket("test-bucket");
+			const res = await client.createBucket("test-bucket-minio");
 			expect(res).toBeUndefined();
 		});
 		after(async () => {
@@ -32,9 +32,9 @@ describe("minio", async () => {
 			// 	console.log(`Leftover: ${f.key}`);
 			// }
 
-			expect(await client.bucketExists("test-bucket")).toBe(true);
-			await client.deleteBucket("test-bucket");
-			expect(await client.bucketExists("test-bucket")).toBe(false);
+			expect(await client.bucketExists("test-bucket-minio")).toBe(true);
+			await client.deleteBucket("test-bucket-minio");
+			expect(await client.bucketExists("test-bucket-minio")).toBe(false);
 			await s3.stop();
 		});
 	}
@@ -45,7 +45,7 @@ describe("minio", async () => {
 		"minioadmin",
 		"minioadmin",
 		"us-east-1",
-		"test-bucket",
+		"test-bucket-minio",
 	);
 });
 
@@ -62,13 +62,13 @@ describe("localstack", async () => {
 		});
 
 		before(async () => {
-			const res = await client.createBucket("test-bucket");
+			const res = await client.createBucket("test-bucket-localstack");
 			expect(res).toBeUndefined();
 		});
 		after(async () => {
-			expect(await client.bucketExists("test-bucket")).toBe(true);
-			await client.deleteBucket("test-bucket");
-			expect(await client.bucketExists("test-bucket")).toBe(false);
+			expect(await client.bucketExists("test-bucket-localstack")).toBe(true);
+			await client.deleteBucket("test-bucket-localstack");
+			expect(await client.bucketExists("test-bucket-localstack")).toBe(false);
 			await s3.stop();
 		});
 	}
@@ -79,6 +79,6 @@ describe("localstack", async () => {
 		"test",
 		"test",
 		"us-east-1",
-		"test-bucket",
+		"test-bucket-localstack",
 	);
 });

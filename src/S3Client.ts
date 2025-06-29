@@ -999,7 +999,20 @@ export default class S3Client {
 
 	//#region bucket cors
 
-	putBucketCors(_rules: BucketCorsRules) {
+	putBucketCors(rules: BucketCorsRules) {
+		const body = {
+			CORSConfiguration: {
+				CORSRule: rules.map(r => ({
+					AllowedOrigin: r.allowedOrigins,
+					AllowedMethod: r.allowedMethods,
+					ExposeHeader: r.exposeHeaders,
+					ID: r.id ?? undefined,
+					MaxAgeSeconds: r.maxAgeSeconds ?? undefined,
+				})),
+			},
+		};
+
+		xmlBuilder.build(body);
 		throw new Error("Not implemented");
 	}
 

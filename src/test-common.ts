@@ -750,7 +750,6 @@ export function runTests(
 		});
 	});
 
-	/*
 	describe("bucket cors", () => {
 		test("put", async () => {
 			if (bucket.endsWith("-minio")) {
@@ -780,5 +779,4 @@ export function runTests(
 			]);
 		});
 	});
-	*/
 }

@@ -13,8 +13,8 @@
   "license": "MIT",
   "type": "module",
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.835.0",
-    "@aws-sdk/s3-request-presigner": "^3.835.0",
+    "@aws-sdk/client-s3": "^3.839.0",
+    "@aws-sdk/s3-request-presigner": "^3.839.0",
     "@monstermann/tinybench-pretty-printer": "^0.1.0",
     "@testcontainers/minio": "^11.0.3",
     "aws4fetch": "^1.0.20",

@@ -44,19 +44,19 @@
   },
   "dependencies": {
     "fast-xml-parser": "^5.2.5",
-    "undici": "^7.10.0"
+    "undici": "^7.11.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.0.5",
+    "@biomejs/biome": "2.0.6",
     "@testcontainers/localstack": "^11.0.3",
     "@testcontainers/minio": "^11.0.3",
-    "@types/node": "^24.0.4",
-    "@typescript/native-preview": "^7.0.0-dev.20250626.1",
+    "@types/node": "^24.0.7",
+    "@typescript/native-preview": "^7.0.0-dev.20250629.1",
     "expect": "^30.0.3",
     "lefthook": "^1.11.14",
     "tsup": "^8.5.0",
     "tsx": "^4.20.3",
-    "typedoc": "^0.28.5"
+    "typedoc": "^0.28.6"
   },
   "engines": {
     "node": "^20.19.2 || ^22.16.0 || ^24.2.0"

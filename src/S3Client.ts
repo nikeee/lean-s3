@@ -23,7 +23,7 @@ import type {
 	StorageClass,
 	UndiciBodyInit,
 } from "./index.ts";
-import { getResponseError } from "./error.ts";
+import { fromStatusCode, getResponseError } from "./error.ts";
 import { getAuthorizationHeader } from "./request.ts";
 import {
 	ensureValidBucketName,
@@ -282,6 +282,14 @@ export type BucketCorsRule = {
 export type PutBucketCorsOptions = {
 	bucket?: string;
 	signal?: AbortSignal;
+};
+
+export type GetBucketCorsOptions = {
+	bucket?: string;
+	signal?: AbortSignal;
+};
+export type GetBucketCorsResult = {
+	rules: BucketCorsRule[];
 };
 
 /**
@@ -1049,6 +1057,36 @@ export default class S3Client {
 		throw new Error(
 			`Response code not implemented yet: ${response.statusCode}`,
 		);
+	}
+
+	/**
+	 * @remarks Uses [`GetBucketCors`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketCors.html).
+	 */
+	async getBucketCors(
+		options: GetBucketCorsOptions = {},
+	): Promise<GetBucketCorsResult> {
+		const response = await this[signedRequest](
+			"GET",
+			"" as ObjectKey,
+			"cors=", // "=" is needed by minio for some reason
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			ensureValidBucketName(options.bucket ?? this.#options.bucket),
+			options.signal,
+		);
+
+		if (response.statusCode !== 200) {
+			// undici docs state that we should dump the body if not used
+			response.body.dump(); // dump's floating promise should not throw
+			throw fromStatusCode(response.statusCode, "");
+		}
+
+		// const text = await response.body.text();
+		// console.log(text)
+
+		throw new Error("Not implemented");
 	}
 
 	//#endregion

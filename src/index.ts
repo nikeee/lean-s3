@@ -37,6 +37,8 @@ export {
 	type BucketCorsRules,
 	type BucketCorsRule,
 	type PutBucketCorsOptions,
+	type GetBucketCorsOptions,
+	type GetBucketCorsResult,
 } from "./S3Client.ts";
 export { default as S3Error, type S3ErrorOptions } from "./S3Error.ts";
 export { default as S3Stat } from "./S3Stat.ts";

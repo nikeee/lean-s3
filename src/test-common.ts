@@ -749,4 +749,23 @@ export function runTests(
 			}
 		});
 	});
+
+	describe("bucket cors", () => {
+		test("put", async () => {
+			await client.putBucketCors([
+				{
+					allowedMethods: ["GET"],
+					allowedOrigins: ["https://example.com"],
+				},
+			]);
+
+			const { rules } = await client.getBucketCors();
+			expect(rules).toStrictEqual([
+				{
+					allowedMethods: ["GET"],
+					allowedOrigins: ["https://example.com"],
+				},
+			]);
+		});
+	});
 }

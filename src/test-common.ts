@@ -777,6 +777,10 @@ export function runTests(
 					maxAgeSeconds: undefined,
 				},
 			]);
+
+			await client.deleteBucketCors();
+
+			expect(client.getBucketCors()).rejects.toThrow();
 		});
 	});
 }

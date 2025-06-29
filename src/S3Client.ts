@@ -283,6 +283,10 @@ export type PutBucketCorsOptions = {
 	bucket?: string;
 	signal?: AbortSignal;
 };
+export type DeleteBucketCorsOptions = {
+	bucket?: string;
+	signal?: AbortSignal;
+};
 
 export type GetBucketCorsOptions = {
 	bucket?: string;
@@ -1087,6 +1091,29 @@ export default class S3Client {
 		// console.log(text)
 
 		throw new Error("Not implemented");
+	}
+
+	/**
+	 * @remarks Uses [`DeleteBucketCors`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketCors.html).
+	 */
+	async deleteBucketCors(options: DeleteBucketCorsOptions = {}): Promise<void> {
+		const response = await this[signedRequest](
+			"DELETE",
+			"" as ObjectKey,
+			"cors=", // "=" is needed by minio for some reason
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			ensureValidBucketName(options.bucket ?? this.#options.bucket),
+			options.signal,
+		);
+
+		if (response.statusCode !== 204) {
+			// undici docs state that we should dump the body if not used
+			response.body.dump(); // dump's floating promise should not throw
+			throw fromStatusCode(response.statusCode, "");
+		}
 	}
 
 	//#endregion

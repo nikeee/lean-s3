@@ -764,6 +764,10 @@ export function runTests(
 				{
 					allowedMethods: ["GET"],
 					allowedOrigins: ["https://example.com"],
+					allowedHeaders: undefined,
+					exposeHeaders: undefined,
+					id: undefined,
+					maxAgeSeconds: undefined,
 				},
 			]);
 		});

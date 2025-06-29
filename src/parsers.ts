@@ -313,3 +313,54 @@ export const parseDeleteResult = buildParser({
 		},
 	},
 });
+
+export const parseGetBucketCorsResult = buildParser({
+	type: "root",
+	children: {
+		result: {
+			type: "object",
+			tagName: "CORSConfiguration",
+			children: {
+				rules: {
+					type: "array",
+					tagName: "CORSRule",
+					optional: true,
+					defaultEmpty: true,
+					item: {
+						type: "object",
+						children: {
+							allowedOrigins: {
+								type: "array",
+								tagName: "AllowedOrigin",
+								item: { type: "string" },
+							},
+							allowedMethods: {
+								type: "array",
+								tagName: "AllowedMethod",
+								item: { type: "string" },
+							},
+							allowedHeaders: {
+								type: "array",
+								tagName: "AllowedHeader",
+								optional: true,
+								item: { type: "string" },
+							},
+							exposeHeaders: {
+								type: "array",
+								tagName: "ExposeHeader",
+								optional: true,
+								item: { type: "string" },
+							},
+							maxAgeSeconds: {
+								type: "integer",
+								tagName: "MaxAgeSeconds",
+								optional: true,
+							},
+							id: { type: "string", tagName: "ID", optional: true },
+						},
+					},
+				},
+			},
+		},
+	},
+});

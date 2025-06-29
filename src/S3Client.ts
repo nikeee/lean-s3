@@ -39,6 +39,7 @@ import {
 	parseListMultipartUploadsResult,
 	parseCompleteMultipartUploadResult,
 	parseDeleteResult,
+	parseGetBucketCorsResult,
 } from "./parsers.ts";
 
 export const write = Symbol("write");
@@ -1021,10 +1022,11 @@ export default class S3Client {
 			throw fromStatusCode(response.statusCode, "");
 		}
 
-		// const text = await response.body.text();
-		// console.log(text)
+		const text = await response.body.text();
 
-		throw new Error("Not implemented");
+		// biome-ignore lint/suspicious/noExplicitAny: PoC
+		return (parseGetBucketCorsResult(text) as any)
+			.result as GetBucketCorsResult;
 	}
 
 	//#endregion

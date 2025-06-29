@@ -23,7 +23,7 @@ import type {
 	StorageClass,
 	UndiciBodyInit,
 } from "./index.ts";
-import { getResponseError } from "./error.ts";
+import { fromStatusCode, getResponseError } from "./error.ts";
 import { getAuthorizationHeader } from "./request.ts";
 import {
 	ensureValidBucketName,
@@ -260,6 +260,33 @@ export type BucketExistsOptions = {
 	signal?: AbortSignal;
 };
 
+export type BucketCorsRules = readonly BucketCorsRule[];
+export type BucketCorsRule = {
+	allowedMethods: readonly HttpMethod[];
+	/** One or more origins you want customers to be able to access the bucket from. */
+	allowedOrigins: readonly string[];
+	/** Headers that are specified in the `Access-Control-Request-Headers` header. These headers are allowed in a preflight `OPTIONS` request. */
+	allowedHeaders?: readonly string[];
+	/** One or more headers in the response that you want customers to be able to access from their applications. */
+	exposeHeaders?: readonly string[];
+	/** Unique identifier for the rule. The value cannot be longer than 255 characters. */
+	id?: string;
+	/** The time in seconds that your browser is to cache the preflight response for the specified resource. */
+	maxAgeSeconds?: number;
+};
+export type PutBucketCorsOptions = {
+	bucket?: string;
+	signal?: AbortSignal;
+};
+
+export type GetBucketCorsOptions = {
+	bucket?: string;
+	signal?: AbortSignal;
+};
+export type GetBucketCorsResult = {
+	rules: BucketCorsRule[];
+};
+
 /**
  * A configured S3 bucket instance for managing files.
  *
@@ -327,6 +354,18 @@ export default class S3Client {
 			sessionToken,
 		};
 	}
+
+	cors = {
+		get: () => {
+			// TODO: GetBucketCors
+		},
+		set: () => {
+			// TODO: PutBucketCors
+		},
+		delete: () => {
+			// TODO: DeleteBucketCors
+		},
+	};
 
 	/**
 	 * Creates an S3File instance for the given path.
@@ -908,7 +947,88 @@ export default class S3Client {
 		throw new Error(`Response code not supported: ${response.statusCode}`);
 	}
 
+	//#region bucket cors
+
+	/**
+	 * @remarks Uses [`PutBucketCors`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketCors.html).
+	 */
+	async putBucketCors(
+		rules: BucketCorsRules,
+		options: PutBucketCorsOptions = {},
+	): Promise<void> {
+		const body = xmlBuilder.build({
+			CORSConfiguration: {
+				CORSRule: rules.map(r => ({
+					AllowedOrigin: r.allowedOrigins,
+					AllowedMethod: r.allowedMethods,
+					ExposeHeader: r.exposeHeaders,
+					ID: r.id ?? undefined,
+					MaxAgeSeconds: r.maxAgeSeconds ?? undefined,
+				})),
+			},
+		});
+
+		const response = await this[signedRequest](
+			"PUT",
+			"" as ObjectKey,
+			"cors=", // "=" is needed by minio for some reason
+			body,
+			{
+				"content-md5": sign.md5Base64(body),
+			},
+			undefined,
+			undefined,
+			ensureValidBucketName(options.bucket ?? this.#options.bucket),
+			options.signal,
+		);
+
+		if (response.statusCode === 200) {
+			// undici docs state that we should dump the body if not used
+			response.body.dump(); // dump's floating promise should not throw
+			return;
+		}
+
+		if (400 <= response.statusCode && response.statusCode < 500) {
+			throw await getResponseError(response, "");
+		}
+
+		throw new Error(
+			`Response code not implemented yet: ${response.statusCode}`,
+		);
+	}
+
+	/**
+	 * @remarks Uses [`GetBucketCors`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketCors.html).
+	 */
+	async getBucketCors(
+		options: GetBucketCorsOptions = {},
+	): Promise<GetBucketCorsResult> {
+		const response = await this[signedRequest](
+			"GET",
+			"" as ObjectKey,
+			"cors=", // "=" is needed by minio for some reason
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			ensureValidBucketName(options.bucket ?? this.#options.bucket),
+			options.signal,
+		);
+
+		if (response.statusCode !== 200) {
+			// undici docs state that we should dump the body if not used
+			response.body.dump(); // dump's floating promise should not throw
+			throw fromStatusCode(response.statusCode, "");
+		}
+
+		// const text = await response.body.text();
+		// console.log(text)
+
+		throw new Error("Not implemented");
+	}
+
 	//#endregion
+
 	//#region list objects
 
 	/**

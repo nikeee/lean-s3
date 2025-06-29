@@ -279,6 +279,10 @@ export type BucketCorsRule = {
 	/** The time in seconds that your browser is to cache the preflight response for the specified resource. */
 	maxAgeSeconds?: number;
 };
+export type PutBucketCorsOptions = {
+	bucket?: string;
+	signal?: AbortSignal;
+};
 
 /**
  * A configured S3 bucket instance for managing files.
@@ -999,8 +1003,14 @@ export default class S3Client {
 
 	//#region bucket cors
 
-	putBucketCors(rules: BucketCorsRules) {
-		const body = {
+	/**
+	 * @remarks Uses [`PutBucketCors`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketCors.html).
+	 */
+	async putBucketCors(
+		rules: BucketCorsRules,
+		options: PutBucketCorsOptions = {},
+	): Promise<void> {
+		const body = xmlBuilder.build({
 			CORSConfiguration: {
 				CORSRule: rules.map(r => ({
 					AllowedOrigin: r.allowedOrigins,
@@ -1010,10 +1020,35 @@ export default class S3Client {
 					MaxAgeSeconds: r.maxAgeSeconds ?? undefined,
 				})),
 			},
-		};
+		});
 
-		xmlBuilder.build(body);
-		throw new Error("Not implemented");
+		const response = await this[signedRequest](
+			"PUT",
+			"" as ObjectKey,
+			"cors=", // "=" is needed by minio for some reason
+			body,
+			{
+				"content-md5": sign.md5Base64(body),
+			},
+			undefined,
+			undefined,
+			ensureValidBucketName(options.bucket ?? this.#options.bucket),
+			options.signal,
+		);
+
+		if (response.statusCode === 200) {
+			// undici docs state that we should dump the body if not used
+			response.body.dump(); // dump's floating promise should not throw
+			return;
+		}
+
+		if (400 <= response.statusCode && response.statusCode < 500) {
+			throw await getResponseError(response, "");
+		}
+
+		throw new Error(
+			`Response code not implemented yet: ${response.statusCode}`,
+		);
 	}
 
 	//#endregion

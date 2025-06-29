@@ -141,6 +141,7 @@ See [DESIGN_DECISIONS.md](./DESIGN_DECISIONS.md) to read about why this library 
 - ✅ [`UploadPart`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPart.html) via `.uploadPart`
 - ✅ [`CompleteMultipartUpload`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html) via `.completeMultipartUpload`
 - ✅ [`AbortMultipartUpload`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_AbortMultipartUpload.html) via `.abortMultipartUpload`
+- ✅ [`PutBucketCors`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketCors.html) via `.putBucketCors`
 
 ## Example Configurations
 ### Hetzner Object Storage

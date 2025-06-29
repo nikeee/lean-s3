@@ -1017,8 +1017,6 @@ export default class S3Client {
 		);
 
 		if (response.statusCode !== 200) {
-			// undici docs state that we should dump the body if not used
-			response.body.dump(); // dump's floating promise should not throw
 			throw fromStatusCode(response.statusCode, "");
 		}
 

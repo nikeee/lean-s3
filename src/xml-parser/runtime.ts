@@ -32,6 +32,96 @@ const enum CharCode {
 	minus = 0x2d,
 }
 
+export class Parser {
+	scanner: Scanner;
+	currentToken!: TokenKind;
+
+	token = () => this.currentToken;
+	nextToken = () => (this.currentToken = this.scanner.scan());
+
+	constructor(text: string) {
+		this.scanner = new Scanner(text);
+		this.nextToken();
+	}
+
+	parseStringTag(tagName: string): string | undefined {
+		if (this.token() !== TokenKind.startTag) {
+			throw new Error(
+				`Wrong token, expected: ${TokenKind.startTag}, got: ${this.token()}`,
+			);
+		}
+		this.nextToken();
+		this.parseIdentifier(tagName);
+
+		this.skipAttributesUntilTagEnd();
+		if (this.token() === TokenKind.endSelfClosing) {
+			return undefined;
+		}
+
+		this.nextToken(); // consume >
+
+		if (this.token() === TokenKind.startClosingTag) {
+			this.parseIdentifier(tagName);
+			this.parseExpected(TokenKind.endTag);
+			return "";
+		}
+
+		const value = this.scanner.getTokenValueDecoded();
+		this.parseClosingTag(tagName);
+		return value;
+	}
+
+	parseClosingTag(tagName: string): void {
+		this.parseExpected(TokenKind.startClosingTag);
+		this.parseIdentifier(tagName);
+		this.parseExpected(TokenKind.endTag);
+	}
+
+	parseExpected(expected: TokenKind): void {
+		if (this.token() !== expected) {
+			throw new Error(
+				`Wrong token, expected: ${expected}, got: ${this.token()}`,
+			);
+		}
+		this.nextToken();
+	}
+
+	parseIdentifier(identifier: string): void {
+		if (this.token() !== TokenKind.identifier) {
+			throw new Error(
+				`Wrong token, expected: ${TokenKind.identifier}, got: ${this.token()}`,
+			);
+		}
+		if (this.scanner.getTokenValueEncoded() !== identifier) {
+			throw new Error(
+				`Expected identifier: ${identifier}, got: ${this.scanner.getTokenValueEncoded()}`,
+			);
+		}
+	}
+
+	skipAttributesUntilTagEnd(): void {
+		// parse until opening tag is terminated
+		do {
+			// skip attributes
+			if (this.token() === TokenKind.identifier) {
+				this.nextToken();
+				this.parseExpected(TokenKind.equals);
+				this.parseExpected(TokenKind.attributeValue);
+				continue;
+			}
+			if (
+				this.token() === TokenKind.endTag ||
+				this.token() === TokenKind.endSelfClosing
+			) {
+				this.nextToken();
+				break;
+			}
+			throw new Error(`Unexpected token: ${this.token()}`);
+			// biome-ignore lint/correctness/noConstantCondition: see above
+		} while (true);
+	}
+}
+
 /**
  * biome-ignore lint/suspicious/noConstEnum: Normally, we'd avoid using TS enums due to its incompability with JS.
  * But we want to inline its values into the switch-cases and still have readable code.
@@ -41,7 +131,7 @@ const enum CharCode {
 export const enum TokenKind {
 	eof = 0,
 	startTag = 1,
-	endTag = 2,
+	endTag = 2, // >
 	startClosingTag = 3, // </
 	endSelfClosing = 4, // />
 	identifier = 5,

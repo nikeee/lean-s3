@@ -44,6 +44,8 @@ export class Parser {
 		this.nextToken();
 	}
 
+	//#region primitives
+
 	parseStringTag(tagName: string): string | undefined {
 		if (this.token() !== TokenKind.startTag) {
 			throw new Error(
@@ -70,6 +72,91 @@ export class Parser {
 		this.parseClosingTag(tagName);
 		return value;
 	}
+
+	parseDateTag(tagName: string): Date | undefined {
+		const value = this.parseStringTag(tagName);
+		if (value === undefined) {
+			return undefined;
+		}
+
+		const r = new Date(value);
+		if (Number.isNaN(r.getTime())) {
+			throw new Error(`Expected valid date time: "${value}"`);
+		}
+		return r;
+	}
+
+	parseIntegerTag(tagName: string): number | undefined {
+		if (this.token() !== TokenKind.startTag) {
+			throw new Error(
+				`Wrong token, expected: ${TokenKind.startTag}, got: ${this.token()}`,
+			);
+		}
+		this.nextToken();
+		this.parseIdentifier(tagName);
+
+		this.skipAttributesUntilTagEnd();
+		if (this.token() === TokenKind.endSelfClosing) {
+			return undefined;
+		}
+
+		this.nextToken(); // consume >
+
+		if (this.token() === TokenKind.startClosingTag) {
+			this.parseIdentifier(tagName);
+			this.parseExpected(TokenKind.endTag);
+			return undefined;
+		}
+
+		const stringValue = this.scanner.getTokenValueDecoded();
+
+		const n = Number(stringValue);
+		if (!Number.isInteger(n)) {
+			throw new Error(`Value is not an integer: "${stringValue}"`);
+		}
+
+		this.parseClosingTag(tagName);
+		return n;
+	}
+
+	parseBooleanTag(tagName: string): boolean | undefined {
+		if (this.token() !== TokenKind.startTag) {
+			throw new Error(
+				`Wrong token, expected: ${TokenKind.startTag}, got: ${this.token()}`,
+			);
+		}
+		this.nextToken();
+		this.parseIdentifier(tagName);
+
+		this.skipAttributesUntilTagEnd();
+		if (this.token() === TokenKind.endSelfClosing) {
+			return undefined;
+		}
+
+		this.nextToken(); // consume >
+
+		if (this.token() === TokenKind.startClosingTag) {
+			this.parseIdentifier(tagName);
+			this.parseExpected(TokenKind.endTag);
+			return undefined;
+		}
+
+		const stringValue = this.scanner.getTokenValueDecoded();
+
+		let value: boolean;
+		if (stringValue === "true") {
+			value = true;
+		} else if (stringValue === "false") {
+			value = false;
+		} else {
+			throw new Error(`Expected boolean, got "${stringValue}"`);
+		}
+
+		this.parseClosingTag(tagName);
+		return value;
+	}
+
+	//#endregion
 
 	parseClosingTag(tagName: string): void {
 		this.parseExpected(TokenKind.startClosingTag);

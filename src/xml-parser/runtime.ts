@@ -217,15 +217,16 @@ export class Parser {
  */
 export const enum TokenKind {
 	eof = 0,
-	startTag = 1,
+	startTag = 1, // <
 	endTag = 2, // >
 	startClosingTag = 3, // </
 	endSelfClosing = 4, // />
 	identifier = 5,
-	equals = 6, // =
-	attributeValue = 7,
-	textContent = 8,
-	preamble = 9, // <?xml ?>
+	textNode = 6,
+	equals = 7, // =
+	attributeValue = 8,
+	textContent = 9,
+	preamble = 10, // <?xml ?>
 }
 
 const entityMap = {
@@ -369,7 +370,7 @@ export class Scanner {
 		}
 	}
 
-	#scanTextNode(): TokenKind | undefined {
+	#scanTextNode(): TokenKind.textNode | undefined {
 		// Read text node
 		let tokenValueStart = this.pos;
 		while (isWhitespace(this.text.charCodeAt(this.pos))) {
@@ -396,10 +397,10 @@ export class Scanner {
 
 		this.tokenValueStart = tokenValueStart;
 		this.tokenValueEnd = tokenValueEnd;
-		return (this.token = TokenKind.identifier);
+		return (this.token = TokenKind.textNode);
 	}
 
-	#scanQuotedString(): TokenKind {
+	#scanQuotedString(): TokenKind.attributeValue {
 		++this.pos; // consume opening "
 		const start = this.pos;
 		while (
@@ -416,7 +417,7 @@ export class Scanner {
 		return (this.token = TokenKind.attributeValue);
 	}
 
-	#scanIdentifier(): TokenKind {
+	#scanIdentifier(): TokenKind.identifier {
 		const identifierStart = this.pos;
 		++this.pos;
 		while (
@@ -431,7 +432,7 @@ export class Scanner {
 		return (this.token = TokenKind.identifier);
 	}
 
-	#scanPreamble(tokenValueStart: number): TokenKind {
+	#scanPreamble(tokenValueStart: number): TokenKind.preamble {
 		++this.pos; // consume ?
 		while (
 			this.pos + 1 < this.end &&

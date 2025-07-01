@@ -48,12 +48,6 @@ export const signedRequest = Symbol("signedRequest");
 
 const xmlParser = new XMLParser({
 	ignoreAttributes: true,
-	isArray: (_, jPath) =>
-		jPath === "ListMultipartUploadsResult.Upload" ||
-		jPath === "ListBucketResult.Contents" ||
-		jPath === "ListPartsResult.Part" ||
-		jPath === "DeleteResult.Deleted" ||
-		jPath === "DeleteResult.Error",
 });
 const xmlBuilder = new XMLBuilder({
 	attributeNamePrefix: "$",

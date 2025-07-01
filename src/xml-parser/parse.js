@@ -1,327 +1,79 @@
 import * as rt from "./runtime.ts";
-function fn_2_Initiator(scanner) {
+/** @param {rt.Parser} parser */
+function fn_1_note(parser) {
 	// Init structure entirely, so v8 can create a single hidden class
-	const res = {
-		displayName: undefined,
-		id: undefined,
-	};
+	const res = {};
 
-	rt.skipAttributes(scanner);
+	parser.parseIdentifier("note");
+	parser.skipAttributesUntilTagEnd();
 
-	while (true) {
-		scanner.scan(); // consume >
+	if (parser.token() === 4 /* TokenKind.endSelfClosing */) {
+		parser.nextToken();
 
-		switch (scanner.token) {
-			case 3: {
-				rt.expectIdentifier(scanner, "Initiator");
-				rt.scanExpected(scanner, 2);
-				if (res.displayName === undefined)
-					throw new TypeError(
-						`Value for field "displayName" was required but not present (expected as tag name "DisplayName").`,
-					);
-				if (res.id === undefined)
-					throw new TypeError(
-						`Value for field "id" was required but not present (expected as tag name "ID").`,
-					);
-				return res;
-			}
-			case 1: {
-				rt.scanExpected(scanner, 5);
-				switch (scanner.getTokenValueEncoded()) {
-					case "DisplayName":
-						res.displayName = rt.parseStringTag(scanner, "DisplayName");
-						break;
-					case "ID":
-						res.id = rt.parseStringTag(scanner, "ID");
-						break;
-					default:
-						throw new Error(
-							`Unexpected tag identifier: ${scanner.getTokenValueEncoded()}`,
-						);
-				}
-				break;
-			}
-			default:
-				throw new Error(`Unhandled token kind: ${scanner.token}`);
-		}
+		return res;
 	}
-}
-function fn_3_Owner(scanner) {
-	// Init structure entirely, so v8 can create a single hidden class
-	const res = {
-		displayName: undefined,
-		id: undefined,
-	};
 
-	rt.skipAttributes(scanner);
+	parser.parseExpected(2 /* TokenKind.endTag */);
 
 	while (true) {
-		scanner.scan(); // consume >
+		switch (parser.token()) {
+			case 3 /* TokenKind.startClosingTag */:
+				parser.nextToken(); // consume TokenKind.startClosingTag
 
-		switch (scanner.token) {
-			case 3: {
-				rt.expectIdentifier(scanner, "Owner");
-				rt.scanExpected(scanner, 2);
-				if (res.displayName === undefined)
-					throw new TypeError(
-						`Value for field "displayName" was required but not present (expected as tag name "DisplayName").`,
-					);
-				if (res.id === undefined)
-					throw new TypeError(
-						`Value for field "id" was required but not present (expected as tag name "ID").`,
-					);
+				parser.parseIdentifier("note");
+				parser.parseExpected(2 /* TokenKind.endTag */);
+
 				return res;
-			}
-			case 1: {
-				rt.scanExpected(scanner, 5);
-				switch (scanner.getTokenValueEncoded()) {
-					case "DisplayName":
-						res.displayName = rt.parseStringTag(scanner, "DisplayName");
-						break;
-					case "ID":
-						res.id = rt.parseStringTag(scanner, "ID");
-						break;
-					default:
-						throw new Error(
-							`Unexpected tag identifier: ${scanner.getTokenValueEncoded()}`,
-						);
-				}
-				break;
-			}
+			case 0:
+				throw new Error(`Unterminated tag: "note"`);
+
 			default:
-				throw new Error(`Unhandled token kind: ${scanner.token}`);
-		}
-	}
-}
-function fn_4_Part(scanner) {
-	// Init structure entirely, so v8 can create a single hidden class
-	const res = {
-		etag: undefined,
-		lastModified: undefined,
-		partNumber: undefined,
-		size: undefined,
-	};
-
-	rt.skipAttributes(scanner);
-
-	while (true) {
-		scanner.scan(); // consume >
-
-		switch (scanner.token) {
-			case 3: {
-				rt.expectIdentifier(scanner, "Part");
-				rt.scanExpected(scanner, 2);
-				if (res.etag === undefined)
-					throw new TypeError(
-						`Value for field "etag" was required but not present (expected as tag name "ETag").`,
-					);
-				if (res.lastModified === undefined)
-					throw new TypeError(
-						`Value for field "lastModified" was required but not present (expected as tag name "LastModified").`,
-					);
-				if (res.partNumber === undefined)
-					throw new TypeError(
-						`Value for field "partNumber" was required but not present (expected as tag name "PartNumber").`,
-					);
-				if (res.size === undefined)
-					throw new TypeError(
-						`Value for field "size" was required but not present (expected as tag name "Size").`,
-					);
-				return res;
-			}
-			case 1: {
-				rt.scanExpected(scanner, 5);
-				switch (scanner.getTokenValueEncoded()) {
-					case "ETag":
-						res.etag = rt.parseStringTag(scanner, "ETag");
-						break;
-					case "LastModified":
-						res.lastModified = rt.parseDateTag(scanner, "LastModified");
-						break;
-					case "PartNumber":
-						res.partNumber = rt.parseIntegerTag(scanner, "PartNumber");
-						break;
-					case "Size":
-						res.size = rt.parseIntegerTag(scanner, "Size");
-						break;
-					default:
-						throw new Error(
-							`Unexpected tag identifier: ${scanner.getTokenValueEncoded()}`,
-						);
-				}
-				break;
-			}
-			default:
-				throw new Error(`Unhandled token kind: ${scanner.token}`);
+				throw new Error(`Unhandled token kind: ${parser.token()}`);
 		}
 	}
 }
 
-function fn_1_ListPartsResult(scanner) {
+/** @param {rt.Parser} parser */
+function root_parse_fn_0(parser) {
 	// Init structure entirely, so v8 can create a single hidden class
 	const res = {
-		bucket: undefined,
-		key: undefined,
-		uploadId: undefined,
-		storageClass: undefined,
-		checksumAlgorithm: undefined,
-		checksumType: undefined,
-		partNumberMarker: undefined,
-		nextPartNumberMarker: undefined,
-		maxParts: undefined,
-		isTruncated: false,
-		initiator: undefined,
-		owner: undefined,
-		parts: [],
+		note: undefined,
 	};
 
-	rt.skipAttributes(scanner);
+	if (parser.token() === 9 /* TokenKind.preamble */) {
+		parser.nextToken();
+	}
 
 	while (true) {
-		scanner.scan(); // consume >
-
-		switch (scanner.token) {
-			case 3: {
-				rt.expectIdentifier(scanner, "ListPartsResult");
-				rt.scanExpected(scanner, 2);
-				if (res.bucket === undefined)
+		switch (parser.token()) {
+			case 0 /* TokenKind.eof */:
+				if (res.note === undefined)
 					throw new TypeError(
-						`Value for field "bucket" was required but not present (expected as tag name "Bucket").`,
-					);
-				if (res.key === undefined)
-					throw new TypeError(
-						`Value for field "key" was required but not present (expected as tag name "Key").`,
-					);
-				if (res.uploadId === undefined)
-					throw new TypeError(
-						`Value for field "uploadId" was required but not present (expected as tag name "UploadId").`,
-					);
-				if (res.storageClass === undefined)
-					throw new TypeError(
-						`Value for field "storageClass" was required but not present (expected as tag name "StorageClass").`,
-					);
-				if (res.partNumberMarker === undefined)
-					throw new TypeError(
-						`Value for field "partNumberMarker" was required but not present (expected as tag name "PartNumberMarker").`,
-					);
-				if (res.nextPartNumberMarker === undefined)
-					throw new TypeError(
-						`Value for field "nextPartNumberMarker" was required but not present (expected as tag name "NextPartNumberMarker").`,
-					);
-				if (res.maxParts === undefined)
-					throw new TypeError(
-						`Value for field "maxParts" was required but not present (expected as tag name "MaxParts").`,
-					);
-				if (res.isTruncated === undefined)
-					throw new TypeError(
-						`Value for field "isTruncated" was required but not present (expected as tag name "IsTruncated").`,
+						`Value for field "note" was required but not present (expected as tag name "note").`,
 					);
 				return res;
-			}
-			case 1: {
-				rt.scanExpected(scanner, 5);
-				switch (scanner.getTokenValueEncoded()) {
-					case "Bucket":
-						res.bucket = rt.parseStringTag(scanner, "Bucket");
-						break;
-					case "Key":
-						res.key = rt.parseStringTag(scanner, "Key");
-						break;
-					case "UploadId":
-						res.uploadId = rt.parseStringTag(scanner, "UploadId");
-						break;
-					case "StorageClass":
-						res.storageClass = rt.parseStringTag(scanner, "StorageClass");
-						break;
-					case "ChecksumAlgorithm":
-						res.checksumAlgorithm =
-							rt.parseStringTag(scanner, "ChecksumAlgorithm") || undefined;
-						break;
-					case "ChecksumType":
-						res.checksumType =
-							rt.parseStringTag(scanner, "ChecksumType") || undefined;
-						break;
-					case "PartNumberMarker":
-						res.partNumberMarker = rt.parseIntegerTag(
-							scanner,
-							"PartNumberMarker",
-						);
-						break;
-					case "NextPartNumberMarker":
-						res.nextPartNumberMarker = rt.parseIntegerTag(
-							scanner,
-							"NextPartNumberMarker",
-						);
-						break;
-					case "MaxParts":
-						res.maxParts = rt.parseIntegerTag(scanner, "MaxParts");
-						break;
-					case "IsTruncated":
-						res.isTruncated = rt.parseBooleanTag(scanner, "IsTruncated");
-						break;
-					case "Initiator":
-						res.initiator = fn_2_Initiator(scanner);
-						break;
-					case "Owner":
-						res.owner = fn_3_Owner(scanner);
-						break;
-					case "Part":
-						res.parts.push(fn_4_Part(scanner));
+
+			case 1 /* TokenKind.startTag */: {
+				parser.nextToken(); // consume TokenKind.startTag
+
+				switch (parser.scanner.getTokenValueEncoded()) {
+					case "note":
+						res.note = fn_1_note(parser);
 						break;
 					default:
 						throw new Error(
-							`Unexpected tag identifier: ${scanner.getTokenValueEncoded()}`,
+							`Unexpected tag identifier: ${parser.scanner.getTokenValueEncoded()}`,
 						);
 				}
 				break;
 			}
+
 			default:
-				throw new Error(`Unhandled token kind: ${scanner.token}`);
+				throw new Error(`Unhandled token kind: ${parser.token()}`);
 		}
 	}
 }
 
-function root_parse_fn_0(scanner) {
-	// Init structure entirely, so v8 can create a single hidden class
-	const res = {
-		result: undefined,
-	};
-
-	if (scanner.token === 9) {
-		scanner.scan();
-	}
-
-	while (true) {
-		scanner.scan();
-		switch (scanner.token) {
-			case 0: {
-				if (res.result === undefined)
-					throw new TypeError(
-						`Value for field "result" was required but not present (expected as tag name "ListPartsResult").`,
-					);
-				return res;
-			}
-			case 1: {
-				rt.scanExpected(scanner, 5);
-				switch (scanner.getTokenValueEncoded()) {
-					case "ListPartsResult":
-						res.result = fn_1_ListPartsResult(scanner);
-						break;
-					default:
-						throw new Error(
-							`Unexpected tag identifier: ${scanner.getTokenValueEncoded()}`,
-						);
-				}
-				break;
-			}
-			default:
-				throw new Error(`Unhandled token kind: ${scanner.token}`);
-		}
-	}
-}
-
-export default function parse(text) {
-	const s = new rt.Scanner(text);
-	s.scan(); // prime scanner
-	return root_parse_fn_0(s);
-}
+root_parse_fn_0(
+	new rt.Parser(`<?xml version="1.0" encoding="utf-8"?><note></note>`),
+);

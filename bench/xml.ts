@@ -2,7 +2,6 @@ import { summary, group, bench, run, barplot } from "mitata";
 
 import { XMLParser } from "fast-xml-parser";
 
-import parse from "../src/xml-parser/parse.js";
 import * as s3mini from "./s3mini-xml.ts";
 import { parseListPartsResult as runtimeGeneratedParser } from "../src/parsers.ts";
 
@@ -33,11 +32,14 @@ summary(() => {
 				}
 			});
 
+			// currently unused
+			/*
 			bench("custom parser (static file)", () => {
 				for (let i = 0; i < 10000; ++i) {
 					parse(s);
 				}
 			});
+			*/
 
 			bench("custom parser (runtime-generated)", () => {
 				for (let i = 0; i < 10000; ++i) {

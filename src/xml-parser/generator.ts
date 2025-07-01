@@ -131,6 +131,8 @@ function ${parseFn}(parser) {
 	while (true) {
 		switch (parser.token()) {
 			case ${rt.TokenKind.startClosingTag} /* TokenKind.startClosingTag */:
+				parser.nextToken(); // consume TokenKind.startClosingTag
+
 				parser.parseIdentifier(${asLiteral(tagName)});
 				parser.parseExpected(${rt.TokenKind.endTag} /* TokenKind.endTag */);
 				${emitObjectInvariants(children).join("\n\t\t\t\t")}
@@ -141,7 +143,8 @@ function ${parseFn}(parser) {
 				Object.keys(children).length > 0
 					? `
 			case ${rt.TokenKind.startTag}: {
-				parser.nextToken();
+				parser.nextToken(); // consume TokenKind.startTag
+
 				switch (parser.scanner.getTokenValueEncoded()) {
 					${Object.entries(children)
 						.map(
@@ -198,7 +201,8 @@ function ${parseFn}(parser) {
 				Object.keys(children).length > 0
 					? `
 			case ${rt.TokenKind.startTag} /* TokenKind.startTag */: {
-				parser.nextToken(); // consume TokenKind.startTag}
+				parser.nextToken(); // consume TokenKind.startTag
+
 				switch (parser.scanner.getTokenValueEncoded()) {
 					${Object.entries(children)
 						.map(

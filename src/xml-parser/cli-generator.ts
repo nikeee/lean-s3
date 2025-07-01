@@ -12,13 +12,13 @@ const source = buildStaticParserSourceWithText(
 	{
 		type: "root",
 		children: {
-			code: {
-				type: "string",
-				tagName: "Code",
+			note: {
+				type: "object",
+				children: {},
 			},
 		},
 	},
-	`<Code>Tom &amp; Jerry</Code>`,
+	`<?xml version="1.0" encoding="utf-8"?><note></note>`,
 );
 
 console.log(source);

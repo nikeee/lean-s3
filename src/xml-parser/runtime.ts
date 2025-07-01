@@ -20,12 +20,14 @@ export class Parser {
 
 		this.skipAttributesUntilTagEnd();
 		if (this.token() === TokenKind.endSelfClosing) {
+			this.nextToken();
 			return undefined;
 		}
 
 		this.parseExpected(TokenKind.endTag);
 
 		if (this.token() === TokenKind.startClosingTag) {
+			this.nextToken();
 			this.parseIdentifier(tagName);
 			this.parseExpected(TokenKind.endTag);
 			return "";
@@ -62,12 +64,14 @@ export class Parser {
 
 		this.skipAttributesUntilTagEnd();
 		if (this.token() === TokenKind.endSelfClosing) {
+			this.nextToken();
 			return undefined;
 		}
 
 		this.parseExpected(TokenKind.endTag);
 
 		if (this.token() === TokenKind.startClosingTag) {
+			this.nextToken();
 			this.parseIdentifier(tagName);
 			this.parseExpected(TokenKind.endTag);
 			return undefined;
@@ -95,12 +99,14 @@ export class Parser {
 
 		this.skipAttributesUntilTagEnd();
 		if (this.token() === TokenKind.endSelfClosing) {
+			this.nextToken();
 			return undefined;
 		}
 
 		this.parseExpected(TokenKind.endTag);
 
 		if (this.token() === TokenKind.startClosingTag) {
+			this.nextToken();
 			this.parseIdentifier(tagName);
 			this.parseExpected(TokenKind.endTag);
 			return undefined;

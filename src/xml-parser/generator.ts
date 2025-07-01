@@ -30,15 +30,15 @@ function emitParserCall(
 ): string {
 	switch (spec.type) {
 		case "string":
-			return `(rt.parseStringTag(scanner, ${asLiteral(tagName)})${spec.emptyIsAbsent ? " || undefined" : ""})`;
+			return `(parser.parseStringTag(${asLiteral(tagName)})${spec.emptyIsAbsent ? " || undefined" : ""})`;
 		case "integer":
-			return `rt.parseIntegerTag(scanner, ${asLiteral(tagName)})`;
+			return `parser.parseIntegerTag(${asLiteral(tagName)})`;
 		case "boolean":
-			return `rt.parseBooleanTag(scanner, ${asLiteral(tagName)})`;
+			return `parser.parseBooleanTag(${asLiteral(tagName)})`;
 		case "date":
-			return `rt.parseDateTag(scanner, ${asLiteral(tagName)})`;
+			return `parser.parseDateTag(${asLiteral(tagName)})`;
 		case "object":
-			return `${globals.get(spec)}(scanner)`;
+			return `${globals.get(spec)}(parser)`;
 		case "array":
 			return ""; // arrays handled differently
 	}
@@ -98,72 +98,6 @@ function emitResultAssignment(
 		: `${resultField}.${fieldName} = ${emitParserCall(spec, spec.tagName ?? fieldName, globals)}`;
 }
 
-function emitRootParser(
-	spec: RootSpec<string>,
-	globals: Map<unknown, string>,
-): string {
-	const parseFn = `root_parse_fn_${globals.size}`;
-	globals.set(spec, parseFn);
-
-	const { children } = spec;
-
-	return `
-${emitChildParsers(spec, globals)}
-function ${parseFn}(scanner) {
-	// Init structure entirely, so v8 can create a single hidden class
-	const res = {
-		${emitChildFieldInit(children)}
-	};
-
-	if (scanner.token === ${rt.TokenKind.preamble}) {
-		scanner.scan();
-	}
-
-	while (true) {
-		scanner.scan();
-		switch (scanner.token) {
-			case ${rt.TokenKind.endSelfClosing}:
-			case ${rt.TokenKind.eof}: {
-				${getObjectPropertyChecks(children).join("\n\t\t\t\t")}
-				return res;
-			}
-			case ${rt.TokenKind.startTag}: {
-				rt.scanExpected(scanner, ${rt.TokenKind.identifier});
-				switch (scanner.getTokenValueEncoded()) {
-					${Object.entries(children)
-						.map(
-							([name, childSpec]) =>
-								`case ${asLiteral(childSpec.tagName ?? name)}:
-						${emitResultAssignment("res", childSpec, name, globals)};
-						break;`,
-						)
-						.join("\n\t\t\t\t\t")}
-					default:
-						throw new Error(\`Unexpected tag identifier: \${scanner.getTokenValueEncoded()}\`);
-				}
-				break;
-			}
-			default:
-				throw new Error(\`Unhandled token kind: \${scanner.token}\`);
-		}
-	}
-}
-`.trimStart();
-}
-
-function getObjectPropertyChecks(
-	children: (ObjectSpec<string> | RootSpec<string>)["children"],
-): string[] {
-	return Object.entries(children)
-		.map(([name, childSpec]) =>
-			childSpec.optional ||
-			(childSpec.type === "array" && childSpec.defaultEmpty)
-				? undefined
-				: `if (res.${name} === undefined) throw new TypeError(\`Value for field "${name}" was required but not present (expected as tag name "${childSpec.tagName ?? name}").\`);`,
-		)
-		.filter(s => s !== undefined);
-}
-
 function emitObjectParser(
 	spec: ObjectSpec<string>,
 	tagName: string,
@@ -176,30 +110,39 @@ function emitObjectParser(
 
 	return `
 ${emitChildParsers(spec, globals)}
-function ${parseFn}(scanner) {
+/** @param {rt.Parser} parser */
+function ${parseFn}(parser) {
 	// Init structure entirely, so v8 can create a single hidden class
 	const res = {
 		${emitChildFieldInit(children)}
 	};
 
-	rt.skipAttributes(scanner);
+	parser.parseIdentifier(${asLiteral(tagName)});
+	parser.skipAttributesUntilTagEnd();
+
+	if (parser.token() === ${rt.TokenKind.endSelfClosing} /* TokenKind.endSelfClosing */) {
+		parser.nextToken();
+		${emitObjectInvariants(children).join("\n\t\t\t\t")}
+		return res;
+	}
+
+	parser.parseExpected(${rt.TokenKind.endTag} /* TokenKind.endTag */);
 
 	while (true) {
-		scanner.scan(); // consume >
-
-		switch (scanner.token) {
-			case ${rt.TokenKind.endSelfClosing}:
-			case ${rt.TokenKind.startClosingTag}:
-				rt.expectIdentifier(scanner, ${asLiteral(tagName)});
-				rt.scanExpected(scanner, ${rt.TokenKind.endTag});
-				${getObjectPropertyChecks(children).join("\n\t\t\t\t")}
+		switch (parser.token()) {
+			case ${rt.TokenKind.startClosingTag} /* TokenKind.startClosingTag */:
+				parser.parseIdentifier(${asLiteral(tagName)});
+				parser.parseExpected(${rt.TokenKind.endTag} /* TokenKind.endTag */);
+				${emitObjectInvariants(children).join("\n\t\t\t\t")}
 				return res;
 			case ${rt.TokenKind.eof}:
-				${getObjectPropertyChecks(children).join("\n\t\t\t\t")}
-				return res;
+				throw new Error(\`Unterminated tag: "${tagName}"\`);
+			${
+				Object.keys(children).length > 0
+					? `
 			case ${rt.TokenKind.startTag}: {
-				rt.scanExpected(scanner, ${rt.TokenKind.identifier});
-				switch (scanner.getTokenValueEncoded()) {
+				parser.nextToken();
+				switch (parser.scanner.getTokenValueEncoded()) {
 					${Object.entries(children)
 						.map(
 							([name, childSpec]) =>
@@ -209,17 +152,91 @@ function ${parseFn}(scanner) {
 						)
 						.join("\n\t\t\t\t\t")}
 					default:
-						throw new Error(\`Unexpected tag identifier: \${scanner.getTokenValueEncoded()}\`);
+						throw new Error(\`Unexpected tag identifier: \${parser.scanner.getTokenValueEncoded()}\`);
 				}
 				break;
 			}
+			`
+					: ""
+			}
 			default:
-				throw new Error(\`Unhandled token kind: \${scanner.token}\`);
+				throw new Error(\`Unhandled token kind: \${parser.token()}\`);
 		}
 	}
 }
 `.trimStart();
 }
+
+function emitRootParser(
+	spec: RootSpec<string>,
+	globals: Map<unknown, string>,
+): string {
+	const parseFn = `root_parse_fn_${globals.size}`;
+	globals.set(spec, parseFn);
+
+	const { children } = spec;
+
+	return `
+${emitChildParsers(spec, globals)}
+/** @param {rt.Parser} parser */
+function ${parseFn}(parser) {
+	// Init structure entirely, so v8 can create a single hidden class
+	const res = {
+		${emitChildFieldInit(children)}
+	};
+
+	if (parser.token() === ${rt.TokenKind.preamble} /* TokenKind.preamble */) {
+		parser.nextToken();
+	}
+
+	while (true) {
+		switch (parser.token()) {
+			case ${rt.TokenKind.eof} /* TokenKind.eof */:
+				${emitObjectInvariants(children).join("\n\t\t\t\t")}
+				return res;
+			${
+				Object.keys(children).length > 0
+					? `
+			case ${rt.TokenKind.startTag} /* TokenKind.startTag */: {
+				parser.nextToken(); // consume TokenKind.startTag}
+				switch (parser.scanner.getTokenValueEncoded()) {
+					${Object.entries(children)
+						.map(
+							([name, childSpec]) =>
+								`case ${asLiteral(childSpec.tagName ?? name)}:
+						${emitResultAssignment("res", childSpec, name, globals)};
+						break;`,
+						)
+						.join("\n\t\t\t\t\t")}
+					default:
+						throw new Error(\`Unexpected tag identifier: \${parser.scanner.getTokenValueEncoded()}\`);
+				}
+				break;
+			}
+			`
+					: ""
+			}
+			default:
+				throw new Error(\`Unhandled token kind: \${parser.token()}\`);
+		}
+	}
+}
+`.trimStart();
+}
+
+function emitObjectInvariants(
+	children: (ObjectSpec<string> | RootSpec<string>)["children"],
+): string[] {
+	return Object.entries(children)
+		.map(([name, childSpec]) =>
+			childSpec.optional ||
+			(childSpec.type === "array" && childSpec.defaultEmpty)
+				? undefined
+				: `if (res.${name} === undefined) throw new TypeError(\`Value for field "${name}" was required but not present (expected as tag name "${childSpec.tagName ?? name}").\`);`,
+		)
+		.filter(s => s !== undefined);
+}
+
 function asLiteral(value: string): string {
 	return `"${value}"`; // TODO: Escaping
 }
@@ -237,7 +254,8 @@ type ParseSpec<T extends string> =
 
 type RootSpec<T extends string> = {
 	type: "root";
-	tagName?: string;
+	// tagName: string;
+	optional?: boolean;
 	children: Record<T, ParseSpec<string>>;
 };
 type ObjectSpec<T extends string> = {
@@ -320,11 +338,23 @@ export function buildStaticParserSource<T extends string>(
 	return `
 import * as rt from "./runtime.ts";
 ${parsingCode}
-export default function parse(text) {
-	const s = new rt.Scanner(text);
-	s.scan(); // prime scanner
-	return ${rootParseFunctionName}(s);
+export default (text)  => ${rootParseFunctionName}(new rt.Parser(text));
+`.trimStart();
 }
+
+export function buildStaticParserSourceWithText<T extends string>(
+	rootSpec: RootSpec<T>,
+	text: string,
+): string {
+	const globals = new Map();
+	const parsingCode = emitSpecParser(rootSpec, "", globals);
+	const rootParseFunctionName = globals.get(rootSpec);
+	globals.clear(); // make sure we clear all references (even though this map won't survive past this function)
+
+	return `
+import * as rt from "./runtime.ts";
+${parsingCode}
+${rootParseFunctionName}(new rt.Parser(\`${text}\`))
 `.trimStart();
 }
 
@@ -342,11 +372,7 @@ export function buildParser<T extends string>(
 return (() => {
 ${parsingCode}
 
-return function parse(text) {
-	const s = new rt.Scanner(text);
-	s.scan(); // prime scanner
-	return ${rootParseFunctionName}(s);
-};
+return (text)  => ${rootParseFunctionName}(new rt.Parser(text));
 })()
 `.trim(),
 	)(rt) as Parser<unknown>;

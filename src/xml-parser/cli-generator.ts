@@ -6,9 +6,19 @@
  * ```
  */
 
-import { buildStaticParserSource } from "./generator.ts";
-import { listPartsResultSpec } from "../parsers.ts";
+import { buildStaticParserSourceWithText } from "./generator.ts";
 
-const source = buildStaticParserSource(listPartsResultSpec);
+const source = buildStaticParserSourceWithText(
+	{
+		type: "root",
+		children: {
+			code: {
+				type: "string",
+				tagName: "Code",
+			},
+		},
+	},
+	`<Code>Tom &amp; Jerry</Code>`,
+);
 
 console.log(source);

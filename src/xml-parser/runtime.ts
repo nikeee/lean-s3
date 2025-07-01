@@ -1,5 +1,214 @@
 /** biome-ignore-all lint/suspicious/noAssignInExpressions: ok here */
 
+export class Parser {
+	scanner: Scanner;
+	currentToken!: TokenKind;
+
+	token = () => this.currentToken;
+	nextToken = () => (this.currentToken = this.scanner.scan());
+
+	constructor(text: string) {
+		this.scanner = new Scanner(text);
+		this.nextToken();
+	}
+
+	//#region primitives
+
+	/** Assumes {@link TokenKind.startTag} was already consumed. */
+	parseStringTag(tagName: string): string | undefined {
+		this.parseIdentifier(tagName);
+
+		this.skipAttributesUntilTagEnd();
+		if (this.token() === TokenKind.endSelfClosing) {
+			return undefined;
+		}
+
+		this.parseExpected(TokenKind.endTag);
+
+		if (this.token() === TokenKind.startClosingTag) {
+			this.parseIdentifier(tagName);
+			this.parseExpected(TokenKind.endTag);
+			return "";
+		}
+
+		if (this.token() !== TokenKind.textNode) {
+			throw new Error(`Expected text content.`);
+		}
+
+		const value = this.scanner.getTokenValueDecoded();
+		this.nextToken();
+
+		this.parseClosingTag(tagName);
+		return value;
+	}
+
+	/** Assumes {@link TokenKind.startTag} was already consumed. */
+	parseDateTag(tagName: string): Date | undefined {
+		const value = this.parseStringTag(tagName);
+		if (value === undefined) {
+			return undefined;
+		}
+
+		const r = new Date(value);
+		if (Number.isNaN(r.getTime())) {
+			throw new Error(`Expected valid date time: "${value}"`);
+		}
+		return r;
+	}
+
+	/** Assumes {@link TokenKind.startTag} was already consumed. */
+	parseIntegerTag(tagName: string): number | undefined {
+		this.parseIdentifier(tagName);
+
+		this.skipAttributesUntilTagEnd();
+		if (this.token() === TokenKind.endSelfClosing) {
+			return undefined;
+		}
+
+		this.parseExpected(TokenKind.endTag);
+
+		if (this.token() === TokenKind.startClosingTag) {
+			this.parseIdentifier(tagName);
+			this.parseExpected(TokenKind.endTag);
+			return undefined;
+		}
+
+		if (this.token() !== TokenKind.textNode) {
+			throw new Error(`Expected text content.`);
+		}
+
+		const stringValue = this.scanner.getTokenValueDecoded();
+		this.nextToken();
+
+		const n = Number(stringValue);
+		if (!Number.isInteger(n)) {
+			throw new Error(`Value is not an integer: "${stringValue}"`);
+		}
+
+		this.parseClosingTag(tagName);
+		return n;
+	}
+
+	/** Assumes {@link TokenKind.startTag} was already consumed. */
+	parseBooleanTag(tagName: string): boolean | undefined {
+		this.parseIdentifier(tagName);
+
+		this.skipAttributesUntilTagEnd();
+		if (this.token() === TokenKind.endSelfClosing) {
+			return undefined;
+		}
+
+		this.parseExpected(TokenKind.endTag);
+
+		if (this.token() === TokenKind.startClosingTag) {
+			this.parseIdentifier(tagName);
+			this.parseExpected(TokenKind.endTag);
+			return undefined;
+		}
+
+		const stringValue = this.scanner.getTokenValueDecoded();
+		this.nextToken();
+
+		let value: boolean;
+		if (stringValue === "true") {
+			value = true;
+		} else if (stringValue === "false") {
+			value = false;
+		} else {
+			throw new Error(`Expected boolean, got "${stringValue}"`);
+		}
+
+		this.parseClosingTag(tagName);
+		return value;
+	}
+
+	//#endregion
+
+	parseOpeningTag(tagName: string): void {
+		this.parseExpected(TokenKind.startTag);
+		this.parseIdentifier(tagName);
+		this.skipAttributesUntilTagEnd();
+		this.nextToken(); // consume closing token
+	}
+
+	parseClosingTag(tagName: string): void {
+		this.parseExpected(TokenKind.startClosingTag);
+		this.parseIdentifier(tagName);
+		this.parseExpected(TokenKind.endTag);
+	}
+
+	parseExpected(expected: TokenKind): void {
+		if (this.token() !== expected) {
+			throw new Error(
+				`Wrong token, expected: ${expected}, got: ${this.token()}`,
+			);
+		}
+		this.nextToken();
+	}
+
+	parseIdentifier(identifier: string): void {
+		if (this.token() !== TokenKind.identifier) {
+			throw new Error(
+				`Wrong token, expected: ${TokenKind.identifier}, got: ${this.token()}`,
+			);
+		}
+		if (this.scanner.getTokenValueEncoded() !== identifier) {
+			throw new Error(
+				`Expected identifier: ${identifier}, got: ${this.scanner.getTokenValueEncoded()}`,
+			);
+		}
+		this.nextToken();
+	}
+
+	skipAttributesUntilTagEnd(): void {
+		// parse until opening tag is terminated
+		do {
+			// skip attributes
+			if (this.token() === TokenKind.identifier) {
+				this.nextToken();
+				this.parseExpected(TokenKind.equals);
+				this.parseExpected(TokenKind.attributeValue);
+				continue;
+			}
+			if (
+				this.token() === TokenKind.endTag ||
+				this.token() === TokenKind.endSelfClosing
+			) {
+				break;
+			}
+			throw new Error(`Unexpected token: ${this.token()}`);
+			// biome-ignore lint/correctness/noConstantCondition: see above
+		} while (true);
+	}
+}
+
+/**
+ * biome-ignore lint/suspicious/noConstEnum: Normally, we'd avoid using TS enums due to its incompability with JS.
+ * But we want to inline its values into the switch-cases and still have readable code.
+ *
+ * @remarks This enum cannot be used in runtime code, since it's `const` and will not exist in the parsing stage. Values have to be inlined by the generator
+ */
+export const enum TokenKind {
+	eof = 0,
+	startTag = 1, // <
+	endTag = 2, // >
+	startClosingTag = 3, // </
+	endSelfClosing = 4, // />
+	identifier = 5,
+	textNode = 6,
+	equals = 7, // =
+	attributeValue = 8,
+	preamble = 9, // <?xml ?>
+}
+
+const entityMap = {
+	"&quot;": '"',
+	"&apos;": "'",
+	"&lt;": "<",
+	"&gt;": ">",
+	"&amp;": "&",
+} as const;
+
 /**
  * biome-ignore lint/suspicious/noConstEnum: Normally, we'd avoid using TS enums due to its incompability with JS.
  * But we want to inline its values into the switch-cases and still have readable code.
@@ -32,212 +241,7 @@ const enum CharCode {
 	minus = 0x2d,
 }
 
-export class Parser {
-	scanner: Scanner;
-	currentToken!: TokenKind;
-
-	token = () => this.currentToken;
-	nextToken = () => (this.currentToken = this.scanner.scan());
-
-	constructor(text: string) {
-		this.scanner = new Scanner(text);
-		this.nextToken();
-	}
-
-	//#region primitives
-
-	parseStringTag(tagName: string): string | undefined {
-		if (this.token() !== TokenKind.startTag) {
-			throw new Error(
-				`Wrong token, expected: ${TokenKind.startTag}, got: ${this.token()}`,
-			);
-		}
-		this.nextToken();
-		this.parseIdentifier(tagName);
-
-		this.skipAttributesUntilTagEnd();
-		if (this.token() === TokenKind.endSelfClosing) {
-			return undefined;
-		}
-
-		this.nextToken(); // consume >
-
-		if (this.token() === TokenKind.startClosingTag) {
-			this.parseIdentifier(tagName);
-			this.parseExpected(TokenKind.endTag);
-			return "";
-		}
-
-		const value = this.scanner.getTokenValueDecoded();
-		this.parseClosingTag(tagName);
-		return value;
-	}
-
-	parseDateTag(tagName: string): Date | undefined {
-		const value = this.parseStringTag(tagName);
-		if (value === undefined) {
-			return undefined;
-		}
-
-		const r = new Date(value);
-		if (Number.isNaN(r.getTime())) {
-			throw new Error(`Expected valid date time: "${value}"`);
-		}
-		return r;
-	}
-
-	parseIntegerTag(tagName: string): number | undefined {
-		if (this.token() !== TokenKind.startTag) {
-			throw new Error(
-				`Wrong token, expected: ${TokenKind.startTag}, got: ${this.token()}`,
-			);
-		}
-		this.nextToken();
-		this.parseIdentifier(tagName);
-
-		this.skipAttributesUntilTagEnd();
-		if (this.token() === TokenKind.endSelfClosing) {
-			return undefined;
-		}
-
-		this.nextToken(); // consume >
-
-		if (this.token() === TokenKind.startClosingTag) {
-			this.parseIdentifier(tagName);
-			this.parseExpected(TokenKind.endTag);
-			return undefined;
-		}
-
-		const stringValue = this.scanner.getTokenValueDecoded();
-
-		const n = Number(stringValue);
-		if (!Number.isInteger(n)) {
-			throw new Error(`Value is not an integer: "${stringValue}"`);
-		}
-
-		this.parseClosingTag(tagName);
-		return n;
-	}
-
-	parseBooleanTag(tagName: string): boolean | undefined {
-		if (this.token() !== TokenKind.startTag) {
-			throw new Error(
-				`Wrong token, expected: ${TokenKind.startTag}, got: ${this.token()}`,
-			);
-		}
-		this.nextToken();
-		this.parseIdentifier(tagName);
-
-		this.skipAttributesUntilTagEnd();
-		if (this.token() === TokenKind.endSelfClosing) {
-			return undefined;
-		}
-
-		this.nextToken(); // consume >
-
-		if (this.token() === TokenKind.startClosingTag) {
-			this.parseIdentifier(tagName);
-			this.parseExpected(TokenKind.endTag);
-			return undefined;
-		}
-
-		const stringValue = this.scanner.getTokenValueDecoded();
-
-		let value: boolean;
-		if (stringValue === "true") {
-			value = true;
-		} else if (stringValue === "false") {
-			value = false;
-		} else {
-			throw new Error(`Expected boolean, got "${stringValue}"`);
-		}
-
-		this.parseClosingTag(tagName);
-		return value;
-	}
-
-	//#endregion
-
-	parseClosingTag(tagName: string): void {
-		this.parseExpected(TokenKind.startClosingTag);
-		this.parseIdentifier(tagName);
-		this.parseExpected(TokenKind.endTag);
-	}
-
-	parseExpected(expected: TokenKind): void {
-		if (this.token() !== expected) {
-			throw new Error(
-				`Wrong token, expected: ${expected}, got: ${this.token()}`,
-			);
-		}
-		this.nextToken();
-	}
-
-	parseIdentifier(identifier: string): void {
-		if (this.token() !== TokenKind.identifier) {
-			throw new Error(
-				`Wrong token, expected: ${TokenKind.identifier}, got: ${this.token()}`,
-			);
-		}
-		if (this.scanner.getTokenValueEncoded() !== identifier) {
-			throw new Error(
-				`Expected identifier: ${identifier}, got: ${this.scanner.getTokenValueEncoded()}`,
-			);
-		}
-	}
-
-	skipAttributesUntilTagEnd(): void {
-		// parse until opening tag is terminated
-		do {
-			// skip attributes
-			if (this.token() === TokenKind.identifier) {
-				this.nextToken();
-				this.parseExpected(TokenKind.equals);
-				this.parseExpected(TokenKind.attributeValue);
-				continue;
-			}
-			if (
-				this.token() === TokenKind.endTag ||
-				this.token() === TokenKind.endSelfClosing
-			) {
-				this.nextToken();
-				break;
-			}
-			throw new Error(`Unexpected token: ${this.token()}`);
-			// biome-ignore lint/correctness/noConstantCondition: see above
-		} while (true);
-	}
-}
-
-/**
- * biome-ignore lint/suspicious/noConstEnum: Normally, we'd avoid using TS enums due to its incompability with JS.
- * But we want to inline its values into the switch-cases and still have readable code.
- *
- * @remarks This enum cannot be used in runtime code, since it's `const` and will not exist in the parsing stage. Values have to be inlined by the generator
- */
-export const enum TokenKind {
-	eof = 0,
-	startTag = 1, // <
-	endTag = 2, // >
-	startClosingTag = 3, // </
-	endSelfClosing = 4, // />
-	identifier = 5,
-	textNode = 6,
-	equals = 7, // =
-	attributeValue = 8,
-	textContent = 9,
-	preamble = 10, // <?xml ?>
-}
-
-const entityMap = {
-	"&quot;": '"',
-	"&apos;": "'",
-	"&lt;": "<",
-	"&gt;": ">",
-	"&amp;": "&",
-} as const;
-
-export class Scanner {
+class Scanner {
 	startPos: number;
 	pos: number;
 	end: number;
@@ -478,127 +482,4 @@ function isWhitespace(ch: number): boolean {
 		ch === CharCode.paragraphSeparator ||
 		ch === CharCode.nextLine
 	);
-}
-
-export function scanExpected(scanner: Scanner, expected: number): void {
-	if (scanner.scan() !== expected) {
-		throw new Error(
-			`Wrong token, expected: ${expected}, got: ${scanner.token}`,
-		);
-	}
-}
-
-export function skipAttributes(scanner: Scanner): void {
-	// parse until opening tag is terminated
-	do {
-		scanner.scan();
-
-		// skip attributes
-		if (scanner.token === TokenKind.identifier) {
-			scanExpected(scanner, TokenKind.equals);
-			scanExpected(scanner, TokenKind.attributeValue);
-			continue;
-		}
-		if (
-			scanner.token === TokenKind.endTag ||
-			scanner.token === TokenKind.endSelfClosing
-		) {
-			break;
-		}
-		throw new Error(`Unexpected token: ${scanner.token}`);
-		// biome-ignore lint/correctness/noConstantCondition: see above
-	} while (true);
-}
-
-export function expectIdentifier(scanner: Scanner, identifier: string): void {
-	scanExpected(scanner, TokenKind.identifier);
-	if (scanner.getTokenValueEncoded() !== identifier) {
-		throw new Error(
-			`Expected closing tag for identifier: ${identifier}, got: ${scanner.getTokenValueEncoded()}`,
-		);
-	}
-}
-export function expectClosingTag(scanner: Scanner, tagName: string): void {
-	scanExpected(scanner, TokenKind.startClosingTag);
-	expectIdentifier(scanner, tagName);
-	scanExpected(scanner, TokenKind.endTag);
-}
-export function parseStringTag(
-	scanner: Scanner,
-	tagName: string,
-): string | undefined {
-	skipAttributes(scanner);
-	if (scanner.token === TokenKind.endSelfClosing) {
-		return undefined;
-	}
-
-	scanner.scan(); // consume >
-	if (scanner.token === TokenKind.startClosingTag) {
-		expectIdentifier(scanner, tagName);
-		scanExpected(scanner, TokenKind.endTag);
-		return "";
-	}
-
-	const value = scanner.getTokenValueDecoded();
-	expectClosingTag(scanner, tagName);
-	return value;
-}
-export function parseDateTag(
-	scanner: Scanner,
-	tagName: string,
-): Date | undefined {
-	const value = parseStringTag(scanner, tagName);
-	if (value === undefined) {
-		return undefined;
-	}
-
-	const r = new Date(value);
-	if (Number.isNaN(r.getTime())) {
-		throw new Error(`Expected valid date time: "${value}"`);
-	}
-	return r;
-}
-export function parseIntegerTag(
-	scanner: Scanner,
-	tagName: string,
-): number | undefined {
-	skipAttributes(scanner);
-
-	if (scanner.token === TokenKind.endSelfClosing) {
-		return undefined;
-	}
-
-	scanner.scan(); // consume >
-	const value = scanner.getTokenValueEncoded();
-	const n = Number(value);
-	if (!Number.isInteger(n)) {
-		throw new Error(`Value is not an integer: "${value}"`);
-	}
-	expectClosingTag(scanner, tagName);
-	return n;
-}
-export function parseBooleanTag(
-	scanner: Scanner,
-	tagName: string,
-): boolean | undefined {
-	skipAttributes(scanner);
-	if (scanner.token === TokenKind.endSelfClosing) {
-		return undefined;
-	}
-
-	scanner.scan(); // consume >
-
-	const stringValue = scanner.getTokenValueEncoded();
-
-	let value: boolean;
-	if (stringValue === "true") {
-		value = true;
-	} else if (stringValue === "false") {
-		value = false;
-	} else {
-		throw new Error(`Expected boolean, got "${stringValue}"`);
-	}
-
-	expectClosingTag(scanner, tagName);
-	return value;
 }

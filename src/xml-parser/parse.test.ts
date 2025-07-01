@@ -20,6 +20,18 @@ describe("xml parsing", () => {
 		expect(
 			parse(`<?xml version="1.0" encoding="utf-8"?><note></note>`),
 		).toStrictEqual({ note: {} });
+		expect(
+			parse(`<?xml version="1.0" encoding="utf-8"?>
+
+
+				<note></note>`),
+		).toStrictEqual({ note: {} });
+		expect(
+			parse(`<?xml
+				version="1.0"encoding="utf-8"?>
+
+				<note></note>`),
+		).toStrictEqual({ note: {} });
 		expect(parse(`<note></note>`)).toStrictEqual({ note: {} });
 	});
 
@@ -58,8 +70,8 @@ describe("xml parsing", () => {
 			const xml = `<user name="John &quot;The Man&quot; Doe" />`;
 			expect(parse(xml)).toStrictEqual({ user: {} });
 		});
-		test("skipes apostrophe (&apos;) in attributes", () => {
-			const xml = `<user nickname='O&apos;Connor' />`;
+		test("skipps apostrophe (&apos;) in attributes", () => {
+			const xml = `<user nickname="O&apos;Connor" />`;
 			expect(parse(xml)).toStrictEqual({ user: {} });
 		});
 	});
@@ -105,22 +117,21 @@ describe("xml parsing", () => {
 			type: "root",
 			children: {
 				code: {
-					type: "object",
+					type: "string",
 					tagName: "Code",
-					children: {},
 				},
 			},
 		});
 
 		test("parses ampersand (&amp;) correctly", () => {
-			const doc = parse(`<code>Tom &amp; Jerry</code>`);
+			const doc = parse(`<Code>Tom &amp; Jerry</Code>`);
 			expect(doc).toStrictEqual({
 				code: "Tom & Jerry",
 			});
 		});
 
 		test("parses less-than (&lt;) and greater-than (&gt;)", () => {
-			const doc = parse(`<code>&lt;div&gt;Hello&lt;/div&gt;</code>`);
+			const doc = parse(`<Code>&lt;div&gt;Hello&lt;/div&gt;</Code>`);
 			expect(doc).toStrictEqual({
 				code: "<div>Hello</div>",
 			});
@@ -128,7 +139,7 @@ describe("xml parsing", () => {
 
 		test("parses mixed escape characters", () => {
 			const doc = parse(
-				`<code>&quot;Use &lt; and &gt; for tags,&quot; she said &amp; left.</code>`,
+				`<Code>&quot;Use &lt; and &gt; for tags,&quot; she said &amp; left.</Code>`,
 			);
 			expect(doc).toStrictEqual({
 				code: `"Use < and > for tags," she said & left.`,
@@ -136,21 +147,32 @@ describe("xml parsing", () => {
 		});
 
 		test("raw quotes in texts", () => {
-			const doc = parse(`<code>"etag-value"</code>`);
+			const doc = parse(`<Code>"etag-value"</Code>`);
 			expect(doc).toStrictEqual({
 				code: `"etag-value"`,
 			});
 		});
 
 		test("leading and trailing equals", () => {
-			expect(parse(`<code>=equal</code>`)).toStrictEqual({
+			expect(parse(`<Code>=equal</Code>`)).toStrictEqual({
+				code: `=equal`,
+			});
+			expect(parse(`<Code>equal=</Code>`)).toStrictEqual({
+				code: `equal=`,
+			});
+			expect(parse(`<Code>=equal=</Code>`)).toStrictEqual({
+				code: `=equal=`,
+			});
+		});
+		test("leading and trailing raw quotes", () => {
+			expect(parse(`<Code>=equal"</Code>`)).toStrictEqual({
 				code: `=equal"`,
 			});
-			expect(parse(`<code>equal=</code>`)).toStrictEqual({
-				code: `equal="`,
+			expect(parse(`<Code>"equal=</Code>`)).toStrictEqual({
+				code: `"equal=`,
 			});
-			expect(parse(`<code>=equal=</code>`)).toStrictEqual({
-				code: `=equal="`,
+			expect(parse(`<Code>"=equal="</Code>`)).toStrictEqual({
+				code: `"=equal="`,
 			});
 		});
 	});

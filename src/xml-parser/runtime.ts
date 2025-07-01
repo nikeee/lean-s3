@@ -445,7 +445,7 @@ class Scanner {
 		) {
 			++this.pos;
 		}
-		++this.pos; // consume >
+		this.pos += 2; // consume ?>
 
 		this.tokenValueStart = tokenValueStart;
 		this.tokenValueEnd = this.pos;

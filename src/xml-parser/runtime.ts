@@ -172,14 +172,6 @@ const enum CharCode {
 	minus = 0x2d,
 }
 
-/*
-const enum ScanContext {
-	none = 0,
-	inTag = 1,
-	inAttributes = 2,
-}
-*/
-
 class Scanner {
 	startPos: number;
 	pos: number;
@@ -295,36 +287,30 @@ class Scanner {
 					return textNode;
 				}
 				default:
-					if (this.inTag) {
-						if (isIdentifierStart(ch)) {
-							// We actually don't care about attributes, just skip them entirely in this case
-							const token = this.#scanIdentifier();
+					if (!this.inTag) {
+						return this.#scanTextNode();
+					}
 
-							// ++this.pos;
-							if (this.text.charCodeAt(this.pos) === CharCode.equals) {
-								++this.pos; // consume =
-								if (this.text.charCodeAt(this.pos) !== CharCode.doubleQuote) {
-									throw new Error(
-										"Equals must be followed by a quoted string.",
-									);
-								}
-								this.skipQuotedString();
-								continue;
+					if (isIdentifierStart(ch)) {
+						// We actually don't care about attributes, just skip them entirely in this case
+						const token = this.#scanIdentifier();
+
+						if (this.text.charCodeAt(this.pos) === CharCode.equals) {
+							++this.pos; // consume =
+							if (this.text.charCodeAt(this.pos) !== CharCode.doubleQuote) {
+								throw new Error("Equals must be followed by a quoted string.");
 							}
-							return token;
-						}
-					} else {
-						const textNode = this.#scanTextNode();
-						if (textNode === undefined) {
+							this.skipQuotedString();
 							continue;
 						}
-						return textNode;
+						return token;
 					}
+					continue;
 			}
 		}
 	}
 
-	#scanTextNode(): TokenKind.textNode | undefined {
+	#scanTextNode(): TokenKind.textNode {
 		// Read text node
 		let tokenValueStart = this.pos;
 		while (isWhitespace(this.text.charCodeAt(this.pos))) {
@@ -343,11 +329,6 @@ class Scanner {
 			--tokenValueEnd;
 		} while (isWhitespace(this.text.charCodeAt(tokenValueEnd)));
 		++tokenValueEnd;
-
-		if (tokenValueStart === tokenValueEnd) {
-			// no text content, next token
-			return undefined;
-		}
 
 		this.tokenValueStart = tokenValueStart;
 		this.tokenValueEnd = tokenValueEnd;

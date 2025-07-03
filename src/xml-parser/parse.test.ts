@@ -49,6 +49,26 @@ describe("xml parsing", () => {
 		expect(parse(`<note></note>`)).toStrictEqual({ note: {} });
 		expect(parse(`<note/>`)).toStrictEqual({ note: {} });
 		expect(parse(`<note />`)).toStrictEqual({ note: {} });
+
+		const parse2 = buildParser({
+			type: "root",
+			children: {
+				note: {
+					type: "string",
+				},
+			},
+		});
+		expect(parse2(`<note></note>`)).toStrictEqual({ note: "" });
+		expect(() => parse2(`<note/>`)).toThrow(
+			new Error(
+				`Value for field "note" was required but not present (expected as tag name "note").`,
+			),
+		);
+		expect(() => parse2(`<note />`)).toThrow(
+			new Error(
+				`Value for field "note" was required but not present (expected as tag name "note").`,
+			),
+		);
 	});
 
 	describe("attributes", () => {

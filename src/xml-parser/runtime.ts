@@ -60,82 +60,31 @@ export class Parser {
 
 	/** Assumes {@link TokenKind.startTag} was already consumed. */
 	parseIntegerTag(tagName: string): number | undefined {
-		this.parseIdentifier(tagName);
-
-		this.skipAttributesUntilTagEnd();
-		if (this.token() === TokenKind.endSelfClosing) {
-			this.nextToken();
+		const value = this.parseStringTag(tagName);
+		if (value === undefined) {
 			return undefined;
 		}
 
-		this.parseExpected(TokenKind.endTag);
-
-		if (this.token() === TokenKind.startClosingTag) {
-			this.nextToken();
-			this.parseIdentifier(tagName);
-			this.parseExpected(TokenKind.endTag);
-			return undefined;
-		}
-
-		if (this.token() !== TokenKind.textNode) {
-			throw new Error(`Expected text content.`);
-		}
-
-		const stringValue = this.scanner.getTokenValueDecoded();
-		this.nextToken();
-
-		const n = Number(stringValue);
+		const n = Number(value);
 		if (!Number.isInteger(n)) {
-			throw new Error(`Value is not an integer: "${stringValue}"`);
+			throw new Error(`Value is not an integer: "${value}"`);
 		}
-
-		this.parseClosingTag(tagName);
 		return n;
 	}
 
 	/** Assumes {@link TokenKind.startTag} was already consumed. */
 	parseBooleanTag(tagName: string): boolean | undefined {
-		this.parseIdentifier(tagName);
-
-		this.skipAttributesUntilTagEnd();
-		if (this.token() === TokenKind.endSelfClosing) {
-			this.nextToken();
-			return undefined;
-		}
-
-		this.parseExpected(TokenKind.endTag);
-
-		if (this.token() === TokenKind.startClosingTag) {
-			this.nextToken();
-			this.parseIdentifier(tagName);
-			this.parseExpected(TokenKind.endTag);
-			return undefined;
-		}
-
-		const stringValue = this.scanner.getTokenValueDecoded();
-		this.nextToken();
-
-		let value: boolean;
-		if (stringValue === "true") {
-			value = true;
-		} else if (stringValue === "false") {
-			value = false;
-		} else {
-			throw new Error(`Expected boolean, got "${stringValue}"`);
-		}
-
-		this.parseClosingTag(tagName);
-		return value;
+		const value = this.parseStringTag(tagName);
+		return value === undefined
+			? undefined
+			: value === "true"
+				? true
+				: value === "false"
+					? false
+					: undefined;
 	}
 
 	//#endregion
-
-	parseOpeningTag(tagName: string): void {
-		this.parseExpected(TokenKind.startTag);
-		this.parseIdentifier(tagName);
-		this.skipAttributesUntilTagEnd();
-		this.nextToken(); // consume closing token
-	}
 
 	parseClosingTag(tagName: string): void {
 		this.parseExpected(TokenKind.startClosingTag);

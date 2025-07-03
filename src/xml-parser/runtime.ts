@@ -2,10 +2,9 @@
 
 export class Parser {
 	scanner: Scanner;
-	currentToken!: TokenKind;
+	token!: TokenKind;
 
-	token = () => this.currentToken;
-	nextToken = () => (this.currentToken = this.scanner.scan());
+	nextToken = () => (this.token = this.scanner.scan());
 
 	constructor(text: string) {
 		this.scanner = new Scanner(text);
@@ -19,21 +18,21 @@ export class Parser {
 		this.parseIdentifier(tagName);
 
 		this.skipAttributesUntilTagEnd();
-		if (this.token() === TokenKind.endSelfClosing) {
+		if (this.token === TokenKind.endSelfClosing) {
 			this.nextToken();
 			return undefined;
 		}
 
 		this.parseExpected(TokenKind.endTag);
 
-		if (this.token() === TokenKind.startClosingTag) {
+		if (this.token === TokenKind.startClosingTag) {
 			this.nextToken();
 			this.parseIdentifier(tagName);
 			this.parseExpected(TokenKind.endTag);
 			return "";
 		}
 
-		if (this.token() !== TokenKind.textNode) {
+		if (this.token !== TokenKind.textNode) {
 			throw new Error(`Expected text content.`);
 		}
 
@@ -93,18 +92,16 @@ export class Parser {
 	}
 
 	parseExpected(expected: TokenKind): void {
-		if (this.token() !== expected) {
-			throw new Error(
-				`Wrong token, expected: ${expected}, got: ${this.token()}`,
-			);
+		if (this.token !== expected) {
+			throw new Error(`Wrong token, expected: ${expected}, got: ${this.token}`);
 		}
 		this.nextToken();
 	}
 
 	parseIdentifier(identifier: string): void {
-		if (this.token() !== TokenKind.identifier) {
+		if (this.token !== TokenKind.identifier) {
 			throw new Error(
-				`Wrong token, expected: ${TokenKind.identifier}, got: ${this.token()}`,
+				`Wrong token, expected: ${TokenKind.identifier}, got: ${this.token}`,
 			);
 		}
 		if (this.scanner.getTokenValueEncoded() !== identifier) {
@@ -119,19 +116,19 @@ export class Parser {
 		// parse until opening tag is terminated
 		do {
 			// skip attributes
-			if (this.token() === TokenKind.identifier) {
+			if (this.token === TokenKind.identifier) {
 				this.nextToken();
 				this.parseExpected(TokenKind.equals);
 				this.parseExpected(TokenKind.attributeValue);
 				continue;
 			}
 			if (
-				this.token() === TokenKind.endTag ||
-				this.token() === TokenKind.endSelfClosing
+				this.token === TokenKind.endTag ||
+				this.token === TokenKind.endSelfClosing
 			) {
 				break;
 			}
-			throw new Error(`Unexpected token: ${this.token()}`);
+			throw new Error(`Unexpected token: ${this.token}`);
 			// biome-ignore lint/correctness/noConstantCondition: see above
 		} while (true);
 	}

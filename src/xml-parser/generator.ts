@@ -120,7 +120,7 @@ function ${parseFn}(parser) {
 	parser.parseIdentifier(${asLiteral(tagName)});
 	parser.skipAttributesUntilTagEnd();
 
-	if (parser.token() === ${rt.TokenKind.endSelfClosing} /* TokenKind.endSelfClosing */) {
+	if (parser.token === ${rt.TokenKind.endSelfClosing} /* TokenKind.endSelfClosing */) {
 		parser.nextToken();
 		${emitObjectInvariants(children).join("\n\t\t\t\t")}
 		return res;
@@ -129,7 +129,7 @@ function ${parseFn}(parser) {
 	parser.parseExpected(${rt.TokenKind.endTag} /* TokenKind.endTag */);
 
 	while (true) {
-		switch (parser.token()) {
+		switch (parser.token) {
 			case ${rt.TokenKind.startClosingTag} /* TokenKind.startClosingTag */:
 				parser.nextToken(); // consume TokenKind.startClosingTag
 
@@ -163,7 +163,7 @@ function ${parseFn}(parser) {
 					: ""
 			}
 			default:
-				throw new Error(\`Unhandled token kind: \${parser.token()}\`);
+				throw new Error(\`Unhandled token kind: \${parser.token}\`);
 		}
 	}
 }
@@ -188,12 +188,12 @@ function ${parseFn}(parser) {
 		${emitChildFieldInit(children)}
 	};
 
-	if (parser.token() === ${rt.TokenKind.preamble} /* TokenKind.preamble */) {
+	if (parser.token === ${rt.TokenKind.preamble} /* TokenKind.preamble */) {
 		parser.nextToken();
 	}
 
 	while (true) {
-		switch (parser.token()) {
+		switch (parser.token) {
 			case ${rt.TokenKind.eof} /* TokenKind.eof */:
 				${emitObjectInvariants(children).join("\n\t\t\t\t")}
 				return res;
@@ -221,7 +221,7 @@ function ${parseFn}(parser) {
 					: ""
 			}
 			default:
-				throw new Error(\`Unhandled token kind: \${parser.token()}\`);
+				throw new Error(\`Unhandled token kind: \${parser.token}\`);
 		}
 	}
 }

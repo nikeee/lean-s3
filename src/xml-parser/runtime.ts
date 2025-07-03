@@ -114,7 +114,7 @@ export class Parser {
 
 	skipAttributesUntilTagEnd(): void {
 		// parse until opening tag is terminated
-		do {
+		while (true) {
 			// skip attributes
 			if (this.token === TokenKind.identifier) {
 				this.nextToken();
@@ -129,8 +129,7 @@ export class Parser {
 				break;
 			}
 			throw new Error(`Unexpected token: ${this.token}`);
-			// biome-ignore lint/correctness/noConstantCondition: see above
-		} while (true);
+		}
 	}
 }
 

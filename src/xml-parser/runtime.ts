@@ -152,6 +152,7 @@ export const enum TokenKind {
 	preamble = 9, // <?xml ?>
 }
 
+const entityPattern = /&(quot|apos|lt|gt|amp);/g;
 const entityMap = {
 	"&quot;": '"',
 	"&apos;": "'",
@@ -205,16 +206,12 @@ class Scanner {
 	tokenValueStart = -1;
 	tokenValueEnd = -1;
 
-	/**
-	 * Doesn't do entity decoding for stuff like &amp;
-	 * TODO: separate method that does decoding
-	 */
 	getTokenValueEncoded() {
 		return this.text.substring(this.tokenValueStart, this.tokenValueEnd);
 	}
 	getTokenValueDecoded() {
 		return this.getTokenValueEncoded().replace(
-			/&(quot|apos|lt|gt|amp);/g,
+			entityPattern,
 			m => entityMap[m as keyof typeof entityMap] ?? m,
 		);
 	}

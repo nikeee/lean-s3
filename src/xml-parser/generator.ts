@@ -30,15 +30,15 @@ function emitParserCall(
 ): string {
 	switch (spec.type) {
 		case "string":
-			return `(parser.parseStringTag(${asLiteral(tagName)})${spec.emptyIsAbsent ? " || undefined" : ""})`;
+			return `(this.parseStringTag(${asLiteral(tagName)})${spec.emptyIsAbsent ? " || undefined" : ""})`;
 		case "integer":
-			return `parser.parseIntegerTag(${asLiteral(tagName)})`;
+			return `this.parseIntegerTag(${asLiteral(tagName)})`;
 		case "boolean":
-			return `parser.parseBooleanTag(${asLiteral(tagName)})`;
+			return `this.parseBooleanTag(${asLiteral(tagName)})`;
 		case "date":
-			return `parser.parseDateTag(${asLiteral(tagName)})`;
+			return `this.parseDateTag(${asLiteral(tagName)})`;
 		case "object":
-			return `${globals.get(spec)}(parser)`;
+			return `this.${globals.get(spec)}()`;
 		case "array":
 			return ""; // arrays handled differently
 	}
@@ -110,30 +110,29 @@ function emitObjectParser(
 
 	return `
 ${emitChildParsers(spec, globals)}
-/** @param {rt.Parser} parser */
-function ${parseFn}(parser) {
+${parseFn}() {
 	// Init structure entirely, so v8 can create a single hidden class
 	const res = {
 		${emitChildFieldInit(children)}
 	};
 
-	parser.parseIdentifier(${asLiteral(tagName)});
+	this.parseIdentifier(${asLiteral(tagName)});
 
-	if (parser.token === ${rt.TokenKind.endSelfClosing} /* TokenKind.endSelfClosing */) {
-		parser.nextToken();
+	if (this.token === ${rt.TokenKind.endSelfClosing} /* TokenKind.endSelfClosing */) {
+		this.nextToken();
 		${emitObjectInvariants(children).join("\n\t\t\t\t")}
 		return res;
 	}
 
-	parser.parseExpected(${rt.TokenKind.endTag} /* TokenKind.endTag */);
+	this.parseExpected(${rt.TokenKind.endTag} /* TokenKind.endTag */);
 
 	while (true) {
-		switch (parser.token) {
+		switch (this.token) {
 			case ${rt.TokenKind.startClosingTag} /* TokenKind.startClosingTag */:
-				parser.nextToken(); // consume TokenKind.startClosingTag
+				this.nextToken(); // consume TokenKind.startClosingTag
 
-				parser.parseIdentifier(${asLiteral(tagName)});
-				parser.parseExpected(${rt.TokenKind.endTag} /* TokenKind.endTag */);
+				this.parseIdentifier(${asLiteral(tagName)});
+				this.parseExpected(${rt.TokenKind.endTag} /* TokenKind.endTag */);
 				${emitObjectInvariants(children).join("\n\t\t\t\t")}
 				return res;
 			case ${rt.TokenKind.eof}:
@@ -142,9 +141,9 @@ function ${parseFn}(parser) {
 				Object.keys(children).length > 0
 					? `
 			case ${rt.TokenKind.startTag}: {
-				parser.nextToken(); // consume TokenKind.startTag
+				this.nextToken(); // consume TokenKind.startTag
 
-				switch (parser.scanner.getTokenValueEncoded()) {
+				switch (this.scanner.getTokenValueEncoded()) {
 					${Object.entries(children)
 						.map(
 							([name, childSpec]) =>
@@ -154,7 +153,7 @@ function ${parseFn}(parser) {
 						)
 						.join("\n\t\t\t\t\t")}
 					default:
-						throw new Error(\`Unexpected tag identifier: \${parser.scanner.getTokenValueEncoded()}\`);
+						throw new Error(\`Unexpected tag identifier: \${this.scanner.getTokenValueEncoded()}\`);
 				}
 				break;
 			}
@@ -162,7 +161,7 @@ function ${parseFn}(parser) {
 					: ""
 			}
 			default:
-				throw new Error(\`Unhandled token kind: \${parser.token}\`);
+				throw new Error(\`Unhandled token kind: \${this.token}\`);
 		}
 	}
 }
@@ -173,22 +172,21 @@ function emitRootParser(
 	spec: RootSpec<string>,
 	globals: Map<unknown, string>,
 ): string {
-	const parseFn = `root_parse_fn_${globals.size}`;
+	const parseFn = `parse_${globals.size}`;
 	globals.set(spec, parseFn);
 
 	const { children } = spec;
 
 	return `
 ${emitChildParsers(spec, globals)}
-/** @param {rt.Parser} parser */
-function ${parseFn}(parser) {
+${parseFn}() {
 	// Init structure entirely, so v8 can create a single hidden class
 	const res = {
 		${emitChildFieldInit(children)}
 	};
 
 	while (true) {
-		switch (parser.token) {
+		switch (this.token) {
 			case ${rt.TokenKind.eof} /* TokenKind.eof */:
 				${emitObjectInvariants(children).join("\n\t\t\t\t")}
 				return res;
@@ -196,9 +194,9 @@ function ${parseFn}(parser) {
 				Object.keys(children).length > 0
 					? `
 			case ${rt.TokenKind.startTag} /* TokenKind.startTag */: {
-				parser.nextToken(); // consume TokenKind.startTag
+				this.nextToken(); // consume TokenKind.startTag
 
-				switch (parser.scanner.getTokenValueEncoded()) {
+				switch (this.scanner.getTokenValueEncoded()) {
 					${Object.entries(children)
 						.map(
 							([name, childSpec]) =>
@@ -208,7 +206,7 @@ function ${parseFn}(parser) {
 						)
 						.join("\n\t\t\t\t\t")}
 					default:
-						throw new Error(\`Unexpected tag identifier: \${parser.scanner.getTokenValueEncoded()}\`);
+						throw new Error(\`Unexpected tag identifier: \${this.scanner.getTokenValueEncoded()}\`);
 				}
 				break;
 			}
@@ -216,7 +214,7 @@ function ${parseFn}(parser) {
 					: ""
 			}
 			default:
-				throw new Error(\`Unhandled token kind: \${parser.token}\`);
+				throw new Error(\`Unhandled token kind: \${this.token}\`);
 		}
 	}
 }
@@ -336,8 +334,10 @@ export function buildStaticParserSource<T extends string>(
 
 	return `
 import * as rt from "./runtime.ts";
-${parsingCode}
-export default (text)  => ${rootParseFunctionName}(new rt.Parser(text));
+class GeneratedParser extends rt.Parser {
+	${parsingCode}
+}
+export default (text) => new GeneratedParser(text).${rootParseFunctionName}();
 `.trimStart();
 }
 
@@ -352,8 +352,10 @@ export function buildStaticParserSourceWithText<T extends string>(
 
 	return `
 import * as rt from "./runtime.ts";
-${parsingCode}
-${rootParseFunctionName}(new rt.Parser(\`${text}\`))
+class GeneratedParser extends rt.Parser {
+	${parsingCode}
+}
+new GeneratedParser(text).${rootParseFunctionName}(\`${text}\`);
 `.trimStart();
 }
 
@@ -369,9 +371,11 @@ export function buildParser<T extends string>(
 		"rt",
 		`
 return (() => {
-${parsingCode}
 
-return (text)  => ${rootParseFunctionName}(new rt.Parser(text));
+class GeneratedParser extends rt.Parser {
+	${parsingCode}
+}
+return (text) => new GeneratedParser(text).${rootParseFunctionName}();
 })()
 `.trim(),
 	)(rt) as Parser<unknown>;

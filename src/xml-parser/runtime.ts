@@ -4,7 +4,9 @@ export class Parser {
 	scanner: Scanner;
 	token!: TokenKind;
 
-	nextToken = () => (this.token = this.scanner.scan());
+	nextToken = () => {
+		this.token = this.scanner.scan();
+	};
 
 	constructor(text: string) {
 		this.scanner = new Scanner(text);

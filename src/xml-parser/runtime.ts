@@ -17,7 +17,6 @@ export class Parser {
 	parseStringTag(tagName: string): string | undefined {
 		this.parseIdentifier(tagName);
 
-		this.skipAttributesUntilTagEnd();
 		if (this.token === TokenKind.endSelfClosing) {
 			this.nextToken();
 			return undefined;
@@ -111,8 +110,6 @@ export class Parser {
 		}
 		this.nextToken();
 	}
-
-	skipAttributesUntilTagEnd(): void {}
 }
 
 /**

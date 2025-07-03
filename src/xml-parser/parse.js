@@ -5,7 +5,6 @@ function fn_1_note(parser) {
 	const res = {};
 
 	parser.parseIdentifier("note");
-	parser.skipAttributesUntilTagEnd();
 
 	if (parser.token() === 4 /* TokenKind.endSelfClosing */) {
 		parser.nextToken();

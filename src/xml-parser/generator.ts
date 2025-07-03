@@ -118,7 +118,6 @@ function ${parseFn}(parser) {
 	};
 
 	parser.parseIdentifier(${asLiteral(tagName)});
-	parser.skipAttributesUntilTagEnd();
 
 	if (parser.token === ${rt.TokenKind.endSelfClosing} /* TokenKind.endSelfClosing */) {
 		parser.nextToken();

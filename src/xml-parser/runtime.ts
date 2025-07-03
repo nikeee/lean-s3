@@ -112,25 +112,7 @@ export class Parser {
 		this.nextToken();
 	}
 
-	skipAttributesUntilTagEnd(): void {
-		// parse until opening tag is terminated
-		while (true) {
-			// skip attributes
-			if (this.token === TokenKind.identifier) {
-				this.nextToken();
-				this.parseExpected(TokenKind.equals);
-				this.parseExpected(TokenKind.attributeValue);
-				continue;
-			}
-			if (
-				this.token === TokenKind.endTag ||
-				this.token === TokenKind.endSelfClosing
-			) {
-				break;
-			}
-			throw new Error(`Unexpected token: ${this.token}`);
-		}
-	}
+	skipAttributesUntilTagEnd(): void {}
 }
 
 /**
@@ -147,9 +129,6 @@ export const enum TokenKind {
 	endSelfClosing = 4, // />
 	identifier = 5,
 	textNode = 6,
-	equals = 7, // =
-	attributeValue = 8,
-	preamble = 9, // <?xml ?>
 }
 
 const entityPattern = /&(quot|apos|lt|gt|amp);/g;
@@ -192,6 +171,14 @@ const enum CharCode {
 	questionMark = 0x3f,
 	minus = 0x2d,
 }
+
+/*
+const enum ScanContext {
+	none = 0,
+	inTag = 1,
+	inAttributes = 2,
+}
+*/
 
 class Scanner {
 	startPos: number;
@@ -248,9 +235,12 @@ class Scanner {
 					continue;
 				case CharCode.equals: {
 					if (this.inTag) {
-						++this.pos;
-						return (this.token = TokenKind.equals);
+						// equals are skipped in the handler for the identifier
+						throw new Error(
+							"Equals cannot appear in a tag without a leading identifier.",
+						);
 					}
+
 					const textNode = this.#scanTextNode();
 					if (textNode === undefined) {
 						continue;
@@ -269,7 +259,8 @@ class Scanner {
 								return (this.token = TokenKind.startClosingTag);
 							case CharCode.questionMark:
 								this.inTag = false;
-								return this.#scanPreamble(this.pos - 1);
+								this.#skipPreamble();
+								continue;
 							default:
 								break;
 						}
@@ -291,13 +282,12 @@ class Scanner {
 					return (this.token = TokenKind.endTag);
 
 				case CharCode.doubleQuote: {
-					// TODO: We actually don't care about attributes
-					// We might just skip scanning everything after the tag identifier
-					// > cannot appear in a quoted string, since it must be escaped
 					if (this.inTag) {
-						return this.#scanQuotedString();
+						// quotes are skipped in the handler for the identifier
+						throw new Error(
+							"Double quotes cannot appear in a tag without a leading equals.",
+						);
 					}
-
 					const textNode = this.#scanTextNode();
 					if (textNode === undefined) {
 						continue;
@@ -307,10 +297,22 @@ class Scanner {
 				default:
 					if (this.inTag) {
 						if (isIdentifierStart(ch)) {
-							return this.#scanIdentifier();
+							// We actually don't care about attributes, just skip them entirely in this case
+							const token = this.#scanIdentifier();
+
+							// ++this.pos;
+							if (this.text.charCodeAt(this.pos) === CharCode.equals) {
+								++this.pos; // consume =
+								if (this.text.charCodeAt(this.pos) !== CharCode.doubleQuote) {
+									throw new Error(
+										"Equals must be followed by a quoted string.",
+									);
+								}
+								this.skipQuotedString();
+								continue;
+							}
+							return token;
 						}
-						++this.pos;
-						continue;
 					} else {
 						const textNode = this.#scanTextNode();
 						if (textNode === undefined) {
@@ -352,9 +354,8 @@ class Scanner {
 		return (this.token = TokenKind.textNode);
 	}
 
-	#scanQuotedString(): TokenKind.attributeValue {
+	skipQuotedString() {
 		++this.pos; // consume opening "
-		const start = this.pos;
 		while (
 			this.pos < this.end &&
 			this.text.charCodeAt(this.pos) !== CharCode.doubleQuote
@@ -363,28 +364,27 @@ class Scanner {
 		}
 
 		++this.pos; // consume closing "
-		this.tokenValueStart = start;
-		this.tokenValueEnd = this.pos;
-
-		return (this.token = TokenKind.attributeValue);
 	}
 
-	#scanIdentifier(): TokenKind.identifier {
-		const identifierStart = this.pos;
-		++this.pos;
+	#skipIdentifier(): void {
+		++this.pos; // consume first char
 		while (
 			this.pos < this.end &&
 			isIdentifierPart(this.text.charCodeAt(this.pos))
 		) {
 			++this.pos;
 		}
+	}
 
+	#scanIdentifier(): TokenKind.identifier {
+		const identifierStart = this.pos;
+		this.#skipIdentifier();
 		this.tokenValueStart = identifierStart;
 		this.tokenValueEnd = this.pos;
 		return (this.token = TokenKind.identifier);
 	}
 
-	#scanPreamble(tokenValueStart: number): TokenKind.preamble {
+	#skipPreamble(): void {
 		++this.pos; // consume ?
 		while (
 			this.pos + 1 < this.end &&
@@ -394,10 +394,6 @@ class Scanner {
 			++this.pos;
 		}
 		this.pos += 2; // consume ?>
-
-		this.tokenValueStart = tokenValueStart;
-		this.tokenValueEnd = this.pos;
-		return (this.token = TokenKind.preamble);
 	}
 }
 

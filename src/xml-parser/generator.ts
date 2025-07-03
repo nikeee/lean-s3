@@ -188,10 +188,6 @@ function ${parseFn}(parser) {
 		${emitChildFieldInit(children)}
 	};
 
-	if (parser.token === ${rt.TokenKind.preamble} /* TokenKind.preamble */) {
-		parser.nextToken();
-	}
-
 	while (true) {
 		switch (parser.token) {
 			case ${rt.TokenKind.eof} /* TokenKind.eof */:

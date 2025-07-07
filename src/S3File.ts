@@ -209,7 +209,6 @@ export default class S3File {
 
 	json(): Promise<unknown> {
 		// Not using JSON.parse(await this.text()), so the env can parse json while loading
-		// Also, see TODO note above this class
 		return new Response(this.stream()).json();
 	}
 	bytes(): Promise<Uint8Array> {

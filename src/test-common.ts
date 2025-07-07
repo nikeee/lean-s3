@@ -166,7 +166,7 @@ export function runTests(
 				hello: testId,
 			};
 
-			const key = `${runId}/${testId}/Sun Jun 15 2025 00:57:03 GMT+0200 (test)`;
+			const key = `${runId}/${testId}/Sun Jun 15 2025 00:57:03 * GMT+0200 (test)`;
 
 			const url = client.presign(key, { method: "PUT" });
 			const res = await fetch(url, {

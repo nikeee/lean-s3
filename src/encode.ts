@@ -16,7 +16,7 @@ export function getContentDispositionHeader(value: ContentDisposition): string {
 				return "attachment";
 			}
 			const encoded = encodeURIComponent(filename);
-			return `attachment; filename="${encoded}"; filename*=UTF-8''${encoded}`;
+			return `attachment;filename="${encoded}";filename*=UTF-8''${encoded}`;
 		}
 		default:
 			assertNever(value);

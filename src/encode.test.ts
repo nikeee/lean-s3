@@ -21,7 +21,7 @@ describe("encoding", () => {
 				type: "attachment",
 				filename: "test.txt",
 			}),
-		).toBe(`attachment; filename="test.txt"; filename*=UTF-8''test.txt`);
+		).toBe(`attachment;filename="test.txt";filename*=UTF-8''test.txt`);
 
 		expect(
 			encode({
@@ -29,7 +29,7 @@ describe("encoding", () => {
 				filename: "füße.txt",
 			}),
 		).toBe(
-			`attachment; filename="f%C3%BC%C3%9Fe.txt"; filename*=UTF-8''f%C3%BC%C3%9Fe.txt`,
+			`attachment;filename="f%C3%BC%C3%9Fe.txt";filename*=UTF-8''f%C3%BC%C3%9Fe.txt`,
 		);
 
 		expect(
@@ -38,7 +38,7 @@ describe("encoding", () => {
 				filename: "résumé.pdf",
 			}),
 		).toBe(
-			`attachment; filename="r%C3%A9sum%C3%A9.pdf"; filename*=UTF-8''r%C3%A9sum%C3%A9.pdf`,
+			`attachment;filename="r%C3%A9sum%C3%A9.pdf";filename*=UTF-8''r%C3%A9sum%C3%A9.pdf`,
 		);
 
 		expect(
@@ -47,7 +47,7 @@ describe("encoding", () => {
 				filename: "你好.txt",
 			}),
 		).toBe(
-			`attachment; filename="%E4%BD%A0%E5%A5%BD.txt"; filename*=UTF-8''%E4%BD%A0%E5%A5%BD.txt`,
+			`attachment;filename="%E4%BD%A0%E5%A5%BD.txt";filename*=UTF-8''%E4%BD%A0%E5%A5%BD.txt`,
 		);
 
 		expect(
@@ -56,7 +56,7 @@ describe("encoding", () => {
 				filename: "a b c.txt",
 			}),
 		).toBe(
-			`attachment; filename="a%20b%20c.txt"; filename*=UTF-8''a%20b%20c.txt`,
+			`attachment;filename="a%20b%20c.txt";filename*=UTF-8''a%20b%20c.txt`,
 		);
 
 		expect(
@@ -65,7 +65,7 @@ describe("encoding", () => {
 				filename: "emoji-💾.zip",
 			}),
 		).toBe(
-			`attachment; filename="emoji-%F0%9F%92%BE.zip"; filename*=UTF-8''emoji-%F0%9F%92%BE.zip`,
+			`attachment;filename="emoji-%F0%9F%92%BE.zip";filename*=UTF-8''emoji-%F0%9F%92%BE.zip`,
 		);
 	});
 });

@@ -210,7 +210,8 @@ class Scanner {
 				return (this.token = TokenKind.eof);
 			}
 
-			switch (this.text.charCodeAt(this.pos)) {
+			const ch = this.text.charCodeAt(this.pos);
+			switch (ch) {
 				case CharCode.lineFeed:
 				case CharCode.carriageReturn:
 				case CharCode.lineSeparator:

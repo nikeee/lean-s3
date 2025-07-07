@@ -605,6 +605,26 @@ export function runTests(
 			}
 		});
 
+		test(".write() with content-type", async () => {
+			const testId = crypto.randomUUID();
+
+			// using .json to make sure the extension does not intefere with the passed content-type
+			const f = client.file(`${runId}/${testId}.json`);
+
+			const content = crypto.randomUUID();
+			await f.write(content, { type: "text/plain" });
+			try {
+				const url = client.presign(`${runId}/${testId}.json`, {
+					method: "GET",
+				});
+				const res = await fetch(url);
+				expect(res.headers.get("content-type")).toBe("text/plain");
+				expect(await res.text()).toBe(content);
+			} finally {
+				await f.delete();
+			}
+		});
+
 		test(".exists()", async () => {
 			const testId = crypto.randomUUID();
 

@@ -92,20 +92,26 @@ export interface S3FilePresignOptions {
 	acl?: Acl;
 	/** `Content-Type` of the file. */
 	type?: string;
+
 	/**
-	 * Used to set the file name that browsers display when downloading the file.
-	 *
-	 * @example
-	 * ```js
-	 * client.presign("foo.jpg", {
-	 *   contentDisposition: {
-	 *     type: "attachment",
-	 *     filename: "download.jpg",
-	 *   },
-	 * });
-	 * ```
+	 * Headers to set on the response of the S3 service.
 	 */
-	contentDisposition?: ContentDisposition;
+	response?: {
+		/**
+		 * Used to set the file name that browsers display when downloading the file.
+		 *
+		 * @example
+		 * ```js
+		 * client.presign("foo.jpg", {
+		 *   contentDisposition: {
+		 *     type: "attachment",
+		 *     filename: "download.jpg",
+		 *   },
+		 * });
+		 * ```
+		 */
+		contentDisposition?: ContentDisposition;
+	};
 }
 
 export type ListObjectsOptions = {
@@ -465,8 +471,7 @@ export default class S3Client {
 			region: regionOverride,
 			bucket: bucketOverride,
 			endpoint: endpointOverride,
-			// biome-ignore lint/correctness/noUnusedFunctionParameters: TODO
-			contentDisposition,
+			response,
 		}: S3FilePresignOptions & OverridableS3ClientOptions = {},
 	): string {
 		if (typeof contentLength === "number") {
@@ -1670,6 +1675,7 @@ export function buildSearchParams(
 	storageClass: StorageClass | null | undefined,
 	sessionToken: string | null | undefined,
 	acl: Acl | null | undefined,
+	responseContentDisposition: string | null | undefined = undefined,
 ): string {
 	// We tried to make these query params entirely lower-cased, just like the headers
 	// but Cloudflare R2 requires them to have this exact casing
@@ -1705,6 +1711,11 @@ export function buildSearchParams(
 	if (storageClass) {
 		res += `&X-Amz-Storage-Class=${storageClass}`;
 	}
+
+	if (responseContentDisposition) {
+		res += `&response-content-disposition=${encodeURIComponentExtended(responseContentDisposition)}`;
+	}
+
 	return res;
 }
 

@@ -195,9 +195,11 @@ export function runTests(
 			try {
 				const url = client.presign(`${runId}/${testId}`, {
 					method: "GET",
-					contentDisposition: {
-						type: "attachment",
-						filename: "download.json",
+					response: {
+						contentDisposition: {
+							type: "attachment",
+							filename: "download.json",
+						},
 					},
 				});
 				const res = await fetch(url);

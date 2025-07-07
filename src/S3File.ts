@@ -14,6 +14,11 @@ import { fromStatusCode, getResponseError } from "./error.ts";
 import assertNever from "./assertNever.ts";
 import type { ObjectKey } from "./branded.ts";
 
+export type S3FileWriteOptions = {
+	/** Content-Type of the file. */
+	type?: string;
+};
+
 // TODO: If we want to hack around, we can use this to access the private implementation of the "get stream" algorithm used by Node.js's blob internally
 // We probably have to do this some day if the fetch implementation is moved to internals.
 // If this happens, fetch will probably use `[kHandle].getReader()` instead of .stream() to read the Blob
@@ -75,7 +80,7 @@ export default class S3File {
 	 * @throws {S3Error} If the file does not exist or the server has some other issues.
 	 * @throws {Error} If the server returns an invalid response.
 	 */
-	async stat(options: Partial<S3StatOptions> = {}): Promise<S3Stat> {
+	async stat(options: S3StatOptions = {}): Promise<S3Stat> {
 		// TODO: Support all options
 
 		const response = await this.#client[signedRequest](
@@ -117,7 +122,7 @@ export default class S3File {
 	 *
 	 * @remarks Uses [`HeadObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html).
 	 */
-	async exists(options: Partial<S3FileExistsOptions> = {}): Promise<boolean> {
+	async exists(options: S3FileExistsOptions = {}): Promise<boolean> {
 		// TODO: Support all options
 
 		const response = await this.#client[signedRequest](
@@ -158,7 +163,7 @@ export default class S3File {
 	 * @remarks - Uses [`DeleteObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html).
 	 *          - `versionId` not supported.
 	 *
-	 * @param {Partial<S3FileDeleteOptions>} [options]
+	 * @param {S3FileDeleteOptions} [options]
 	 *
 	 * @example
 	 * ```js
@@ -174,7 +179,7 @@ export default class S3File {
 	 * }
 	 * ```
 	 */
-	async delete(options: Partial<S3FileDeleteOptions> = {}): Promise<void> {
+	async delete(options: S3FileDeleteOptions = {}): Promise<void> {
 		// TODO: Support all options
 
 		const response = await this.#client[signedRequest](
@@ -204,7 +209,6 @@ export default class S3File {
 
 	json(): Promise<unknown> {
 		// Not using JSON.parse(await this.text()), so the env can parse json while loading
-		// Also, see TODO note above this class
 		return new Response(this.stream()).json();
 	}
 	bytes(): Promise<Uint8Array> {
@@ -278,9 +282,13 @@ export default class S3File {
 
 	/**
 	 * @param {ByteSource} data
+	 * @param {S3FileWriteOptions} [options.type] Defaults to the Content-Type that was used to create the {@link S3File} instance.
 	 * @returns {Promise<void>}
 	 */
-	async write(data: ByteSource): Promise<void> {
+	async write(
+		data: ByteSource,
+		options: S3FileWriteOptions = {},
+	): Promise<void> {
 		/** @type {AbortSignal | undefined} */
 		const signal: AbortSignal | undefined = undefined; // TODO: Take this as param
 
@@ -290,7 +298,7 @@ export default class S3File {
 		return await this.#client[write](
 			this.#path,
 			bytes,
-			this.#contentType,
+			options.type ?? this.#contentType,
 			length,
 			hash,
 			this.#start,
@@ -311,11 +319,11 @@ export default class S3File {
 }
 
 export interface S3FileDeleteOptions extends OverridableS3ClientOptions {
-	signal: AbortSignal;
+	signal?: AbortSignal;
 }
 export interface S3StatOptions extends OverridableS3ClientOptions {
-	signal: AbortSignal;
+	signal?: AbortSignal;
 }
 export interface S3FileExistsOptions extends OverridableS3ClientOptions {
-	signal: AbortSignal;
+	signal?: AbortSignal;
 }

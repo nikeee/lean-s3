@@ -58,13 +58,14 @@ export interface S3ClientOptions {
 	secretAccessKey: string;
 	sessionToken?: string;
 }
-export type OverridableS3ClientOptions = Pick<
-	S3ClientOptions,
-	"region" | "bucket" | "endpoint"
+export type OverridableS3ClientOptions = Partial<
+	Pick<S3ClientOptions, "region" | "bucket" | "endpoint">
 >;
 
-// biome-ignore lint/complexity/noBannedTypes: TODO
-export type CreateFileInstanceOptions = {}; // TODO
+export type CreateFileInstanceOptions = {
+	/** Content-Type of the file. */
+	type?: string;
+};
 
 export type DeleteObjectsOptions = {
 	bucket?: string;
@@ -81,13 +82,15 @@ export type DeleteObjectsError = {
 };
 
 export interface S3FilePresignOptions {
-	contentHash: Buffer;
+	contentHash?: Buffer;
 	/** Seconds. */
-	expiresIn: number; // TODO: Maybe support Temporal.Duration once major support arrives
-	method: PresignableHttpMethod;
-	contentLength: number;
-	storageClass: StorageClass;
-	acl: Acl;
+	expiresIn?: number; // TODO: Maybe support Temporal.Duration once major support arrives
+	method?: PresignableHttpMethod;
+	contentLength?: number;
+	storageClass?: StorageClass;
+	acl?: Acl;
+	/** `Content-Type` of the file. */
+	type?: string;
 }
 
 export type ListObjectsOptions = {
@@ -364,6 +367,8 @@ export default class S3Client {
 		};
 	}
 
+	// Maybe future API
+	/*
 	cors = {
 		get: () => {
 			// TODO: GetBucketCors
@@ -375,6 +380,7 @@ export default class S3Client {
 			// TODO: DeleteBucketCors
 		},
 	};
+	*/
 
 	/**
 	 * Creates an S3File instance for the given path.
@@ -399,7 +405,6 @@ export default class S3Client {
 	 *
 	 * lean-s3 does not enforce these restrictions.
 	 *
-	 * @param {Partial<CreateFileInstanceOptions>} [_options] TODO
 	 * @example
 	 * ```js
 	 * const file = client.file("image.jpg");
@@ -407,19 +412,17 @@ export default class S3Client {
 	 *
 	 * const configFile = client.file("config.json", {
 	 *   type: "application/json",
-	 *   acl: "private"
 	 * });
 	 * ```
 	 */
-	file(path: string, _options?: Partial<CreateFileInstanceOptions>): S3File {
+	file(path: string, options: CreateFileInstanceOptions = {}): S3File {
 		// TODO: Check max path length in bytes
-		// TODO: Use options
 		return new S3File(
 			this,
 			ensureValidPath(path),
 			undefined,
 			undefined,
-			undefined,
+			options.type ?? undefined,
 		);
 	}
 
@@ -442,11 +445,12 @@ export default class S3Client {
 			expiresIn = 3600, // TODO: Maybe rename this to expiresInSeconds
 			storageClass,
 			contentLength,
+			type,
 			acl,
 			region: regionOverride,
 			bucket: bucketOverride,
 			endpoint: endpointOverride,
-		}: Partial<S3FilePresignOptions & OverridableS3ClientOptions> = {},
+		}: S3FilePresignOptions & OverridableS3ClientOptions = {},
 	): string {
 		if (typeof contentLength === "number") {
 			if (contentLength < 0) {
@@ -468,7 +472,15 @@ export default class S3Client {
 			`${options.accessKeyId}/${date.date}/${region}/s3/aws4_request`,
 			date,
 			expiresIn,
-			typeof contentLength === "number" ? "content-length;host" : "host",
+			typeof contentLength === "number" || typeof type === "string"
+				? typeof contentLength === "number" && typeof type === "string"
+					? "content-length;content-type;host"
+					: typeof contentLength === "number"
+						? "content-length;host"
+						: typeof type === "string"
+							? "content-type;host"
+							: "" // TODO: this should not happen, find different solution
+				: "host",
 			sign.unsignedPayload,
 			storageClass,
 			options.sessionToken,
@@ -478,12 +490,22 @@ export default class S3Client {
 		// This probably does'nt scale if there are more headers in the signature
 		// But we want to take a fast-path if there is only the host header to sign
 		const dataDigest =
-			typeof contentLength === "number"
+			typeof contentLength === "number" || typeof type === "string"
 				? sign.createCanonicalDataDigest(
 						method,
 						res.pathname,
 						query,
-						{ "content-length": String(contentLength), host: res.host },
+						typeof contentLength === "number" && typeof type === "string"
+							? {
+									"content-length": String(contentLength),
+									"content-type": type,
+									host: res.host,
+								}
+							: typeof contentLength === "number"
+								? { "content-length": String(contentLength), host: res.host }
+								: typeof type === "string"
+									? { "content-type": type, host: res.host }
+									: {},
 						sign.unsignedPayload,
 					)
 				: sign.createCanonicalDataDigestHostOnly(

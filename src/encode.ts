@@ -22,3 +22,13 @@ export function getContentDispositionHeader(value: ContentDisposition): string {
 			assertNever(value);
 	}
 }
+
+export function encodeURIComponentExtended(value: string) {
+	return encodeURIComponent(value)
+		.replaceAll(":", "%3A") // See: https://github.com/nikeee/lean-s3/issues/61
+		.replaceAll("+", "%2B")
+		.replaceAll("(", "%28")
+		.replaceAll(")", "%29")
+		.replaceAll(",", "%2C")
+		.replaceAll("*", "%2A");
+}

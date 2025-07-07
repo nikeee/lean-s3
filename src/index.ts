@@ -5,6 +5,7 @@ export {
 	type S3FileDeleteOptions,
 	type S3FileExistsOptions,
 	type S3StatOptions,
+	type S3FileWriteOptions,
 } from "./S3File.ts";
 export {
 	default as S3Client,
@@ -39,6 +40,7 @@ export {
 	type PutBucketCorsOptions,
 	type GetBucketCorsOptions,
 	type GetBucketCorsResult,
+	type DeleteBucketCorsOptions,
 } from "./S3Client.ts";
 export { default as S3Error, type S3ErrorOptions } from "./S3Error.ts";
 export { default as S3Stat } from "./S3Stat.ts";

@@ -80,6 +80,86 @@ export function runTests(
 			}
 		});
 
+		test("put with content type", async () => {
+			const value = crypto.randomUUID();
+
+			{
+				const url = client.presign(`${runId}/content-type.json`, {
+					method: "PUT",
+					type: "application/json",
+				});
+
+				const res = await fetch(url, {
+					method: "PUT",
+					body: JSON.stringify({ value }),
+					headers: {
+						"Content-Type": "application/json",
+					},
+				});
+				expect(res.ok).toBe(true);
+			}
+
+			const f = client.file(`${runId}/content-type.json`);
+			try {
+				{
+					const url = client.presign(`${runId}/content-type.json`, {
+						method: "GET",
+					});
+					const res = await fetch(url);
+					expect(res.ok).toBe(true);
+					expect(res.headers.get("content-type")).toBe("application/json");
+				}
+				{
+					const url = client.presign(`${runId}/content-type.json`, {
+						method: "PUT",
+						type: "application/octet-stream",
+					});
+					const res = await fetch(url, {
+						method: "PUT",
+						body: JSON.stringify({ value }),
+						headers: {
+							"Content-Type": "application/octet-stream",
+						},
+					});
+					expect(res.ok).toBe(true);
+				}
+				{
+					const url = client.presign(`${runId}/content-type.json`, {
+						method: "GET",
+					});
+					const res = await fetch(url);
+					expect(res.headers.get("content-type")).toBe(
+						"application/octet-stream",
+					);
+				}
+			} finally {
+				await f.delete();
+			}
+		});
+
+		test("put with content type and conent-length", async () => {
+			const body = crypto.randomUUID();
+			const f = client.file(`${runId}/content-type-with-length.json`);
+			try {
+				const url = client.presign(`${runId}/content-type-with-length.json`, {
+					method: "PUT",
+					type: "application/json",
+					contentLength: body.length,
+				});
+
+				const res = await fetch(url, {
+					method: "PUT",
+					body,
+					headers: {
+						"Content-Type": "application/json",
+					},
+				});
+				expect(res.ok).toBe(true);
+			} finally {
+				await f.delete();
+			}
+		});
+
 		test("put with weird key", async () => {
 			const testId = crypto.randomUUID();
 			const expected = {
@@ -520,6 +600,26 @@ export function runTests(
 			try {
 				expect(await f.exists()).toBe(true);
 				expect(await f.text()).toBe(content);
+			} finally {
+				await f.delete();
+			}
+		});
+
+		test(".write() with content-type", async () => {
+			const testId = crypto.randomUUID();
+
+			// using .json to make sure the extension does not intefere with the passed content-type
+			const f = client.file(`${runId}/${testId}.json`);
+
+			const content = crypto.randomUUID();
+			await f.write(content, { type: "text/plain" });
+			try {
+				const url = client.presign(`${runId}/${testId}.json`, {
+					method: "GET",
+				});
+				const res = await fetch(url);
+				expect(res.headers.get("content-type")).toBe("text/plain");
+				expect(await res.text()).toBe(content);
 			} finally {
 				await f.delete();
 			}

@@ -14,6 +14,11 @@ import { fromStatusCode, getResponseError } from "./error.ts";
 import assertNever from "./assertNever.ts";
 import type { ObjectKey } from "./branded.ts";
 
+export type S3FileWriteOptions = {
+	/** Content-Type of the file. */
+	type?: string;
+};
+
 // TODO: If we want to hack around, we can use this to access the private implementation of the "get stream" algorithm used by Node.js's blob internally
 // We probably have to do this some day if the fetch implementation is moved to internals.
 // If this happens, fetch will probably use `[kHandle].getReader()` instead of .stream() to read the Blob
@@ -278,9 +283,13 @@ export default class S3File {
 
 	/**
 	 * @param {ByteSource} data
+	 * @param {S3FileWriteOptions} [options.type] Defaults to the Content-Type that was used to create the {@link S3File} instance.
 	 * @returns {Promise<void>}
 	 */
-	async write(data: ByteSource): Promise<void> {
+	async write(
+		data: ByteSource,
+		options: S3FileWriteOptions = {},
+	): Promise<void> {
 		/** @type {AbortSignal | undefined} */
 		const signal: AbortSignal | undefined = undefined; // TODO: Take this as param
 
@@ -290,7 +299,7 @@ export default class S3File {
 		return await this.#client[write](
 			this.#path,
 			bytes,
-			this.#contentType,
+			options.type ?? this.#contentType,
 			length,
 			hash,
 			this.#start,

@@ -5,6 +5,7 @@ export {
 	type S3FileDeleteOptions,
 	type S3FileExistsOptions,
 	type S3StatOptions,
+	type S3FileWriteOptions,
 } from "./S3File.ts";
 export {
 	default as S3Client,

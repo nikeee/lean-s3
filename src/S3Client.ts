@@ -63,8 +63,10 @@ export type OverridableS3ClientOptions = Pick<
 	"region" | "bucket" | "endpoint"
 >;
 
-// biome-ignore lint/complexity/noBannedTypes: TODO
-export type CreateFileInstanceOptions = {}; // TODO
+export type CreateFileInstanceOptions = {
+	/** Content-Type of the file. */
+	type: string;
+};
 
 export type DeleteObjectsOptions = {
 	bucket?: string;
@@ -404,7 +406,6 @@ export default class S3Client {
 	 *
 	 * lean-s3 does not enforce these restrictions.
 	 *
-	 * @param {Partial<CreateFileInstanceOptions>} [_options] TODO
 	 * @example
 	 * ```js
 	 * const file = client.file("image.jpg");
@@ -412,19 +413,17 @@ export default class S3Client {
 	 *
 	 * const configFile = client.file("config.json", {
 	 *   type: "application/json",
-	 *   acl: "private"
 	 * });
 	 * ```
 	 */
-	file(path: string, _options?: Partial<CreateFileInstanceOptions>): S3File {
+	file(path: string, options: Partial<CreateFileInstanceOptions> = {}): S3File {
 		// TODO: Check max path length in bytes
-		// TODO: Use options
 		return new S3File(
 			this,
 			ensureValidPath(path),
 			undefined,
 			undefined,
-			undefined,
+			options.type ?? undefined,
 		);
 	}
 

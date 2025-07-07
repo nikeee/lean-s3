@@ -27,6 +27,7 @@ export function buildRequestUrl(
 			.replaceAll("(", "%28")
 			.replaceAll(")", "%29")
 			.replaceAll(",", "%2C")
+			.replaceAll("'", "%27")
 			.replaceAll("*", "%2A");
 
 	return result;

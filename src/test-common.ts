@@ -96,7 +96,6 @@ export function runTests(
 						"Content-Type": "application/json",
 					},
 				});
-				console.log("res", await res.text());
 				expect(res.ok).toBe(true);
 			}
 
@@ -133,6 +132,29 @@ export function runTests(
 						"application/octet-stream",
 					);
 				}
+			} finally {
+				await f.delete();
+			}
+		});
+
+		test("put with content type and conent-length", async () => {
+			const body = crypto.randomUUID();
+			const f = client.file(`${runId}/content-type-with-length.json`);
+			try {
+				const url = client.presign(`${runId}/content-type-with-length.json`, {
+					method: "PUT",
+					type: "application/json",
+					contentLength: body.length,
+				});
+
+				const res = await fetch(url, {
+					method: "PUT",
+					body,
+					headers: {
+						"Content-Type": "application/json",
+					},
+				});
+				expect(res.ok).toBe(true);
 			} finally {
 				await f.delete();
 			}

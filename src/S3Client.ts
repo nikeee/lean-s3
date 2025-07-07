@@ -366,6 +366,8 @@ export default class S3Client {
 		};
 	}
 
+	// Maybe future API
+	/*
 	cors = {
 		get: () => {
 			// TODO: GetBucketCors
@@ -377,6 +379,7 @@ export default class S3Client {
 			// TODO: DeleteBucketCors
 		},
 	};
+	*/
 
 	/**
 	 * Creates an S3File instance for the given path.

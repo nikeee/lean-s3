@@ -18,6 +18,7 @@ import type {
 	BucketLocationInfo,
 	ChecksumAlgorithm,
 	ChecksumType,
+	ContentDisposition,
 	HttpMethod,
 	PresignableHttpMethod,
 	StorageClass,
@@ -91,6 +92,7 @@ export interface S3FilePresignOptions {
 	acl?: Acl;
 	/** `Content-Type` of the file. */
 	type?: string;
+	contentDisposition?: ContentDisposition;
 }
 
 export type ListObjectsOptions = {
@@ -450,6 +452,7 @@ export default class S3Client {
 			region: regionOverride,
 			bucket: bucketOverride,
 			endpoint: endpointOverride,
+			contentDisposition,
 		}: S3FilePresignOptions & OverridableS3ClientOptions = {},
 	): string {
 		if (typeof contentLength === "number") {

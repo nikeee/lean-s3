@@ -107,9 +107,11 @@ export interface S3FilePresignOptions {
 		 * @example
 		 * ```js
 		 * client.presign("foo.jpg", {
-		 *   contentDisposition: {
-		 *     type: "attachment",
-		 *     filename: "download.jpg",
+		 *   response: {
+		 *     contentDisposition: {
+		 *       type: "attachment",
+		 *       filename: "download.jpg",
+		 *     },
 		 *   },
 		 * });
 		 * ```
@@ -460,6 +462,19 @@ export default class S3Client {
 	 * ```js
 	 * const downloadUrl = client.presign("file.pdf", {
 	 *   expiresIn: 3600 // 1 hour
+	 * });
+	 * ```
+	 *
+	 * @example
+	 * ```js
+	 * client.presign("foo.jpg", {
+	 *   expiresIn: 3600 // 1 hour
+	 *   response: {
+	 *     contentDisposition: {
+	 *       type: "attachment",
+	 *       filename: "download.jpg",
+	 *     },
+	 *   },
 	 * });
 	 * ```
 	 */

@@ -223,7 +223,9 @@ export default class S3File {
 		return new Response(this.stream()).text();
 	}
 	blob(): Promise<Blob> {
-		return new Response(this.stream()).blob();
+		return new Response(this.stream(), {
+			headers: { "Content-Type": this.#contentType },
+		}).blob();
 	}
 
 	/** @returns {ReadableStream<Uint8Array>} */

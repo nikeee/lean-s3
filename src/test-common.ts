@@ -198,14 +198,20 @@ export function runTests(
 					response: {
 						contentDisposition: {
 							type: "attachment",
-							filename: "download.json",
+							filename: "download-💾.json",
 						},
 					},
 				});
 				const res = await fetch(url);
 				expect(res.ok).toBe(true);
-				expect(res.headers.get("content-disposition")).toBe(
-					`attachment;filename="download.json";filename*=UTF-8''download.json`,
+
+				const cd = res.headers.get("content-disposition");
+				expect(cd).toBe(
+					`attachment;filename="download-%F0%9F%92%BE.json";filename*=UTF-8''download-%F0%9F%92%BE.json`,
+				);
+				// @ts-expect-error
+				expect(decodeURIComponent(cd)).toBe(
+					`attachment;filename="download-💾.json";filename*=UTF-8''download-💾.json`,
 				);
 			} finally {
 				await f.delete();

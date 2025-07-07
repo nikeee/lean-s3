@@ -32,6 +32,10 @@ import {
 	type BucketName,
 	type ObjectKey,
 } from "./branded.ts";
+import {
+	encodeURIComponentExtended,
+	getContentDispositionHeader,
+} from "./encode.ts";
 
 export const write = Symbol("write");
 export const stream = Symbol("stream");

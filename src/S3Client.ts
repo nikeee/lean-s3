@@ -1684,7 +1684,7 @@ export function buildSearchParams(
 	storageClass: StorageClass | null | undefined,
 	sessionToken: string | null | undefined,
 	acl: Acl | null | undefined,
-	responseContentDisposition: string | null | undefined = undefined,
+	responseContentDisposition: string | null | undefined,
 ): string {
 	// We tried to make these query params entirely lower-cased, just like the headers
 	// but Cloudflare R2 requires them to have this exact casing
@@ -1707,7 +1707,7 @@ export function buildSearchParams(
 		res += `&X-Amz-Content-Sha256=${contentHashStr}`;
 	}
 
-	res += `&X-Amz-Credential=${encodeURIComponent(amzCredential)}`;
+	res += `&X-Amz-Credential=${encodeURIComponentExtended(amzCredential)}`;
 	res += `&X-Amz-Date=${date.dateTime}`; // internal dateTimes don't need encoding
 	res += `&X-Amz-Expires=${expiresIn}`; // number -> no encoding
 

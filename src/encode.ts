@@ -2,14 +2,11 @@ import assertNever from "./assertNever.ts";
 import type { ContentDisposition } from "./index.ts";
 
 /**
- *
- * Ref: https://datatracker.ietf.org/doc/html/rfc5987#section-3.2
+ * Refs:
+ * - https://datatracker.ietf.org/doc/html/rfc5987#section-3.2
+ * - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Disposition
  */
-function rfc5987Encode(_value: string) {
-	throw new Error("Not implemented");
-}
-
-export function getContentDispositionHeader(value: ContentDisposition) {
+export function getContentDispositionHeader(value: ContentDisposition): string {
 	switch (value.type) {
 		case "inline":
 			return "inline";
@@ -18,7 +15,8 @@ export function getContentDispositionHeader(value: ContentDisposition) {
 			if (typeof filename === "undefined") {
 				return "attachment";
 			}
-			return `attachment ${rfc5987Encode(filename)}`;
+			const encoded = encodeURIComponent(filename);
+			return `attachment; filename="${encoded}"; filename*=UTF-8''${encoded}`;
 		}
 		default:
 			assertNever(value);

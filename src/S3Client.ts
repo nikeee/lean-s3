@@ -492,6 +492,10 @@ export default class S3Client {
 		const bucket = bucketOverride ?? options.bucket;
 		const endpoint = endpointOverride ?? options.endpoint;
 
+		const responseContentDisposition = response?.contentDisposition
+			? getContentDispositionHeader(response?.contentDisposition)
+			: undefined;
+
 		const res = buildRequestUrl(endpoint, bucket, region, path);
 
 		const query = buildSearchParams(
@@ -511,6 +515,7 @@ export default class S3Client {
 			storageClass,
 			options.sessionToken,
 			acl,
+			responseContentDisposition,
 		);
 
 		// This probably does'nt scale if there are more headers in the signature

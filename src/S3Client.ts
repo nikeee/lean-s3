@@ -90,9 +90,10 @@ export type DeleteObjectsError = {
 	versionId: string;
 };
 
-export interface S3FilePresignOptions {
+export interface S3FilePresignOptions extends OverridableS3ClientOptions {
 	contentHash?: Buffer;
 	/** Seconds. */
+	// TODO: Maybe rename this to expiresInSeconds
 	expiresIn?: number; // TODO: Maybe support Temporal.Duration once major support arrives
 	method?: PresignableHttpMethod;
 	contentLength?: number;
@@ -468,79 +469,70 @@ export default class S3Client {
 	 * });
 	 * ```
 	 */
-	presign(
-		path: string,
-		{
-			method = "GET",
-			expiresIn = 3600, // TODO: Maybe rename this to expiresInSeconds
-			storageClass,
-			contentLength,
-			type,
-			acl,
-			region: regionOverride,
-			bucket: bucketOverride,
-			endpoint: endpointOverride,
-			response,
-		}: S3FilePresignOptions & OverridableS3ClientOptions = {},
-	): string {
+	presign(path: string, optio2ns: S3FilePresignOptions = {}): string {
+		const contentLength = optio2ns.contentLength ?? undefined;
 		if (typeof contentLength === "number") {
 			if (contentLength < 0) {
 				throw new RangeError("`contentLength` must be >= 0.");
 			}
 		}
 
-		const now = new Date();
-		const date = amzDate.getAmzDate(now);
-		const options = this.#options;
+		const method = optio2ns.method ?? "GET";
+		const contentType = optio2ns.type ?? undefined;
 
-		const region = regionOverride ?? options.region;
-		const bucket = bucketOverride ?? options.bucket;
-		const endpoint = endpointOverride ?? options.endpoint;
+		const region = optio2ns.region ?? this.#options.region;
+		const bucket = optio2ns.bucket ?? this.#options.bucket;
+		const endpoint = optio2ns.endpoint ?? this.#options.endpoint;
+		const responseOptions = optio2ns.response;
 
-		const responseContentDisposition = response?.contentDisposition
-			? getContentDispositionHeader(response?.contentDisposition)
+		const contentDisposition = responseOptions?.contentDisposition;
+		const responseContentDisposition = contentDisposition
+			? getContentDispositionHeader(contentDisposition)
 			: undefined;
 
 		const res = buildRequestUrl(endpoint, bucket, region, path);
 
+		const now = new Date();
+		const date = amzDate.getAmzDate(now);
+
 		const query = buildSearchParams(
-			`${options.accessKeyId}/${date.date}/${region}/s3/aws4_request`,
+			`${this.#options.accessKeyId}/${date.date}/${region}/s3/aws4_request`,
 			date,
-			expiresIn,
-			typeof contentLength === "number" || typeof type === "string"
-				? typeof contentLength === "number" && typeof type === "string"
+			optio2ns.expiresIn ?? 3600,
+			typeof contentLength === "number" || typeof contentType === "string"
+				? typeof contentLength === "number" && typeof contentType === "string"
 					? "content-length;content-type;host"
 					: typeof contentLength === "number"
 						? "content-length;host"
-						: typeof type === "string"
+						: typeof contentType === "string"
 							? "content-type;host"
 							: "" // TODO: this should not happen, find different solution
 				: "host",
 			sign.unsignedPayload,
-			storageClass,
-			options.sessionToken,
-			acl,
+			optio2ns.storageClass,
+			this.#options.sessionToken,
+			optio2ns.acl,
 			responseContentDisposition,
 		);
 
 		// This probably does'nt scale if there are more headers in the signature
 		// But we want to take a fast-path if there is only the host header to sign
 		const dataDigest =
-			typeof contentLength === "number" || typeof type === "string"
+			typeof contentLength === "number" || typeof contentType === "string"
 				? sign.createCanonicalDataDigest(
 						method,
 						res.pathname,
 						query,
-						typeof contentLength === "number" && typeof type === "string"
+						typeof contentLength === "number" && typeof contentType === "string"
 							? {
 									"content-length": String(contentLength),
-									"content-type": type,
+									"content-type": contentType,
 									host: res.host,
 								}
 							: typeof contentLength === "number"
 								? { "content-length": String(contentLength), host: res.host }
-								: typeof type === "string"
-									? { "content-type": type, host: res.host }
+								: typeof contentType === "string"
+									? { "content-type": contentType, host: res.host }
 									: {},
 						sign.unsignedPayload,
 					)
@@ -554,8 +546,8 @@ export default class S3Client {
 		const signingKey = this.#keyCache.computeIfAbsent(
 			date,
 			region,
-			options.accessKeyId,
-			options.secretAccessKey,
+			this.#options.accessKeyId,
+			this.#options.secretAccessKey,
 		);
 
 		const signature = sign.signCanonicalDataHash(

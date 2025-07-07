@@ -88,6 +88,8 @@ export interface S3FilePresignOptions {
 	contentLength: number;
 	storageClass: StorageClass;
 	acl: Acl;
+	/** `Content-Type` of the file. */
+	type: string;
 }
 
 export type ListObjectsOptions = {
@@ -442,6 +444,7 @@ export default class S3Client {
 			expiresIn = 3600, // TODO: Maybe rename this to expiresInSeconds
 			storageClass,
 			contentLength,
+			type,
 			acl,
 			region: regionOverride,
 			bucket: bucketOverride,
@@ -468,7 +471,15 @@ export default class S3Client {
 			`${options.accessKeyId}/${date.date}/${region}/s3/aws4_request`,
 			date,
 			expiresIn,
-			typeof contentLength === "number" ? "content-length;host" : "host",
+			typeof contentLength === "number" || typeof type === "string"
+				? typeof contentLength === "number" && typeof type === "string"
+					? "content-length;content-type;host"
+					: typeof contentLength === "number"
+						? "content-length;host"
+						: typeof type === "string"
+							? "content-type;host"
+							: "" // TODO: this should not happen, find different solution
+				: "host",
 			sign.unsignedPayload,
 			storageClass,
 			options.sessionToken,
@@ -478,12 +489,22 @@ export default class S3Client {
 		// This probably does'nt scale if there are more headers in the signature
 		// But we want to take a fast-path if there is only the host header to sign
 		const dataDigest =
-			typeof contentLength === "number"
+			typeof contentLength === "number" || typeof type === "string"
 				? sign.createCanonicalDataDigest(
 						method,
 						res.pathname,
 						query,
-						{ "content-length": String(contentLength), host: res.host },
+						typeof contentLength === "number" && typeof type === "string"
+							? {
+									"content-length": String(contentLength),
+									"content-type": type,
+									host: res.host,
+								}
+							: typeof contentLength === "number"
+								? { "content-length": String(contentLength), host: res.host }
+								: typeof type === "string"
+									? { "content-type": type, host: res.host }
+									: {},
 						sign.unsignedPayload,
 					)
 				: sign.createCanonicalDataDigestHostOnly(

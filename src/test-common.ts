@@ -166,7 +166,7 @@ export function runTests(
 				hello: testId,
 			};
 
-			const key = `${runId}/${testId}/Sun Jun 15 2025 00:57:03 GMT+0200 (test)`;
+			const key = `${runId}/${testId}/Sun Jun 15 2025 00:57:03 * ' GMT+0200 (test)`;
 
 			const url = client.presign(key, { method: "PUT" });
 			const res = await fetch(url, {
@@ -182,6 +182,37 @@ export function runTests(
 			try {
 				const actual = await f.json();
 				expect(actual).toStrictEqual(expected);
+			} finally {
+				await f.delete();
+			}
+		});
+
+		test("put with content disposition", async () => {
+			const testId = crypto.randomUUID();
+			const f = client.file(`${runId}/${testId}`);
+			await f.write(crypto.randomUUID());
+
+			try {
+				const url = client.presign(`${runId}/${testId}`, {
+					method: "GET",
+					response: {
+						contentDisposition: {
+							type: "attachment",
+							filename: "download-💾.json",
+						},
+					},
+				});
+				const res = await fetch(url);
+				expect(res.ok).toBe(true);
+
+				const cd = res.headers.get("content-disposition");
+				expect(cd).toBe(
+					`attachment;filename="download-%F0%9F%92%BE.json";filename*=UTF-8''download-%F0%9F%92%BE.json`,
+				);
+				// @ts-expect-error
+				expect(decodeURIComponent(cd)).toBe(
+					`attachment;filename="download-💾.json";filename*=UTF-8''download-💾.json`,
+				);
 			} finally {
 				await f.delete();
 			}

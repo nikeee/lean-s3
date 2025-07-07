@@ -109,3 +109,19 @@ export type BucketInfo = {
 	dataRedundancy?: string;
 	type?: string;
 };
+
+/**
+ * Represents valid values for the [`Content-Disposition`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Disposition) header.
+ */
+export type ContentDisposition =
+	| AttachmentContentDisposition
+	| InlineContentDisposition;
+
+export type InlineContentDisposition = {
+	type: "inline";
+};
+
+export type AttachmentContentDisposition = {
+	type: "attachment";
+	filename?: string;
+};

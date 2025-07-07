@@ -18,6 +18,7 @@ import type {
 	BucketLocationInfo,
 	ChecksumAlgorithm,
 	ChecksumType,
+	ContentDisposition,
 	HttpMethod,
 	PresignableHttpMethod,
 	StorageClass,
@@ -31,6 +32,10 @@ import {
 	type BucketName,
 	type ObjectKey,
 } from "./branded.ts";
+import {
+	encodeURIComponentExtended,
+	getContentDispositionHeader,
+} from "./encode.ts";
 
 export const write = Symbol("write");
 export const stream = Symbol("stream");
@@ -91,6 +96,28 @@ export interface S3FilePresignOptions {
 	acl?: Acl;
 	/** `Content-Type` of the file. */
 	type?: string;
+
+	/**
+	 * Headers to set on the response of the S3 service.
+	 */
+	response?: {
+		/**
+		 * Used to set the file name that browsers display when downloading the file.
+		 *
+		 * @example
+		 * ```js
+		 * client.presign("foo.jpg", {
+		 *   response: {
+		 *     contentDisposition: {
+		 *       type: "attachment",
+		 *       filename: "download.jpg",
+		 *     },
+		 *   },
+		 * });
+		 * ```
+		 */
+		contentDisposition?: ContentDisposition;
+	};
 }
 
 export type ListObjectsOptions = {
@@ -437,6 +464,19 @@ export default class S3Client {
 	 *   expiresIn: 3600 // 1 hour
 	 * });
 	 * ```
+	 *
+	 * @example
+	 * ```js
+	 * client.presign("foo.jpg", {
+	 *   expiresIn: 3600 // 1 hour
+	 *   response: {
+	 *     contentDisposition: {
+	 *       type: "attachment",
+	 *       filename: "download.jpg",
+	 *     },
+	 *   },
+	 * });
+	 * ```
 	 */
 	presign(
 		path: string,
@@ -450,6 +490,7 @@ export default class S3Client {
 			region: regionOverride,
 			bucket: bucketOverride,
 			endpoint: endpointOverride,
+			response,
 		}: S3FilePresignOptions & OverridableS3ClientOptions = {},
 	): string {
 		if (typeof contentLength === "number") {
@@ -465,6 +506,10 @@ export default class S3Client {
 		const region = regionOverride ?? options.region;
 		const bucket = bucketOverride ?? options.bucket;
 		const endpoint = endpointOverride ?? options.endpoint;
+
+		const responseContentDisposition = response?.contentDisposition
+			? getContentDispositionHeader(response?.contentDisposition)
+			: undefined;
 
 		const res = buildRequestUrl(endpoint, bucket, region, path);
 
@@ -485,6 +530,7 @@ export default class S3Client {
 			storageClass,
 			options.sessionToken,
 			acl,
+			responseContentDisposition,
 		);
 
 		// This probably does'nt scale if there are more headers in the signature
@@ -1653,6 +1699,7 @@ export function buildSearchParams(
 	storageClass: StorageClass | null | undefined,
 	sessionToken: string | null | undefined,
 	acl: Acl | null | undefined,
+	responseContentDisposition: string | null | undefined,
 ): string {
 	// We tried to make these query params entirely lower-cased, just like the headers
 	// but Cloudflare R2 requires them to have this exact casing
@@ -1675,7 +1722,7 @@ export function buildSearchParams(
 		res += `&X-Amz-Content-Sha256=${contentHashStr}`;
 	}
 
-	res += `&X-Amz-Credential=${encodeURIComponent(amzCredential)}`;
+	res += `&X-Amz-Credential=${encodeURIComponentExtended(amzCredential)}`;
 	res += `&X-Amz-Date=${date.dateTime}`; // internal dateTimes don't need encoding
 	res += `&X-Amz-Expires=${expiresIn}`; // number -> no encoding
 
@@ -1688,6 +1735,11 @@ export function buildSearchParams(
 	if (storageClass) {
 		res += `&X-Amz-Storage-Class=${storageClass}`;
 	}
+
+	if (responseContentDisposition) {
+		res += `&response-content-disposition=${encodeURIComponentExtended(responseContentDisposition)}`;
+	}
+
 	return res;
 }
 

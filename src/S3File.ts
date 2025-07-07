@@ -80,7 +80,7 @@ export default class S3File {
 	 * @throws {S3Error} If the file does not exist or the server has some other issues.
 	 * @throws {Error} If the server returns an invalid response.
 	 */
-	async stat(options: Partial<S3StatOptions> = {}): Promise<S3Stat> {
+	async stat(options: S3StatOptions = {}): Promise<S3Stat> {
 		// TODO: Support all options
 
 		const response = await this.#client[signedRequest](
@@ -122,7 +122,7 @@ export default class S3File {
 	 *
 	 * @remarks Uses [`HeadObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html).
 	 */
-	async exists(options: Partial<S3FileExistsOptions> = {}): Promise<boolean> {
+	async exists(options: S3FileExistsOptions = {}): Promise<boolean> {
 		// TODO: Support all options
 
 		const response = await this.#client[signedRequest](
@@ -163,7 +163,7 @@ export default class S3File {
 	 * @remarks - Uses [`DeleteObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html).
 	 *          - `versionId` not supported.
 	 *
-	 * @param {Partial<S3FileDeleteOptions>} [options]
+	 * @param {S3FileDeleteOptions} [options]
 	 *
 	 * @example
 	 * ```js
@@ -179,7 +179,7 @@ export default class S3File {
 	 * }
 	 * ```
 	 */
-	async delete(options: Partial<S3FileDeleteOptions> = {}): Promise<void> {
+	async delete(options: S3FileDeleteOptions = {}): Promise<void> {
 		// TODO: Support all options
 
 		const response = await this.#client[signedRequest](
@@ -320,11 +320,11 @@ export default class S3File {
 }
 
 export interface S3FileDeleteOptions extends OverridableS3ClientOptions {
-	signal: AbortSignal;
+	signal?: AbortSignal;
 }
 export interface S3StatOptions extends OverridableS3ClientOptions {
-	signal: AbortSignal;
+	signal?: AbortSignal;
 }
 export interface S3FileExistsOptions extends OverridableS3ClientOptions {
-	signal: AbortSignal;
+	signal?: AbortSignal;
 }

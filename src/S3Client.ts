@@ -58,14 +58,13 @@ export interface S3ClientOptions {
 	secretAccessKey: string;
 	sessionToken?: string;
 }
-export type OverridableS3ClientOptions = Pick<
-	S3ClientOptions,
-	"region" | "bucket" | "endpoint"
+export type OverridableS3ClientOptions = Partial<
+	Pick<S3ClientOptions, "region" | "bucket" | "endpoint">
 >;
 
 export type CreateFileInstanceOptions = {
 	/** Content-Type of the file. */
-	type: string;
+	type?: string;
 };
 
 export type DeleteObjectsOptions = {
@@ -83,15 +82,15 @@ export type DeleteObjectsError = {
 };
 
 export interface S3FilePresignOptions {
-	contentHash: Buffer;
+	contentHash?: Buffer;
 	/** Seconds. */
-	expiresIn: number; // TODO: Maybe support Temporal.Duration once major support arrives
-	method: PresignableHttpMethod;
-	contentLength: number;
-	storageClass: StorageClass;
-	acl: Acl;
+	expiresIn?: number; // TODO: Maybe support Temporal.Duration once major support arrives
+	method?: PresignableHttpMethod;
+	contentLength?: number;
+	storageClass?: StorageClass;
+	acl?: Acl;
 	/** `Content-Type` of the file. */
-	type: string;
+	type?: string;
 }
 
 export type ListObjectsOptions = {
@@ -416,7 +415,7 @@ export default class S3Client {
 	 * });
 	 * ```
 	 */
-	file(path: string, options: Partial<CreateFileInstanceOptions> = {}): S3File {
+	file(path: string, options: CreateFileInstanceOptions = {}): S3File {
 		// TODO: Check max path length in bytes
 		return new S3File(
 			this,
@@ -451,7 +450,7 @@ export default class S3Client {
 			region: regionOverride,
 			bucket: bucketOverride,
 			endpoint: endpointOverride,
-		}: Partial<S3FilePresignOptions & OverridableS3ClientOptions> = {},
+		}: S3FilePresignOptions & OverridableS3ClientOptions = {},
 	): string {
 		if (typeof contentLength === "number") {
 			if (contentLength < 0) {

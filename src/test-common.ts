@@ -186,6 +186,29 @@ export function runTests(
 				await f.delete();
 			}
 		});
+
+		test("put with content disposition", async () => {
+			const testId = crypto.randomUUID();
+			const f = client.file(`${runId}/${testId}`);
+			await f.write(crypto.randomUUID());
+
+			try {
+				const url = client.presign(`${runId}/${testId}`, {
+					method: "GET",
+					contentDisposition: {
+						type: "attachment",
+						filename: "download.json",
+					},
+				});
+				const res = await fetch(url);
+				expect(res.ok).toBe(true);
+				expect(res.headers.get("content-disposition")).toBe(
+					`attachment;filename="download.json";filename*=UTF-8''download.json`,
+				);
+			} finally {
+				await f.delete();
+			}
+		});
 	});
 
 	test("roundtrip", async () => {

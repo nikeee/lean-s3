@@ -92,6 +92,19 @@ export interface S3FilePresignOptions {
 	acl?: Acl;
 	/** `Content-Type` of the file. */
 	type?: string;
+	/**
+	 * Used to set the file name that browsers display when downloading the file.
+	 *
+	 * @example
+	 * ```js
+	 * client.presign("foo.jpg", {
+	 *   contentDisposition: {
+	 *     type: "attachment",
+	 *     filename: "download.jpg",
+	 *   },
+	 * });
+	 * ```
+	 */
 	contentDisposition?: ContentDisposition;
 }
 
@@ -452,6 +465,7 @@ export default class S3Client {
 			region: regionOverride,
 			bucket: bucketOverride,
 			endpoint: endpointOverride,
+			// biome-ignore lint/correctness/noUnusedFunctionParameters: TODO
 			contentDisposition,
 		}: S3FilePresignOptions & OverridableS3ClientOptions = {},
 	): string {

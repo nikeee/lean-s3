@@ -123,5 +123,5 @@ export type InlineContentDisposition = {
 
 export type AttachmentContentDisposition = {
 	type: "attachment";
-	filename: string;
+	filename?: string;
 };

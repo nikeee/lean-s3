@@ -26,11 +26,10 @@ export class GarageContainer extends GenericContainer {
 
 	override async start(): Promise<StartedGarageContainer> {
 		const startedContainer = await super.start();
-		const credentials = await GarageContainer.#createAccessKey(
-			startedContainer,
-			this.adminToken,
-		);
-		// TODO: Set up initial bucket and credentials
+		const nodeId = await this.getNodeId(startedContainer);
+		await startedContainer.exec(`/garage layout assign -z dc1 -c 1G ${nodeId}`);
+		await startedContainer.exec(`/garage layout apply --version 1`);
+		const credentials = await this.#createAccessKey(startedContainer);
 		return new StartedGarageContainer(
 			startedContainer,
 			credentials.accessKeyId,
@@ -38,33 +37,46 @@ export class GarageContainer extends GenericContainer {
 		);
 	}
 
-	static async #createAccessKey(
-		container: StartedTestContainer,
-		adminToken: string,
-	) {
-		const apiBase = `http://${container.getHost()}:${container.getMappedPort(ADMIN_API_PORT)}`;
-		const res = await fetch(`${apiBase}/v2/CreateKey`, {
+	async #createAccessKey(container: StartedTestContainer) {
+		const json = await this.apiFetch(container, "/v2/CreateKey", {
 			method: "POST",
 			body: JSON.stringify({
-				allow: null,
+				allow: {
+					createBucket: true,
+				},
 				deny: null,
 				name: "testcontainer-access",
 				neverExpires: true,
 				expiration: null,
 			}),
-			headers: {
-				Authorization: `Bearer ${adminToken}`,
-				"Content-Type": "application/json",
-			},
 		});
-
-		// biome-ignore lint/suspicious/noExplicitAny: shrug
-		const json = (await res.json()) as any;
-		console.log("garage response", json);
 		return {
 			accessKeyId: json.accessKeyId,
 			secretAccessKey: json.secretAccessKey,
 		};
+	}
+
+	async getNodeId(container: StartedTestContainer) {
+		const json = await this.apiFetch(container, "/v2/GetNodeInfo?node=self");
+		return Object.keys(json.success)[0] ?? undefined;
+	}
+
+	async apiFetch(
+		container: StartedTestContainer,
+		path: string,
+		options?: RequestInit,
+		// biome-ignore lint/suspicious/noExplicitAny: shrug
+	): Promise<any> {
+		const apiBase = `http://${container.getHost()}:${container.getMappedPort(ADMIN_API_PORT)}`;
+		const res = await fetch(`${apiBase}${path}`, {
+			...options,
+			headers: {
+				"Content-Type": "application/json",
+				...options?.headers,
+				Authorization: `Bearer ${this.adminToken}`,
+			},
+		});
+		return await res.json();
 	}
 }
 

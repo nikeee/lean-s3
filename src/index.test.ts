@@ -20,24 +20,24 @@ describe("garage", async () => {
 			bucket: "none", // intentionally set to a non-existent one, so we catch cases where the bucket is not passed correctly
 		});
 		before(async () => {
-			const res = await client.createBucket("test-bucket");
+			const res = await client.createBucket("test-bucket-garage");
 			expect(res).toBeUndefined();
 		});
 		after(async () => {
-			// you can use this to debug leftover files:
-			// for await (const f of client.listIterating({
-			// 	prefix: runId.toString(),
-			// 	bucket: "test-bucket",
-			// })) {
-			// 	console.log(`Leftover: ${f.key}`);
-			// }
-
-			expect(await client.bucketExists("test-bucket")).toBe(true);
-			await client.deleteBucket("test-bucket");
-			expect(await client.bucketExists("test-bucket")).toBe(false);
+			expect(await client.bucketExists("test-bucket-garage")).toBe(true);
+			await client.deleteBucket("test-bucket-garage");
+			expect(await client.bucketExists("test-bucket-garage")).toBe(false);
 			await s3.stop();
 		});
 	}
+	runTests(
+		runId,
+		s3.getConnectionUrl(),
+		s3.getAccessKeyId(),
+		s3.getSecretAccessKey(),
+		"garage",
+		"test-bucket-garage",
+	);
 });
 
 describe("minio", async () => {

@@ -262,6 +262,14 @@ class Scanner {
 					this.inTag = false;
 					return (this.token = TokenKind.endTag);
 				case CharCode.slash:
+					if (!this.inTag) {
+						const textNode = this.#scanTextNode();
+						if (textNode === undefined) {
+							continue;
+						}
+						return textNode;
+					}
+
 					++this.pos;
 					if (this.pos < this.end) {
 						const nextChar = this.text.charCodeAt(this.pos);

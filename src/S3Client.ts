@@ -362,7 +362,7 @@ export default class S3Client {
 	#options: Readonly<InternalS3ClientOptions>;
 	#keyCache = new KeyCache();
 
-	// TODO: pass options to this in client? Do we want to expose tjhe internal use of undici?
+	// TODO: pass options to this in client? Do we want to expose the internal use of undici?
 	#dispatcher: Dispatcher = new Agent();
 
 	/**
@@ -421,21 +421,6 @@ export default class S3Client {
 			ensureValidBucketName(bucket ?? this.#options.bucket),
 		];
 	}
-
-	// Maybe future API
-	/*
-	cors = {
-		get: () => {
-			// TODO: GetBucketCors
-		},
-		set: () => {
-			// TODO: PutBucketCors
-		},
-		delete: () => {
-			// TODO: DeleteBucketCors
-		},
-	};
-	*/
 
 	/**
 	 * Creates an S3File instance for the given path.

@@ -12,7 +12,7 @@ import {
 	DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
 import { type BucketStream, Client as MinioClient } from "minio";
-import { s3mini as s3miniClient } from "s3mini";
+import { S3mini as S3miniClient } from "s3mini";
 import { S3Client as LeanS3Client } from "../dist/index.js";
 import { finished } from "node:stream/promises";
 
@@ -99,7 +99,7 @@ const leanS3 = new LeanS3Client({
 	bucket: "test-lean-s3",
 });
 
-const s3mini = new s3miniClient({
+const s3mini = new S3miniClient({
 	region,
 	endpoint: `${s3.getConnectionUrl()}/test-s3mini`,
 	accessKeyId,

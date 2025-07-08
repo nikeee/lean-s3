@@ -28,8 +28,10 @@ import { fromStatusCode, getResponseError } from "./error.ts";
 import { getAuthorizationHeader } from "./request.ts";
 import {
 	ensureValidBucketName,
+	ensureValidEndpoint,
 	ensureValidPath,
 	type BucketName,
+	type Endpoint,
 	type ObjectKey,
 } from "./branded.ts";
 import {
@@ -400,10 +402,10 @@ export default class S3Client {
 		region: string | undefined | null,
 		endpoint: string | undefined | null,
 		bucket: string | undefined | null,
-	): [region: string, endpoint: string, bucket: BucketName] {
+	): [region: string, endpoint: Endpoint, bucket: BucketName] {
 		return [
 			region ?? this.#options.region,
-			endpoint ?? this.#options.endpoint,
+			ensureValidEndpoint(endpoint ?? this.#options.endpoint),
 			ensureValidBucketName(bucket ?? this.#options.bucket),
 		];
 	}
@@ -597,6 +599,7 @@ export default class S3Client {
 		}
 
 		const response = await this[kSignedRequest](
+			ensureValidEndpoint(this.#options.endpoint),
 			"POST",
 			ensureValidPath(key),
 			"uploads=",
@@ -675,6 +678,7 @@ export default class S3Client {
 		}
 
 		const response = await this[kSignedRequest](
+			ensureValidEndpoint(this.#options.endpoint),
 			"GET",
 			"" as ObjectKey,
 			query,
@@ -736,6 +740,7 @@ export default class S3Client {
 		}
 
 		const response = await this[kSignedRequest](
+			ensureValidEndpoint(this.#options.endpoint),
 			"DELETE",
 			ensureValidPath(path),
 			`uploadId=${encodeURIComponent(uploadId)}`,
@@ -777,6 +782,7 @@ export default class S3Client {
 		});
 
 		const response = await this[kSignedRequest](
+			ensureValidEndpoint(this.#options.endpoint),
 			"POST",
 			ensureValidPath(path),
 			`uploadId=${encodeURIComponent(uploadId)}`,
@@ -831,6 +837,7 @@ export default class S3Client {
 		}
 
 		const response = await this[kSignedRequest](
+			ensureValidEndpoint(this.#options.endpoint),
 			"PUT",
 			ensureValidPath(path),
 			`partNumber=${partNumber}&uploadId=${encodeURIComponent(uploadId)}`,
@@ -896,6 +903,7 @@ export default class S3Client {
 		query += `&uploadId=${encodeURIComponent(uploadId)}`;
 
 		const response = await this[kSignedRequest](
+			ensureValidEndpoint(this.#options.endpoint),
 			"GET",
 			ensureValidPath(path),
 			// We always have a leading &, so we can slice the leading & away (this way, we have less conditionals on the hot path); see benchmark-operations.js
@@ -988,6 +996,7 @@ export default class S3Client {
 			: undefined;
 
 		const response = await this[kSignedRequest](
+			ensureValidEndpoint(this.#options.endpoint),
 			"PUT",
 			"" as ObjectKey,
 			undefined,
@@ -1022,6 +1031,7 @@ export default class S3Client {
 	 */
 	async deleteBucket(name: string, options?: BucketDeletionOptions) {
 		const response = await this[kSignedRequest](
+			ensureValidEndpoint(this.#options.endpoint),
 			"DELETE",
 			"" as ObjectKey,
 			undefined,
@@ -1057,6 +1067,7 @@ export default class S3Client {
 		options?: BucketExistsOptions,
 	): Promise<boolean> {
 		const response = await this[kSignedRequest](
+			ensureValidEndpoint(this.#options.endpoint),
 			"HEAD",
 			"" as ObjectKey,
 			undefined,
@@ -1110,6 +1121,7 @@ export default class S3Client {
 		});
 
 		const response = await this[kSignedRequest](
+			ensureValidEndpoint(this.#options.endpoint),
 			"PUT",
 			"" as ObjectKey,
 			"cors=", // "=" is needed by minio for some reason
@@ -1145,6 +1157,7 @@ export default class S3Client {
 		options: GetBucketCorsOptions = {},
 	): Promise<GetBucketCorsResult> {
 		const response = await this[kSignedRequest](
+			ensureValidEndpoint(this.#options.endpoint),
 			"GET",
 			"" as ObjectKey,
 			"cors=", // "=" is needed by minio for some reason
@@ -1173,6 +1186,7 @@ export default class S3Client {
 	 */
 	async deleteBucketCors(options: DeleteBucketCorsOptions = {}): Promise<void> {
 		const response = await this[kSignedRequest](
+			ensureValidEndpoint(this.#options.endpoint),
 			"DELETE",
 			"" as ObjectKey,
 			"cors=", // "=" is needed by minio for some reason
@@ -1282,6 +1296,7 @@ export default class S3Client {
 		}
 
 		const response = await this[kSignedRequest](
+			ensureValidEndpoint(this.#options.endpoint),
 			"GET",
 			"" as ObjectKey,
 			query,
@@ -1342,6 +1357,7 @@ export default class S3Client {
 		});
 
 		const response = await this[kSignedRequest](
+			ensureValidEndpoint(this.#options.endpoint),
 			"POST",
 			"" as ObjectKey,
 			"delete=", // "=" is needed by minio for some reason
@@ -1400,6 +1416,7 @@ export default class S3Client {
 	 * @internal
 	 */
 	async [kSignedRequest](
+		endpoint: Endpoint,
 		method: HttpMethod,
 		pathWithoutBucket: ObjectKey,
 		query: string | undefined,
@@ -1410,7 +1427,6 @@ export default class S3Client {
 		bucket: BucketName | undefined,
 		signal: AbortSignal | undefined = undefined,
 	) {
-		const endpoint = this.#options.endpoint;
 		const region = this.#options.region;
 		const effectiveBucket = bucket ?? this.#options.bucket;
 

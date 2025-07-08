@@ -38,3 +38,13 @@ export function ensureValidPath(path: string): ObjectKey {
 	}
 	return path as ObjectKey;
 }
+
+export function ensureValidEndpoint(endpoint: string): Endpoint {
+	if (typeof endpoint !== "string") {
+		throw new TypeError("`endpoint` must be a `string`.");
+	}
+	if (endpoint.length < 1) {
+		throw new RangeError("`endpoint` must be at least 1 character long.");
+	}
+	return endpoint as Endpoint;
+}

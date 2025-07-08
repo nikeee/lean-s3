@@ -101,8 +101,14 @@ export default class S3File {
 	 */
 	async stat(options: S3StatOptions = {}): Promise<S3Stat> {
 		// TODO: Support all options
+		const [region, endpoint, bucket] = this.#client[kGetEffectiveParams](
+			options.region,
+			options.endpoint,
+			options.bucket,
+		);
 
 		const response = await this.#client[kSignedRequest](
+			endpoint,
 			"HEAD",
 			this.#path,
 			undefined,
@@ -143,8 +149,14 @@ export default class S3File {
 	 */
 	async exists(options: S3FileExistsOptions = {}): Promise<boolean> {
 		// TODO: Support all options
+		const [region, endpoint, bucket] = this.#client[kGetEffectiveParams](
+			options.region,
+			options.endpoint,
+			options.bucket,
+		);
 
 		const response = await this.#client[kSignedRequest](
+			endpoint,
 			"HEAD",
 			this.#path,
 			undefined,
@@ -208,6 +220,7 @@ export default class S3File {
 		);
 
 		const response = await this.#client[kSignedRequest](
+			endpoint,
 			"DELETE",
 			this.#path,
 			undefined,

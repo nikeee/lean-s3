@@ -618,6 +618,9 @@ export default class S3Client {
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			"POST",
 			ensureValidPath(key),
 			"uploads=",
@@ -625,9 +628,6 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			options.bucket
-				? ensureValidBucketName(options.bucket)
-				: this.#options.bucket,
 			options.signal,
 		);
 
@@ -652,10 +652,6 @@ export default class S3Client {
 	async listMultipartUploads(
 		options: ListMultipartUploadsOptions = {},
 	): Promise<ListMultipartUploadsResult> {
-		const bucket = ensureValidBucketName(
-			options.bucket ?? this.#options.bucket,
-		);
-
 		// See `benchmark-operations.js` on why we don't use URLSearchParams but string concat
 		// tldr: This is faster and we know the params exactly, so we can focus our encoding
 
@@ -700,6 +696,9 @@ export default class S3Client {
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			"GET",
 			"" as ObjectKey,
 			query,
@@ -707,7 +706,6 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			bucket,
 			options.signal,
 		);
 
@@ -763,6 +761,9 @@ export default class S3Client {
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			"DELETE",
 			ensureValidPath(path),
 			`uploadId=${encodeURIComponent(uploadId)}`,
@@ -770,9 +771,6 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			options.bucket
-				? ensureValidBucketName(options.bucket)
-				: this.#options.bucket,
 			options.signal,
 		);
 
@@ -808,6 +806,9 @@ export default class S3Client {
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			"POST",
 			ensureValidPath(path),
 			`uploadId=${encodeURIComponent(uploadId)}`,
@@ -815,9 +816,6 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			options.bucket
-				? ensureValidBucketName(options.bucket)
-				: this.#options.bucket,
 			options.signal,
 		);
 
@@ -866,6 +864,9 @@ export default class S3Client {
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			"PUT",
 			ensureValidPath(path),
 			`partNumber=${partNumber}&uploadId=${encodeURIComponent(uploadId)}`,
@@ -873,9 +874,6 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			options.bucket
-				? ensureValidBucketName(options.bucket)
-				: this.#options.bucket,
 			options.signal,
 		);
 
@@ -935,6 +933,9 @@ export default class S3Client {
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			"GET",
 			ensureValidPath(path),
 			// We always have a leading &, so we can slice the leading & away (this way, we have less conditionals on the hot path); see benchmark-operations.js
@@ -943,9 +944,6 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			options.bucket
-				? ensureValidBucketName(options.bucket)
-				: this.#options.bucket,
 			options?.signal,
 		);
 
@@ -1031,6 +1029,7 @@ export default class S3Client {
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,
+			ensureValidBucketName(name),
 			"PUT",
 			"" as ObjectKey,
 			undefined,
@@ -1038,7 +1037,6 @@ export default class S3Client {
 			additionalSignedHeaders,
 			undefined,
 			undefined,
-			ensureValidBucketName(name),
 			options?.signal,
 		);
 
@@ -1067,6 +1065,7 @@ export default class S3Client {
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,
+			ensureValidBucketName(name),
 			"DELETE",
 			"" as ObjectKey,
 			undefined,
@@ -1074,7 +1073,6 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			ensureValidBucketName(name),
 			options?.signal,
 		);
 
@@ -1104,6 +1102,7 @@ export default class S3Client {
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,
+			ensureValidBucketName(name),
 			"HEAD",
 			"" as ObjectKey,
 			undefined,
@@ -1111,7 +1110,6 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			ensureValidBucketName(name),
 			options?.signal,
 		);
 
@@ -1159,6 +1157,9 @@ export default class S3Client {
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			"PUT",
 			"" as ObjectKey,
 			"cors=", // "=" is needed by minio for some reason
@@ -1168,9 +1169,6 @@ export default class S3Client {
 			},
 			undefined,
 			undefined,
-			options.bucket
-				? ensureValidBucketName(options.bucket)
-				: this.#options.bucket,
 			options.signal,
 		);
 
@@ -1198,6 +1196,9 @@ export default class S3Client {
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			"GET",
 			"" as ObjectKey,
 			"cors=", // "=" is needed by minio for some reason
@@ -1205,9 +1206,6 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			options.bucket
-				? ensureValidBucketName(options.bucket)
-				: this.#options.bucket,
 			options.signal,
 		);
 
@@ -1230,6 +1228,9 @@ export default class S3Client {
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			"DELETE",
 			"" as ObjectKey,
 			"cors=", // "=" is needed by minio for some reason
@@ -1237,9 +1238,6 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			options.bucket
-				? ensureValidBucketName(options.bucket)
-				: this.#options.bucket,
 			options.signal,
 		);
 
@@ -1343,6 +1341,9 @@ export default class S3Client {
 		const response = await this[kSignedRequest](
 			ensureValidRegion(this.#options.region),
 			ensureValidEndpoint(this.#options.endpoint),
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			"GET",
 			"" as ObjectKey,
 			query,
@@ -1350,7 +1351,6 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			ensureValidBucketName(options.bucket ?? this.#options.bucket),
 			options.signal,
 		);
 
@@ -1405,6 +1405,9 @@ export default class S3Client {
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			"POST",
 			"" as ObjectKey,
 			"delete=", // "=" is needed by minio for some reason
@@ -1414,9 +1417,6 @@ export default class S3Client {
 			},
 			undefined,
 			undefined,
-			options.bucket
-				? ensureValidBucketName(options.bucket)
-				: this.#options.bucket,
 			options.signal,
 		);
 
@@ -1467,6 +1467,7 @@ export default class S3Client {
 	async [kSignedRequest](
 		region: Region,
 		endpoint: Endpoint,
+		bucket: BucketName,
 		method: HttpMethod,
 		pathWithoutBucket: ObjectKey,
 		query: string | undefined,
@@ -1474,17 +1475,9 @@ export default class S3Client {
 		additionalSignedHeaders: Record<string, string> | undefined,
 		additionalUnsignedHeaders: Record<string, string> | undefined,
 		contentHash: Buffer | undefined,
-		bucket: BucketName | undefined,
 		signal: AbortSignal | undefined = undefined,
 	) {
-		const effectiveBucket = bucket ?? this.#options.bucket;
-
-		const url = buildRequestUrl(
-			endpoint,
-			effectiveBucket,
-			region,
-			pathWithoutBucket,
-		);
+		const url = buildRequestUrl(endpoint, bucket, region, pathWithoutBucket);
 		if (query) {
 			url.search = query;
 		}

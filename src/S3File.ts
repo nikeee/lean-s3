@@ -110,9 +110,9 @@ export default class S3File {
 		const response = await this.#client[kSignedRequest](
 			region,
 			endpoint,
+			bucket,
 			"HEAD",
 			this.#path,
-			undefined,
 			undefined,
 			undefined,
 			undefined,
@@ -159,9 +159,9 @@ export default class S3File {
 		const response = await this.#client[kSignedRequest](
 			region,
 			endpoint,
+			bucket,
 			"HEAD",
 			this.#path,
-			undefined,
 			undefined,
 			undefined,
 			undefined,
@@ -224,9 +224,9 @@ export default class S3File {
 		const response = await this.#client[kSignedRequest](
 			region,
 			endpoint,
+			bucket,
 			"DELETE",
 			this.#path,
-			undefined,
 			undefined,
 			undefined,
 			undefined,

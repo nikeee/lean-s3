@@ -30,9 +30,11 @@ import {
 	ensureValidBucketName,
 	ensureValidEndpoint,
 	ensureValidPath,
+	ensureValidRegion,
 	type BucketName,
 	type Endpoint,
 	type ObjectKey,
+	type Region,
 } from "./branded.ts";
 import {
 	encodeURIComponentExtended,
@@ -402,9 +404,9 @@ export default class S3Client {
 		region: string | undefined | null,
 		endpoint: string | undefined | null,
 		bucket: string | undefined | null,
-	): [region: string, endpoint: Endpoint, bucket: BucketName] {
+	): [region: Region, endpoint: Endpoint, bucket: BucketName] {
 		return [
-			region ?? this.#options.region,
+			ensureValidRegion(region ?? this.#options.region),
 			ensureValidEndpoint(endpoint ?? this.#options.endpoint),
 			ensureValidBucketName(bucket ?? this.#options.bucket),
 		];
@@ -599,6 +601,7 @@ export default class S3Client {
 		}
 
 		const response = await this[kSignedRequest](
+			ensureValidRegion(this.#options.region),
 			ensureValidEndpoint(this.#options.endpoint),
 			"POST",
 			ensureValidPath(key),
@@ -678,6 +681,7 @@ export default class S3Client {
 		}
 
 		const response = await this[kSignedRequest](
+			ensureValidRegion(this.#options.region),
 			ensureValidEndpoint(this.#options.endpoint),
 			"GET",
 			"" as ObjectKey,
@@ -740,6 +744,7 @@ export default class S3Client {
 		}
 
 		const response = await this[kSignedRequest](
+			ensureValidRegion(this.#options.region),
 			ensureValidEndpoint(this.#options.endpoint),
 			"DELETE",
 			ensureValidPath(path),
@@ -782,6 +787,7 @@ export default class S3Client {
 		});
 
 		const response = await this[kSignedRequest](
+			ensureValidRegion(this.#options.region),
 			ensureValidEndpoint(this.#options.endpoint),
 			"POST",
 			ensureValidPath(path),
@@ -837,6 +843,7 @@ export default class S3Client {
 		}
 
 		const response = await this[kSignedRequest](
+			ensureValidRegion(this.#options.region),
 			ensureValidEndpoint(this.#options.endpoint),
 			"PUT",
 			ensureValidPath(path),
@@ -903,6 +910,7 @@ export default class S3Client {
 		query += `&uploadId=${encodeURIComponent(uploadId)}`;
 
 		const response = await this[kSignedRequest](
+			ensureValidRegion(this.#options.region),
 			ensureValidEndpoint(this.#options.endpoint),
 			"GET",
 			ensureValidPath(path),
@@ -996,6 +1004,7 @@ export default class S3Client {
 			: undefined;
 
 		const response = await this[kSignedRequest](
+			ensureValidRegion(this.#options.region),
 			ensureValidEndpoint(this.#options.endpoint),
 			"PUT",
 			"" as ObjectKey,
@@ -1031,6 +1040,7 @@ export default class S3Client {
 	 */
 	async deleteBucket(name: string, options?: BucketDeletionOptions) {
 		const response = await this[kSignedRequest](
+			ensureValidRegion(this.#options.region),
 			ensureValidEndpoint(this.#options.endpoint),
 			"DELETE",
 			"" as ObjectKey,
@@ -1067,6 +1077,7 @@ export default class S3Client {
 		options?: BucketExistsOptions,
 	): Promise<boolean> {
 		const response = await this[kSignedRequest](
+			ensureValidRegion(this.#options.region),
 			ensureValidEndpoint(this.#options.endpoint),
 			"HEAD",
 			"" as ObjectKey,
@@ -1121,6 +1132,7 @@ export default class S3Client {
 		});
 
 		const response = await this[kSignedRequest](
+			ensureValidRegion(this.#options.region),
 			ensureValidEndpoint(this.#options.endpoint),
 			"PUT",
 			"" as ObjectKey,
@@ -1157,6 +1169,7 @@ export default class S3Client {
 		options: GetBucketCorsOptions = {},
 	): Promise<GetBucketCorsResult> {
 		const response = await this[kSignedRequest](
+			ensureValidRegion(this.#options.region),
 			ensureValidEndpoint(this.#options.endpoint),
 			"GET",
 			"" as ObjectKey,
@@ -1186,6 +1199,7 @@ export default class S3Client {
 	 */
 	async deleteBucketCors(options: DeleteBucketCorsOptions = {}): Promise<void> {
 		const response = await this[kSignedRequest](
+			ensureValidRegion(this.#options.region),
 			ensureValidEndpoint(this.#options.endpoint),
 			"DELETE",
 			"" as ObjectKey,
@@ -1296,6 +1310,7 @@ export default class S3Client {
 		}
 
 		const response = await this[kSignedRequest](
+			ensureValidRegion(this.#options.region),
 			ensureValidEndpoint(this.#options.endpoint),
 			"GET",
 			"" as ObjectKey,
@@ -1357,6 +1372,7 @@ export default class S3Client {
 		});
 
 		const response = await this[kSignedRequest](
+			ensureValidRegion(this.#options.region),
 			ensureValidEndpoint(this.#options.endpoint),
 			"POST",
 			"" as ObjectKey,
@@ -1416,6 +1432,7 @@ export default class S3Client {
 	 * @internal
 	 */
 	async [kSignedRequest](
+		region: Region,
 		endpoint: Endpoint,
 		method: HttpMethod,
 		pathWithoutBucket: ObjectKey,
@@ -1427,7 +1444,6 @@ export default class S3Client {
 		bucket: BucketName | undefined,
 		signal: AbortSignal | undefined = undefined,
 	) {
-		const region = this.#options.region;
 		const effectiveBucket = bucket ?? this.#options.bucket;
 
 		const url = buildRequestUrl(

@@ -4,10 +4,11 @@ import type S3Client from "./S3Client.ts";
 import type { ByteSource } from "./index.ts";
 import S3Stat from "./S3Stat.ts";
 import {
-	write,
-	stream,
+	kWrite,
+	kStream,
 	type OverridableS3ClientOptions,
-	signedRequest,
+	kSignedRequest,
+	kGetEffectiveParams,
 } from "./S3Client.ts";
 import { sha256 } from "./sign.ts";
 import { fromStatusCode, getResponseError } from "./error.ts";
@@ -101,7 +102,7 @@ export default class S3File {
 	async stat(options: S3StatOptions = {}): Promise<S3Stat> {
 		// TODO: Support all options
 
-		const response = await this.#client[signedRequest](
+		const response = await this.#client[kSignedRequest](
 			"HEAD",
 			this.#path,
 			undefined,
@@ -143,7 +144,7 @@ export default class S3File {
 	async exists(options: S3FileExistsOptions = {}): Promise<boolean> {
 		// TODO: Support all options
 
-		const response = await this.#client[signedRequest](
+		const response = await this.#client[kSignedRequest](
 			"HEAD",
 			this.#path,
 			undefined,
@@ -200,7 +201,13 @@ export default class S3File {
 	async delete(options: S3FileDeleteOptions = {}): Promise<void> {
 		// TODO: Support all options
 
-		const response = await this.#client[signedRequest](
+		const [region, endpoint, bucket] = this.#client[kGetEffectiveParams](
+			options.region,
+			options.endpoint,
+			options.bucket,
+		);
+
+		const response = await this.#client[kSignedRequest](
 			"DELETE",
 			this.#path,
 			undefined,
@@ -249,7 +256,7 @@ export default class S3File {
 	/** @returns {ReadableStream<Uint8Array>} */
 	stream(): ReadableStream<Uint8Array> {
 		// This function is called for every operation on the blob
-		return this.#client[stream](this.#path, undefined, this.#start, this.#end);
+		return this.#client[kStream](this.#path, undefined, this.#start, this.#end);
 	}
 
 	async #transformData(
@@ -315,7 +322,7 @@ export default class S3File {
 		// TODO: Support S3File as input and maybe use CopyObject
 		// TODO: Support Request and Response as input?
 		const [bytes, length, hash] = await this.#transformData(data);
-		return await this.#client[write](
+		return await this.#client[kWrite](
 			this.#path,
 			bytes,
 			options.type ?? this.#contentType,

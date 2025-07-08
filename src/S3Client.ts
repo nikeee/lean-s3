@@ -37,9 +37,10 @@ import {
 	getContentDispositionHeader,
 } from "./encode.ts";
 
-export const write = Symbol("write");
-export const stream = Symbol("stream");
-export const signedRequest = Symbol("signedRequest");
+export const kWrite = Symbol("kWrite");
+export const kStream = Symbol("kStream");
+export const kSignedRequest = Symbol("kSignedRequest");
+export const kGetEffectiveParams = Symbol("kGetEffectiveParams");
 
 const xmlParser = new XMLParser({
 	ignoreAttributes: true,
@@ -395,6 +396,18 @@ export default class S3Client {
 		};
 	}
 
+	[kGetEffectiveParams](
+		region: string | undefined | null,
+		endpoint: string | undefined | null,
+		bucket: string | undefined | null,
+	): [region: string, endpoint: string, bucket: BucketName] {
+		return [
+			region ?? this.#options.region,
+			endpoint ?? this.#options.endpoint,
+			ensureValidBucketName(bucket ?? this.#options.bucket),
+		];
+	}
+
 	// Maybe future API
 	/*
 	cors = {
@@ -581,7 +594,7 @@ export default class S3Client {
 		if (key.length < 1) {
 		}
 
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
 			"POST",
 			ensureValidPath(key),
 			"uploads=",
@@ -659,7 +672,7 @@ export default class S3Client {
 			query += `&prefix=${encodeURIComponent(options.prefix)}`;
 		}
 
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
 			"GET",
 			"" as ObjectKey,
 			query,
@@ -720,7 +733,7 @@ export default class S3Client {
 			throw new Error("`uploadId` is required.");
 		}
 
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
 			"DELETE",
 			ensureValidPath(path),
 			`uploadId=${encodeURIComponent(uploadId)}`,
@@ -761,7 +774,7 @@ export default class S3Client {
 			},
 		});
 
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
 			"POST",
 			ensureValidPath(path),
 			`uploadId=${encodeURIComponent(uploadId)}`,
@@ -815,7 +828,7 @@ export default class S3Client {
 			throw new Error("`partNumber` has to be a `number` which is >= 1.");
 		}
 
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
 			"PUT",
 			ensureValidPath(path),
 			`partNumber=${partNumber}&uploadId=${encodeURIComponent(uploadId)}`,
@@ -880,7 +893,7 @@ export default class S3Client {
 
 		query += `&uploadId=${encodeURIComponent(uploadId)}`;
 
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
 			"GET",
 			ensureValidPath(path),
 			// We always have a leading &, so we can slice the leading & away (this way, we have less conditionals on the hot path); see benchmark-operations.js
@@ -972,7 +985,7 @@ export default class S3Client {
 			? { "content-md5": sign.md5Base64(body) }
 			: undefined;
 
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
 			"PUT",
 			"" as ObjectKey,
 			undefined,
@@ -1006,7 +1019,7 @@ export default class S3Client {
 	 * @remarks Uses [`DeleteBucket`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucket.html).
 	 */
 	async deleteBucket(name: string, options?: BucketDeletionOptions) {
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
 			"DELETE",
 			"" as ObjectKey,
 			undefined,
@@ -1041,7 +1054,7 @@ export default class S3Client {
 		name: string,
 		options?: BucketExistsOptions,
 	): Promise<boolean> {
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
 			"HEAD",
 			"" as ObjectKey,
 			undefined,
@@ -1094,7 +1107,7 @@ export default class S3Client {
 			},
 		});
 
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
 			"PUT",
 			"" as ObjectKey,
 			"cors=", // "=" is needed by minio for some reason
@@ -1129,7 +1142,7 @@ export default class S3Client {
 	async getBucketCors(
 		options: GetBucketCorsOptions = {},
 	): Promise<GetBucketCorsResult> {
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
 			"GET",
 			"" as ObjectKey,
 			"cors=", // "=" is needed by minio for some reason
@@ -1157,7 +1170,7 @@ export default class S3Client {
 	 * @remarks Uses [`DeleteBucketCors`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketCors.html).
 	 */
 	async deleteBucketCors(options: DeleteBucketCorsOptions = {}): Promise<void> {
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
 			"DELETE",
 			"" as ObjectKey,
 			"cors=", // "=" is needed by minio for some reason
@@ -1266,7 +1279,7 @@ export default class S3Client {
 			query += `&start-after=${encodeURIComponent(options.startAfter)}`;
 		}
 
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
 			"GET",
 			"" as ObjectKey,
 			query,
@@ -1326,7 +1339,7 @@ export default class S3Client {
 			},
 		});
 
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
 			"POST",
 			"" as ObjectKey,
 			"delete=", // "=" is needed by minio for some reason
@@ -1384,7 +1397,7 @@ export default class S3Client {
 	 * TODO: Maybe move this into a separate free function?
 	 * @internal
 	 */
-	async [signedRequest](
+	async [kSignedRequest](
 		method: HttpMethod,
 		pathWithoutBucket: ObjectKey,
 		query: string | undefined,
@@ -1459,7 +1472,7 @@ export default class S3Client {
 	 * @internal
 	 * @param {import("./index.d.ts").UndiciBodyInit} data TODO
 	 */
-	async [write](
+	async [kWrite](
 		path: string,
 		data: UndiciBodyInit,
 		contentType: string,
@@ -1536,7 +1549,7 @@ export default class S3Client {
 	/**
 	 * @internal
 	 */
-	[stream](
+	[kStream](
 		path: string,
 		contentHash: Buffer | undefined,
 		rageStart: number | undefined,

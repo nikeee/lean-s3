@@ -9,9 +9,10 @@ import {
 	CreateBucketCommand,
 	GetObjectCommand,
 	ListObjectsV2Command,
+	DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
 import { type BucketStream, Client as MinioClient } from "minio";
-import { s3mini as s3miniClient } from "s3mini";
+import { S3mini as S3miniClient } from "s3mini";
 import { S3Client as LeanS3Client } from "../dist/index.js";
 import { finished } from "node:stream/promises";
 
@@ -98,7 +99,7 @@ const leanS3 = new LeanS3Client({
 	bucket: "test-lean-s3",
 });
 
-const s3mini = new s3miniClient({
+const s3mini = new S3miniClient({
 	region,
 	endpoint: `${s3.getConnectionUrl()}/test-s3mini`,
 	accessKeyId,
@@ -156,7 +157,12 @@ const clients: ClientWrapper[] = [
 			return r.KeyCount!;
 		},
 		delete: async (bucket, key) => {
-			/* TODO */
+			await awsS3.send(
+				new DeleteObjectCommand({
+					Bucket: bucket,
+					Key: key,
+				}),
+			);
 		},
 	},
 	{
@@ -175,7 +181,7 @@ const clients: ClientWrapper[] = [
 			const r = await collectObjectStream(stream);
 			return r.length;
 		},
-		delete: async (bucket, key) => {
+		delete: async (_bucket, _key) => {
 			/* TODO */
 		},
 	},
@@ -191,7 +197,7 @@ const clients: ClientWrapper[] = [
 			const r = await leanS3.list({ prefix, maxKeys: 1000 });
 			return r.keyCount;
 		},
-		delete: (bucket, key) => leanS3.file(key).delete(),
+		delete: async (_bucket, key) => await leanS3.file(key).delete(),
 	},
 	{
 		baseline: false,
@@ -203,13 +209,13 @@ const clients: ClientWrapper[] = [
 		getBuffer: async (_bucket, key) =>
 			// biome-ignore lint/style/noNonNullAssertion: :shrug:
 			(await s3mini.getObjectArrayBuffer(key))!,
-		list: async (bucket, prefix) => {
+		list: async (_bucket, prefix) => {
 			const o = await s3mini.listObjects(undefined, prefix, 1000);
 			// biome-ignore lint/style/noNonNullAssertion: :shrug:
 			return o!.length;
 		},
-		delete: async (bucket, key) => {
-			/* TODO */
+		delete: async (_bucket, key) => {
+			await s3mini.deleteObject(key);
 		},
 	},
 ];
@@ -230,12 +236,12 @@ try {
 			await buns3.file(key).write(value);
 		},
 		getBuffer: async (_bucket, key) => buns3.file(key).arrayBuffer(),
-		list: async (bucket, prefix) => {
+		list: async (_bucket, prefix) => {
 			const r = await buns3.list({ prefix, maxKeys: 1000 });
 			// biome-ignore lint/style/noNonNullAssertion: :shrug:
 			return r.keyCount!;
 		},
-		delete: (bucket, key) => buns3.file("perf/perf.txt").delete(),
+		delete: (_bucket, key) => buns3.file(key).delete(),
 	});
 } catch {
 	// Not executed in bun

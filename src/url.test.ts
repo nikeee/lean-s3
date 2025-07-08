@@ -2,15 +2,16 @@ import { describe, test } from "node:test";
 import { expect } from "expect";
 
 import { buildRequestUrl } from "./url.ts";
+import type { BucketName, Endpoint, ObjectKey, Region } from "./branded.ts";
 
 describe("buildRequestUrl", () => {
 	test("aws", () => {
 		expect(
 			buildRequestUrl(
-				"https://{bucket}.s3.{region}.amazonaws.com",
-				"mybucket",
-				"us-west-1",
-				"object.json",
+				"https://{bucket}.s3.{region}.amazonaws.com" as Endpoint,
+				"mybucket" as BucketName,
+				"us-west-1" as Region,
+				"object.json" as ObjectKey,
 			),
 		).toStrictEqual(
 			new URL("https://mybucket.s3.us-west-1.amazonaws.com/object.json"),
@@ -18,10 +19,10 @@ describe("buildRequestUrl", () => {
 
 		expect(
 			buildRequestUrl(
-				"https://{bucket}.s3.{region}.amazonaws.com",
-				"mybucket",
-				"us-west-1",
-				"/object.json",
+				"https://{bucket}.s3.{region}.amazonaws.com" as Endpoint,
+				"mybucket" as BucketName,
+				"us-west-1" as Region,
+				"/object.json" as ObjectKey,
 			),
 		).toStrictEqual(
 			new URL("https://mybucket.s3.us-west-1.amazonaws.com/object.json"),
@@ -29,10 +30,10 @@ describe("buildRequestUrl", () => {
 
 		expect(
 			buildRequestUrl(
-				"https://{bucket}.s3.us-west-1.amazonaws.com",
-				"mybucket",
-				"us-west-1",
-				"/object.json",
+				"https://{bucket}.s3.us-west-1.amazonaws.com" as Endpoint,
+				"mybucket" as BucketName,
+				"us-west-1" as Region,
+				"/object.json" as ObjectKey,
 			),
 		).toStrictEqual(
 			new URL("https://mybucket.s3.us-west-1.amazonaws.com/object.json"),
@@ -40,10 +41,10 @@ describe("buildRequestUrl", () => {
 
 		expect(
 			buildRequestUrl(
-				"https://{bucket}.s3.{region}.amazonaws.com/",
-				"/mybucket/",
-				"us-west-1",
-				"/object.json",
+				"https://{bucket}.s3.{region}.amazonaws.com/" as Endpoint,
+				"/mybucket/" as BucketName,
+				"us-west-1" as Region,
+				"/object.json" as ObjectKey,
 			),
 		).toStrictEqual(
 			new URL("https://mybucket.s3.us-west-1.amazonaws.com/object.json"),
@@ -51,10 +52,10 @@ describe("buildRequestUrl", () => {
 
 		expect(
 			buildRequestUrl(
-				"https://{bucket}.s3.{region}.amazonaws.com/",
-				"/mybucket/",
-				"eu-west-1",
-				"object.json",
+				"https://{bucket}.s3.{region}.amazonaws.com/" as Endpoint,
+				"/mybucket/" as BucketName,
+				"eu-west-1" as Region,
+				"object.json" as ObjectKey,
 			),
 		).toStrictEqual(
 			new URL("https://mybucket.s3.eu-west-1.amazonaws.com/object.json"),
@@ -64,10 +65,10 @@ describe("buildRequestUrl", () => {
 	test("r2", () => {
 		expect(
 			buildRequestUrl(
-				"https://my-account-id.r2.cloudflarestorage.com",
-				"/mybucket/",
-				"auto",
-				"object.json",
+				"https://my-account-id.r2.cloudflarestorage.com" as Endpoint,
+				"/mybucket/" as BucketName,
+				"auto" as Region,
+				"object.json" as ObjectKey,
 			),
 		).toStrictEqual(
 			new URL(
@@ -77,10 +78,10 @@ describe("buildRequestUrl", () => {
 
 		expect(
 			buildRequestUrl(
-				"https://my-account-id.r2.cloudflarestorage.com/",
-				"mybucket",
-				"auto",
-				"object.json",
+				"https://my-account-id.r2.cloudflarestorage.com/" as Endpoint,
+				"mybucket" as BucketName,
+				"auto" as Region,
+				"object.json" as ObjectKey,
 			),
 		).toStrictEqual(
 			new URL(
@@ -90,10 +91,10 @@ describe("buildRequestUrl", () => {
 
 		expect(
 			buildRequestUrl(
-				"https://my-account-id.eu.r2.cloudflarestorage.com/",
-				"mybucket",
-				"auto",
-				"object.json",
+				"https://my-account-id.eu.r2.cloudflarestorage.com/" as Endpoint,
+				"mybucket" as BucketName,
+				"auto" as Region,
+				"object.json" as ObjectKey,
 			),
 		).toStrictEqual(
 			new URL(
@@ -103,10 +104,10 @@ describe("buildRequestUrl", () => {
 
 		expect(
 			buildRequestUrl(
-				"https://{bucket}.my-account-id.r2.cloudflarestorage.com",
-				"mybucket",
-				"auto",
-				"object.json",
+				"https://{bucket}.my-account-id.r2.cloudflarestorage.com" as Endpoint,
+				"mybucket" as BucketName,
+				"auto" as Region,
+				"object.json" as ObjectKey,
 			),
 		).toStrictEqual(
 			new URL(
@@ -118,10 +119,10 @@ describe("buildRequestUrl", () => {
 	test("hetzner", () => {
 		expect(
 			buildRequestUrl(
-				"https://fsn1.your-objectstorage.com",
-				"mybucket",
-				"auto",
-				"object.json",
+				"https://fsn1.your-objectstorage.com" as Endpoint,
+				"mybucket" as BucketName,
+				"auto" as Region,
+				"object.json" as ObjectKey,
 			),
 		).toStrictEqual(
 			new URL("https://fsn1.your-objectstorage.com/mybucket/object.json"),

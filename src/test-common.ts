@@ -849,9 +849,9 @@ export function runTests(
 						bucket: expect.any(String),
 						key,
 						uploadId: res.uploadId,
-						partNumberMarker: 0,
-						nextPartNumberMarker: expect.any(Number), // Minio returns 0, localstack returns 3
-						maxParts: expect.any(Number),
+						// partNumberMarker: 0, // minio/localstack return 0, garage returns undefined
+						// nextPartNumberMarker: expect.any(Number), // minio returns 0, localstack returns 3, garage returns undefined
+						// maxParts: expect.any(Number), garage returns undefined, minio/localstack return some number
 						isTruncated: false,
 						parts: [
 							expect.objectContaining({

@@ -3,10 +3,15 @@ type Brand<B> = { [__brand]: B };
 export type Branded<T, B> = T & Brand<B>;
 
 export type BucketName = Branded<string, "BucketName">;
-
 export type ObjectKey = Branded<string, "ObjectKey">;
+export type Endpoint = Branded<string, "Endpoint">;
+export type Region = Branded<string, "Region">;
 
 export function ensureValidBucketName(name: string): BucketName {
+	if (typeof name !== "string") {
+		throw new TypeError("`name` must be a `string`.");
+	}
+
 	if (name.length < 3 || name.length > 63) {
 		throw new Error("`name` must be between 3 and 63 characters long.");
 	}
@@ -35,4 +40,24 @@ export function ensureValidPath(path: string): ObjectKey {
 		throw new RangeError("`path` must be at least 1 character long.");
 	}
 	return path as ObjectKey;
+}
+
+export function ensureValidEndpoint(endpoint: unknown): Endpoint {
+	if (typeof endpoint !== "string") {
+		throw new TypeError("`endpoint` must be a `string`.");
+	}
+	if (endpoint.length < 1) {
+		throw new RangeError("`endpoint` must be at least 1 character long.");
+	}
+	return endpoint as Endpoint;
+}
+
+export function ensureValidRegion(region: unknown): Region {
+	if (typeof region !== "string") {
+		throw new TypeError("`region` must be a `string`.");
+	}
+	if (region.length < 1) {
+		throw new RangeError("`region` must be at least 1 character long.");
+	}
+	return region as Region;
 }

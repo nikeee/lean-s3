@@ -28,9 +28,13 @@ import { fromStatusCode, getResponseError } from "./error.ts";
 import { getAuthorizationHeader } from "./request.ts";
 import {
 	ensureValidBucketName,
+	ensureValidEndpoint,
 	ensureValidPath,
+	ensureValidRegion,
 	type BucketName,
+	type Endpoint,
 	type ObjectKey,
+	type Region,
 } from "./branded.ts";
 import {
 	encodeURIComponentExtended,
@@ -47,9 +51,10 @@ import {
 	parseGetBucketCorsResult,
 } from "./parsers.ts";
 
-export const write = Symbol("write");
-export const stream = Symbol("stream");
-export const signedRequest = Symbol("signedRequest");
+export const kWrite = Symbol("kWrite");
+export const kStream = Symbol("kStream");
+export const kSignedRequest = Symbol("kSignedRequest");
+export const kGetEffectiveParams = Symbol("kGetEffectiveParams");
 
 const xmlParser = new XMLParser({
 	ignoreAttributes: true,
@@ -67,6 +72,16 @@ export interface S3ClientOptions {
 	secretAccessKey: string;
 	sessionToken?: string;
 }
+
+interface InternalS3ClientOptions {
+	bucket: BucketName;
+	region: Region;
+	endpoint: Endpoint;
+	accessKeyId: string;
+	secretAccessKey: string;
+	sessionToken?: string;
+}
+
 export type OverridableS3ClientOptions = Partial<
 	Pick<S3ClientOptions, "region" | "bucket" | "endpoint">
 >;
@@ -334,10 +349,10 @@ export type GetBucketCorsResult = {
  * ```
  */
 export default class S3Client {
-	#options: Readonly<S3ClientOptions>;
+	#options: Readonly<InternalS3ClientOptions>;
 	#keyCache = new KeyCache();
 
-	// TODO: pass options to this in client? Do we want to expose tjhe internal use of undici?
+	// TODO: pass options to this in client? Do we want to expose the internal use of undici?
 	#dispatcher: Dispatcher = new Agent();
 
 	/**
@@ -378,27 +393,24 @@ export default class S3Client {
 		this.#options = {
 			accessKeyId,
 			secretAccessKey,
-			endpoint,
-			region,
-			bucket,
+			endpoint: ensureValidEndpoint(options.endpoint),
+			region: ensureValidRegion(options.region),
+			bucket: ensureValidBucketName(options.bucket),
 			sessionToken,
 		};
 	}
 
-	// Maybe future API
-	/*
-	cors = {
-		get: () => {
-			// TODO: GetBucketCors
-		},
-		set: () => {
-			// TODO: PutBucketCors
-		},
-		delete: () => {
-			// TODO: DeleteBucketCors
-		},
-	};
-	*/
+	[kGetEffectiveParams](
+		region: string | undefined | null,
+		endpoint: string | undefined | null,
+		bucket: string | undefined | null,
+	): [region: Region, endpoint: Endpoint, bucket: BucketName] {
+		return [
+			ensureValidRegion(region ?? this.#options.region),
+			ensureValidEndpoint(endpoint ?? this.#options.endpoint),
+			ensureValidBucketName(bucket ?? this.#options.bucket),
+		];
+	}
 
 	/**
 	 * Creates an S3File instance for the given path.
@@ -469,28 +481,35 @@ export default class S3Client {
 	 * });
 	 * ```
 	 */
-	presign(path: string, optio2ns: S3FilePresignOptions = {}): string {
-		const contentLength = optio2ns.contentLength ?? undefined;
+	presign(path: string, options: S3FilePresignOptions = {}): string {
+		const contentLength = options.contentLength ?? undefined;
 		if (typeof contentLength === "number") {
 			if (contentLength < 0) {
 				throw new RangeError("`contentLength` must be >= 0.");
 			}
 		}
 
-		const method = optio2ns.method ?? "GET";
-		const contentType = optio2ns.type ?? undefined;
+		const method = options.method ?? "GET";
+		const contentType = options.type ?? undefined;
 
-		const region = optio2ns.region ?? this.#options.region;
-		const bucket = optio2ns.bucket ?? this.#options.bucket;
-		const endpoint = optio2ns.endpoint ?? this.#options.endpoint;
-		const responseOptions = optio2ns.response;
+		const [region, endpoint, bucket] = this[kGetEffectiveParams](
+			options.region,
+			options.endpoint,
+			options.bucket,
+		);
+		const responseOptions = options.response;
 
 		const contentDisposition = responseOptions?.contentDisposition;
 		const responseContentDisposition = contentDisposition
 			? getContentDispositionHeader(contentDisposition)
 			: undefined;
 
-		const res = buildRequestUrl(endpoint, bucket, region, path);
+		const res = buildRequestUrl(
+			endpoint,
+			bucket,
+			region,
+			ensureValidPath(path),
+		);
 
 		const now = new Date();
 		const date = amzDate.getAmzDate(now);
@@ -498,7 +517,7 @@ export default class S3Client {
 		const query = buildSearchParams(
 			`${this.#options.accessKeyId}/${date.date}/${region}/s3/aws4_request`,
 			date,
-			optio2ns.expiresIn ?? 3600,
+			options.expiresIn ?? 3600,
 			typeof contentLength === "number" || typeof contentType === "string"
 				? typeof contentLength === "number" && typeof contentType === "string"
 					? "content-length;content-type;host"
@@ -509,9 +528,9 @@ export default class S3Client {
 							: "" // TODO: this should not happen, find different solution
 				: "host",
 			sign.unsignedPayload,
-			optio2ns.storageClass,
+			options.storageClass,
 			this.#options.sessionToken,
-			optio2ns.acl,
+			options.acl,
 			responseContentDisposition,
 		);
 
@@ -571,7 +590,12 @@ export default class S3Client {
 		if (key.length < 1) {
 		}
 
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
+			this.#options.region,
+			this.#options.endpoint,
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			"POST",
 			ensureValidPath(key),
 			"uploads=",
@@ -579,7 +603,6 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			ensureValidBucketName(options.bucket ?? this.#options.bucket),
 			options.signal,
 		);
 
@@ -601,10 +624,6 @@ export default class S3Client {
 	async listMultipartUploads(
 		options: ListMultipartUploadsOptions = {},
 	): Promise<ListMultipartUploadsResult> {
-		const bucket = ensureValidBucketName(
-			options.bucket ?? this.#options.bucket,
-		);
-
 		// See `benchmark-operations.js` on why we don't use URLSearchParams but string concat
 		// tldr: This is faster and we know the params exactly, so we can focus our encoding
 
@@ -646,7 +665,12 @@ export default class S3Client {
 			query += `&prefix=${encodeURIComponent(options.prefix)}`;
 		}
 
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
+			this.#options.region,
+			this.#options.endpoint,
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			"GET",
 			"" as ObjectKey,
 			query,
@@ -654,7 +678,6 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			bucket,
 			options.signal,
 		);
 
@@ -682,7 +705,12 @@ export default class S3Client {
 			throw new Error("`uploadId` is required.");
 		}
 
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
+			this.#options.region,
+			this.#options.endpoint,
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			"DELETE",
 			ensureValidPath(path),
 			`uploadId=${encodeURIComponent(uploadId)}`,
@@ -690,11 +718,12 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			ensureValidBucketName(options.bucket ?? this.#options.bucket),
 			options.signal,
 		);
 
-		if (response.statusCode !== 204) {
+		// garage returns 200 even though the spec states 204 should be returned
+		// fix @ garage proposed in https://git.deuxfleurs.fr/Deuxfleurs/garage/pulls/1095
+		if (response.statusCode !== 204 && response.statusCode !== 200) {
 			throw await getResponseError(response, path);
 		}
 	}
@@ -723,7 +752,12 @@ export default class S3Client {
 			},
 		});
 
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
+			this.#options.region,
+			this.#options.endpoint,
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			"POST",
 			ensureValidPath(path),
 			`uploadId=${encodeURIComponent(uploadId)}`,
@@ -731,7 +765,6 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			ensureValidBucketName(options.bucket ?? this.#options.bucket),
 			options.signal,
 		);
 
@@ -766,7 +799,12 @@ export default class S3Client {
 			throw new Error("`partNumber` has to be a `number` which is >= 1.");
 		}
 
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
+			this.#options.region,
+			this.#options.endpoint,
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			"PUT",
 			ensureValidPath(path),
 			`partNumber=${partNumber}&uploadId=${encodeURIComponent(uploadId)}`,
@@ -774,7 +812,6 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			ensureValidBucketName(options.bucket ?? this.#options.bucket),
 			options.signal,
 		);
 
@@ -831,7 +868,12 @@ export default class S3Client {
 
 		query += `&uploadId=${encodeURIComponent(uploadId)}`;
 
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
+			this.#options.region,
+			this.#options.endpoint,
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			"GET",
 			ensureValidPath(path),
 			// We always have a leading &, so we can slice the leading & away (this way, we have less conditionals on the hot path); see benchmark-operations.js
@@ -840,7 +882,6 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			ensureValidBucketName(options.bucket ?? this.#options.bucket),
 			options?.signal,
 		);
 
@@ -905,7 +946,10 @@ export default class S3Client {
 			? { "content-md5": sign.md5Base64(body) }
 			: undefined;
 
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
+			this.#options.region,
+			this.#options.endpoint,
+			ensureValidBucketName(name),
 			"PUT",
 			"" as ObjectKey,
 			undefined,
@@ -913,7 +957,6 @@ export default class S3Client {
 			additionalSignedHeaders,
 			undefined,
 			undefined,
-			ensureValidBucketName(name),
 			options?.signal,
 		);
 
@@ -939,7 +982,10 @@ export default class S3Client {
 	 * @remarks Uses [`DeleteBucket`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucket.html).
 	 */
 	async deleteBucket(name: string, options?: BucketDeletionOptions) {
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
+			this.#options.region,
+			this.#options.endpoint,
+			ensureValidBucketName(name),
 			"DELETE",
 			"" as ObjectKey,
 			undefined,
@@ -947,7 +993,6 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			ensureValidBucketName(name),
 			options?.signal,
 		);
 
@@ -974,7 +1019,10 @@ export default class S3Client {
 		name: string,
 		options?: BucketExistsOptions,
 	): Promise<boolean> {
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
+			this.#options.region,
+			this.#options.endpoint,
+			ensureValidBucketName(name),
 			"HEAD",
 			"" as ObjectKey,
 			undefined,
@@ -982,7 +1030,6 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			ensureValidBucketName(name),
 			options?.signal,
 		);
 
@@ -1027,7 +1074,12 @@ export default class S3Client {
 			},
 		});
 
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
+			this.#options.region,
+			this.#options.endpoint,
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			"PUT",
 			"" as ObjectKey,
 			"cors=", // "=" is needed by minio for some reason
@@ -1037,7 +1089,6 @@ export default class S3Client {
 			},
 			undefined,
 			undefined,
-			ensureValidBucketName(options.bucket ?? this.#options.bucket),
 			options.signal,
 		);
 
@@ -1062,7 +1113,12 @@ export default class S3Client {
 	async getBucketCors(
 		options: GetBucketCorsOptions = {},
 	): Promise<GetBucketCorsResult> {
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
+			this.#options.region,
+			this.#options.endpoint,
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			"GET",
 			"" as ObjectKey,
 			"cors=", // "=" is needed by minio for some reason
@@ -1070,7 +1126,6 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			ensureValidBucketName(options.bucket ?? this.#options.bucket),
 			options.signal,
 		);
 
@@ -1089,7 +1144,12 @@ export default class S3Client {
 	 * @remarks Uses [`DeleteBucketCors`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketCors.html).
 	 */
 	async deleteBucketCors(options: DeleteBucketCorsOptions = {}): Promise<void> {
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
+			this.#options.region,
+			this.#options.endpoint,
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			"DELETE",
 			"" as ObjectKey,
 			"cors=", // "=" is needed by minio for some reason
@@ -1097,7 +1157,6 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			ensureValidBucketName(options.bucket ?? this.#options.bucket),
 			options.signal,
 		);
 
@@ -1198,7 +1257,12 @@ export default class S3Client {
 			query += `&start-after=${encodeURIComponent(options.startAfter)}`;
 		}
 
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
+			ensureValidRegion(this.#options.region),
+			ensureValidEndpoint(this.#options.endpoint),
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			"GET",
 			"" as ObjectKey,
 			query,
@@ -1206,7 +1270,6 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			ensureValidBucketName(options.bucket ?? this.#options.bucket),
 			options.signal,
 		);
 
@@ -1248,7 +1311,12 @@ export default class S3Client {
 			},
 		});
 
-		const response = await this[signedRequest](
+		const response = await this[kSignedRequest](
+			this.#options.region,
+			this.#options.endpoint,
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			"POST",
 			"" as ObjectKey,
 			"delete=", // "=" is needed by minio for some reason
@@ -1258,7 +1326,6 @@ export default class S3Client {
 			},
 			undefined,
 			undefined,
-			ensureValidBucketName(options.bucket ?? this.#options.bucket),
 			options.signal,
 		);
 
@@ -1298,7 +1365,10 @@ export default class S3Client {
 	 * TODO: Maybe move this into a separate free function?
 	 * @internal
 	 */
-	async [signedRequest](
+	async [kSignedRequest](
+		region: Region,
+		endpoint: Endpoint,
+		bucket: BucketName,
 		method: HttpMethod,
 		pathWithoutBucket: ObjectKey,
 		query: string | undefined,
@@ -1306,19 +1376,9 @@ export default class S3Client {
 		additionalSignedHeaders: Record<string, string> | undefined,
 		additionalUnsignedHeaders: Record<string, string> | undefined,
 		contentHash: Buffer | undefined,
-		bucket: BucketName | undefined,
 		signal: AbortSignal | undefined = undefined,
 	) {
-		const endpoint = this.#options.endpoint;
-		const region = this.#options.region;
-		const effectiveBucket = bucket ?? this.#options.bucket;
-
-		const url = buildRequestUrl(
-			endpoint,
-			effectiveBucket,
-			region,
-			pathWithoutBucket,
-		);
+		const url = buildRequestUrl(endpoint, bucket, region, pathWithoutBucket);
 		if (query) {
 			url.search = query;
 		}
@@ -1373,8 +1433,8 @@ export default class S3Client {
 	 * @internal
 	 * @param {import("./index.d.ts").UndiciBodyInit} data TODO
 	 */
-	async [write](
-		path: string,
+	async [kWrite](
+		path: ObjectKey,
 		data: UndiciBodyInit,
 		contentType: string,
 		contentLength: number | undefined,
@@ -1450,8 +1510,8 @@ export default class S3Client {
 	/**
 	 * @internal
 	 */
-	[stream](
-		path: string,
+	[kStream](
+		path: ObjectKey,
 		contentHash: Buffer | undefined,
 		rageStart: number | undefined,
 		rangeEndExclusive: number | undefined,

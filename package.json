@@ -2,7 +2,7 @@
   "name": "lean-s3",
   "author": "Niklas Mollenhauer",
   "license": "MIT",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "A server-side S3 API for the regular user.",
   "keywords": [
     "s3",
@@ -54,6 +54,7 @@
     "@typescript/native-preview": "^7.0.0-dev.20250705.1",
     "expect": "^30.0.4",
     "lefthook": "^1.11.16",
+    "testcontainers": "^11.2.1",
     "tsup": "^8.5.0",
     "tsx": "^4.20.3",
     "typedoc": "^0.28.7"

@@ -184,6 +184,7 @@ describe("xml parsing", () => {
 				code: `=equal=`,
 			});
 		});
+
 		test("leading and trailing raw quotes", () => {
 			expect(parse(`<Code>=equal"</Code>`)).toStrictEqual({
 				code: `=equal"`,
@@ -193,6 +194,18 @@ describe("xml parsing", () => {
 			});
 			expect(parse(`<Code>"=equal="</Code>`)).toStrictEqual({
 				code: `"=equal="`,
+			});
+		});
+
+		test("leading and trailing slash", () => {
+			expect(parse(`<Code>/equal</Code>`)).toStrictEqual({
+				code: `/equal`,
+			});
+			expect(parse(`<Code>equal/</Code>`)).toStrictEqual({
+				code: `equal/`,
+			});
+			expect(parse(`<Code>/equal/</Code>`)).toStrictEqual({
+				code: `/equal/`,
 			});
 		});
 	});

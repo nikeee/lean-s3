@@ -34,7 +34,7 @@ export class Parser {
 		}
 
 		if (this.token !== TokenKind.textNode) {
-			throw new Error(`Expected text content.`);
+			throw new Error(`Expected text content for tag "${tagName}".`);
 		}
 
 		const value = this.scanner.getTokenValueDecoded();

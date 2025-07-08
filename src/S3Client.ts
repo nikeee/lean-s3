@@ -1130,7 +1130,13 @@ export default class S3Client {
 		);
 
 		if (response.statusCode !== 200) {
-			throw fromStatusCode(response.statusCode, "");
+			// garage returns 204 instead of 404
+			// fix submitted here: https://git.deuxfleurs.fr/Deuxfleurs/garage/pulls/1096
+			// This workaround should be removed as soon as garage fixed the compat issue
+			throw fromStatusCode(
+				response.statusCode === 204 ? 404 : response.statusCode,
+				"",
+			);
 		}
 
 		const text = await response.body.text();

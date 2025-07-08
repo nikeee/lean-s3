@@ -58,7 +58,25 @@ export default class S3File {
 		this.#contentType = contentType ?? "application/octet-stream";
 	}
 
-	// TODO: slice overloads
+	/**
+	 * Creates and returns a new {@link S3File} containing a subset of this {@link S3File} data.
+	 * @param start The starting index.
+	 * @param end The ending index, exclusive.
+	 */
+	slice(start?: number, end?: number): S3File;
+	/**
+	 * Creates and returns a new {@link S3File} containing a subset of this {@link S3File} data.
+	 * @param start The starting index.
+	 * @param end The ending index, exclusive.
+	 * @param contentType The content-type for the new {@link S3File}.
+	 */
+	slice(start?: number, end?: number, contentType?: string): S3File;
+	/**
+	 * Creates and returns a new {@link S3File} containing a subset of this {@link S3File} data.
+	 * @param start The starting index.
+	 * @param end The ending index, exclusive.
+	 * @param contentType The content-type for the new {@link S3File}.
+	 */
 	slice(
 		start?: number | undefined,
 		end?: number | undefined,

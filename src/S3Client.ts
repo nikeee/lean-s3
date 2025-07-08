@@ -529,7 +529,12 @@ export default class S3Client {
 			? getContentDispositionHeader(contentDisposition)
 			: undefined;
 
-		const res = buildRequestUrl(endpoint, bucket, region, path);
+		const res = buildRequestUrl(
+			endpoint,
+			bucket,
+			region,
+			ensureValidPath(path),
+		);
 
 		const now = new Date();
 		const date = amzDate.getAmzDate(now);
@@ -1535,7 +1540,7 @@ export default class S3Client {
 	 * @param {import("./index.d.ts").UndiciBodyInit} data TODO
 	 */
 	async [kWrite](
-		path: string,
+		path: ObjectKey,
 		data: UndiciBodyInit,
 		contentType: string,
 		contentLength: number | undefined,
@@ -1612,7 +1617,7 @@ export default class S3Client {
 	 * @internal
 	 */
 	[kStream](
-		path: string,
+		path: ObjectKey,
 		contentHash: Buffer | undefined,
 		rageStart: number | undefined,
 		rangeEndExclusive: number | undefined,

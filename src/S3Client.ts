@@ -492,21 +492,23 @@ export default class S3Client {
 	 * });
 	 * ```
 	 */
-	presign(path: string, optio2ns: S3FilePresignOptions = {}): string {
-		const contentLength = optio2ns.contentLength ?? undefined;
+	presign(path: string, options: S3FilePresignOptions = {}): string {
+		const contentLength = options.contentLength ?? undefined;
 		if (typeof contentLength === "number") {
 			if (contentLength < 0) {
 				throw new RangeError("`contentLength` must be >= 0.");
 			}
 		}
 
-		const method = optio2ns.method ?? "GET";
-		const contentType = optio2ns.type ?? undefined;
+		const method = options.method ?? "GET";
+		const contentType = options.type ?? undefined;
 
-		const region = optio2ns.region ?? this.#options.region;
-		const bucket = optio2ns.bucket ?? this.#options.bucket;
-		const endpoint = optio2ns.endpoint ?? this.#options.endpoint;
-		const responseOptions = optio2ns.response;
+		const [region, endpoint, bucket] = this[kGetEffectiveParams](
+			options.region,
+			options.endpoint,
+			options.bucket,
+		);
+		const responseOptions = options.response;
 
 		const contentDisposition = responseOptions?.contentDisposition;
 		const responseContentDisposition = contentDisposition
@@ -521,7 +523,7 @@ export default class S3Client {
 		const query = buildSearchParams(
 			`${this.#options.accessKeyId}/${date.date}/${region}/s3/aws4_request`,
 			date,
-			optio2ns.expiresIn ?? 3600,
+			options.expiresIn ?? 3600,
 			typeof contentLength === "number" || typeof contentType === "string"
 				? typeof contentLength === "number" && typeof contentType === "string"
 					? "content-length;content-type;host"
@@ -532,9 +534,9 @@ export default class S3Client {
 							: "" // TODO: this should not happen, find different solution
 				: "host",
 			sign.unsignedPayload,
-			optio2ns.storageClass,
+			options.storageClass,
 			this.#options.sessionToken,
-			optio2ns.acl,
+			options.acl,
 			responseContentDisposition,
 		);
 

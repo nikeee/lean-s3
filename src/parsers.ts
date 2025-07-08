@@ -42,10 +42,15 @@ export const listPartsResultSpec = {
 					optional: true,
 					emptyIsAbsent: true,
 				},
-				partNumberMarker: { type: "integer", tagName: "PartNumberMarker" },
+				partNumberMarker: {
+					type: "integer",
+					tagName: "PartNumberMarker",
+					optional: true,
+				},
 				nextPartNumberMarker: {
 					type: "integer",
 					tagName: "NextPartNumberMarker",
+					optional: true,
 				},
 				maxParts: { type: "integer", tagName: "MaxParts" },
 				isTruncated: {

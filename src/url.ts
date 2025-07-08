@@ -1,10 +1,12 @@
+import type { BucketName, Endpoint, ObjectKey, Region } from "./branded.ts";
+
 export function buildRequestUrl(
-	endpoint: string,
-	bucket: string,
-	region: string,
-	path: string,
+	endpoint: Endpoint,
+	bucket: BucketName,
+	region: Region,
+	path: ObjectKey,
 ): URL {
-	const normalizedBucket = normalizePath(bucket);
+	const normalizedBucket = normalizePath(bucket) as BucketName;
 
 	const [endpointWithBucketAndRegion, replacedBucket] =
 		replaceDomainPlaceholders(endpoint, normalizedBucket, region);
@@ -34,9 +36,9 @@ export function buildRequestUrl(
 }
 
 function replaceDomainPlaceholders(
-	endpoint: string,
-	bucket: string,
-	region: string,
+	endpoint: Endpoint,
+	bucket: BucketName,
+	region: Region,
 ): [endpoint: string, replacedBucket: boolean] {
 	const replacedBucket = endpoint.includes("{bucket}");
 	return [

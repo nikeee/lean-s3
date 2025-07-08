@@ -1,10 +1,24 @@
 import { after, before, describe } from "node:test";
 import { MinioContainer } from "@testcontainers/minio";
 import { LocalstackContainer } from "@testcontainers/localstack";
+import { GenericContainer, Wait } from "testcontainers";
 import { expect } from "expect";
 
 import { runTests } from "./test-common.ts";
 import { S3Client } from "./index.ts";
+
+describe("garage", async () => {
+	const s3 = await new GenericContainer(
+		"ghcr.io/nikeee/lean-s3-ci-images/garage:latest",
+	)
+		.withWaitStrategy(Wait.forLogMessage("S3 API server listening on"))
+		.withExposedPorts(9000)
+		.start();
+
+	after(async () => {
+		await s3.stop();
+	});
+});
 
 describe("minio", async () => {
 	const s3 = await new MinioContainer(

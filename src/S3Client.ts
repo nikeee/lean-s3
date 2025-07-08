@@ -68,6 +68,16 @@ export interface S3ClientOptions {
 	secretAccessKey: string;
 	sessionToken?: string;
 }
+
+interface InternalS3ClientOptions {
+	bucket: BucketName;
+	region: Region;
+	endpoint: Endpoint;
+	accessKeyId: string;
+	secretAccessKey: string;
+	sessionToken?: string;
+}
+
 export type OverridableS3ClientOptions = Partial<
 	Pick<S3ClientOptions, "region" | "bucket" | "endpoint">
 >;
@@ -349,7 +359,7 @@ export type GetBucketCorsResult = {
  * ```
  */
 export default class S3Client {
-	#options: Readonly<S3ClientOptions>;
+	#options: Readonly<InternalS3ClientOptions>;
 	#keyCache = new KeyCache();
 
 	// TODO: pass options to this in client? Do we want to expose tjhe internal use of undici?
@@ -393,9 +403,9 @@ export default class S3Client {
 		this.#options = {
 			accessKeyId,
 			secretAccessKey,
-			endpoint,
-			region,
-			bucket,
+			endpoint: ensureValidEndpoint(options.endpoint),
+			region: ensureValidRegion(options.region),
+			bucket: ensureValidBucketName(options.bucket),
 			sessionToken,
 		};
 	}
@@ -601,8 +611,8 @@ export default class S3Client {
 		}
 
 		const response = await this[kSignedRequest](
-			ensureValidRegion(this.#options.region),
-			ensureValidEndpoint(this.#options.endpoint),
+			this.#options.region,
+			this.#options.endpoint,
 			"POST",
 			ensureValidPath(key),
 			"uploads=",
@@ -610,7 +620,9 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			ensureValidBucketName(options.bucket ?? this.#options.bucket),
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			options.signal,
 		);
 
@@ -681,8 +693,8 @@ export default class S3Client {
 		}
 
 		const response = await this[kSignedRequest](
-			ensureValidRegion(this.#options.region),
-			ensureValidEndpoint(this.#options.endpoint),
+			this.#options.region,
+			this.#options.endpoint,
 			"GET",
 			"" as ObjectKey,
 			query,
@@ -744,8 +756,8 @@ export default class S3Client {
 		}
 
 		const response = await this[kSignedRequest](
-			ensureValidRegion(this.#options.region),
-			ensureValidEndpoint(this.#options.endpoint),
+			this.#options.region,
+			this.#options.endpoint,
 			"DELETE",
 			ensureValidPath(path),
 			`uploadId=${encodeURIComponent(uploadId)}`,
@@ -753,7 +765,9 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			ensureValidBucketName(options.bucket ?? this.#options.bucket),
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			options.signal,
 		);
 
@@ -787,8 +801,8 @@ export default class S3Client {
 		});
 
 		const response = await this[kSignedRequest](
-			ensureValidRegion(this.#options.region),
-			ensureValidEndpoint(this.#options.endpoint),
+			this.#options.region,
+			this.#options.endpoint,
 			"POST",
 			ensureValidPath(path),
 			`uploadId=${encodeURIComponent(uploadId)}`,
@@ -796,7 +810,9 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			ensureValidBucketName(options.bucket ?? this.#options.bucket),
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			options.signal,
 		);
 
@@ -843,8 +859,8 @@ export default class S3Client {
 		}
 
 		const response = await this[kSignedRequest](
-			ensureValidRegion(this.#options.region),
-			ensureValidEndpoint(this.#options.endpoint),
+			this.#options.region,
+			this.#options.endpoint,
 			"PUT",
 			ensureValidPath(path),
 			`partNumber=${partNumber}&uploadId=${encodeURIComponent(uploadId)}`,
@@ -852,7 +868,9 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			ensureValidBucketName(options.bucket ?? this.#options.bucket),
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			options.signal,
 		);
 
@@ -910,8 +928,8 @@ export default class S3Client {
 		query += `&uploadId=${encodeURIComponent(uploadId)}`;
 
 		const response = await this[kSignedRequest](
-			ensureValidRegion(this.#options.region),
-			ensureValidEndpoint(this.#options.endpoint),
+			this.#options.region,
+			this.#options.endpoint,
 			"GET",
 			ensureValidPath(path),
 			// We always have a leading &, so we can slice the leading & away (this way, we have less conditionals on the hot path); see benchmark-operations.js
@@ -920,7 +938,9 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			ensureValidBucketName(options.bucket ?? this.#options.bucket),
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			options?.signal,
 		);
 
@@ -1004,8 +1024,8 @@ export default class S3Client {
 			: undefined;
 
 		const response = await this[kSignedRequest](
-			ensureValidRegion(this.#options.region),
-			ensureValidEndpoint(this.#options.endpoint),
+			this.#options.region,
+			this.#options.endpoint,
 			"PUT",
 			"" as ObjectKey,
 			undefined,
@@ -1040,8 +1060,8 @@ export default class S3Client {
 	 */
 	async deleteBucket(name: string, options?: BucketDeletionOptions) {
 		const response = await this[kSignedRequest](
-			ensureValidRegion(this.#options.region),
-			ensureValidEndpoint(this.#options.endpoint),
+			this.#options.region,
+			this.#options.endpoint,
 			"DELETE",
 			"" as ObjectKey,
 			undefined,
@@ -1077,8 +1097,8 @@ export default class S3Client {
 		options?: BucketExistsOptions,
 	): Promise<boolean> {
 		const response = await this[kSignedRequest](
-			ensureValidRegion(this.#options.region),
-			ensureValidEndpoint(this.#options.endpoint),
+			this.#options.region,
+			this.#options.endpoint,
 			"HEAD",
 			"" as ObjectKey,
 			undefined,
@@ -1132,8 +1152,8 @@ export default class S3Client {
 		});
 
 		const response = await this[kSignedRequest](
-			ensureValidRegion(this.#options.region),
-			ensureValidEndpoint(this.#options.endpoint),
+			this.#options.region,
+			this.#options.endpoint,
 			"PUT",
 			"" as ObjectKey,
 			"cors=", // "=" is needed by minio for some reason
@@ -1143,7 +1163,9 @@ export default class S3Client {
 			},
 			undefined,
 			undefined,
-			ensureValidBucketName(options.bucket ?? this.#options.bucket),
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			options.signal,
 		);
 
@@ -1169,8 +1191,8 @@ export default class S3Client {
 		options: GetBucketCorsOptions = {},
 	): Promise<GetBucketCorsResult> {
 		const response = await this[kSignedRequest](
-			ensureValidRegion(this.#options.region),
-			ensureValidEndpoint(this.#options.endpoint),
+			this.#options.region,
+			this.#options.endpoint,
 			"GET",
 			"" as ObjectKey,
 			"cors=", // "=" is needed by minio for some reason
@@ -1178,7 +1200,9 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			ensureValidBucketName(options.bucket ?? this.#options.bucket),
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			options.signal,
 		);
 
@@ -1199,8 +1223,8 @@ export default class S3Client {
 	 */
 	async deleteBucketCors(options: DeleteBucketCorsOptions = {}): Promise<void> {
 		const response = await this[kSignedRequest](
-			ensureValidRegion(this.#options.region),
-			ensureValidEndpoint(this.#options.endpoint),
+			this.#options.region,
+			this.#options.endpoint,
 			"DELETE",
 			"" as ObjectKey,
 			"cors=", // "=" is needed by minio for some reason
@@ -1208,7 +1232,9 @@ export default class S3Client {
 			undefined,
 			undefined,
 			undefined,
-			ensureValidBucketName(options.bucket ?? this.#options.bucket),
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			options.signal,
 		);
 
@@ -1372,8 +1398,8 @@ export default class S3Client {
 		});
 
 		const response = await this[kSignedRequest](
-			ensureValidRegion(this.#options.region),
-			ensureValidEndpoint(this.#options.endpoint),
+			this.#options.region,
+			this.#options.endpoint,
 			"POST",
 			"" as ObjectKey,
 			"delete=", // "=" is needed by minio for some reason
@@ -1383,7 +1409,9 @@ export default class S3Client {
 			},
 			undefined,
 			undefined,
-			ensureValidBucketName(options.bucket ?? this.#options.bucket),
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 			options.signal,
 		);
 

@@ -8,6 +8,10 @@ export type Endpoint = Branded<string, "Endpoint">;
 export type Region = Branded<string, "Region">;
 
 export function ensureValidBucketName(name: string): BucketName {
+	if (typeof name !== "string") {
+		throw new TypeError("`name` must be a `string`.");
+	}
+
 	if (name.length < 3 || name.length > 63) {
 		throw new Error("`name` must be between 3 and 63 characters long.");
 	}
@@ -38,7 +42,7 @@ export function ensureValidPath(path: string): ObjectKey {
 	return path as ObjectKey;
 }
 
-export function ensureValidEndpoint(endpoint: string): Endpoint {
+export function ensureValidEndpoint(endpoint: unknown): Endpoint {
 	if (typeof endpoint !== "string") {
 		throw new TypeError("`endpoint` must be a `string`.");
 	}
@@ -48,7 +52,7 @@ export function ensureValidEndpoint(endpoint: string): Endpoint {
 	return endpoint as Endpoint;
 }
 
-export function ensureValidRegion(region: string): Region {
+export function ensureValidRegion(region: unknown): Region {
 	if (typeof region !== "string") {
 		throw new TypeError("`region` must be a `string`.");
 	}

@@ -6,6 +6,8 @@ export type BucketName = Branded<string, "BucketName">;
 
 export type ObjectKey = Branded<string, "ObjectKey">;
 
+export type Endpoint = Branded<string, "Endpoint">;
+
 export function ensureValidBucketName(name: string): BucketName {
 	if (name.length < 3 || name.length > 63) {
 		throw new Error("`name` must be between 3 and 63 characters long.");

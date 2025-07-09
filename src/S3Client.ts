@@ -303,6 +303,8 @@ export type ListObjectsResult = {
 };
 
 export type BucketCreationOptions = {
+	endpoint?: string;
+	region?: string;
 	locationConstraint?: string;
 	location?: BucketLocationInfo;
 	info?: BucketInfo;
@@ -953,7 +955,7 @@ export default class S3Client {
 	 * @throws {S3Error} If the bucket could not be created, e.g. if it already exists.
 	 * @remarks Uses [`CreateBucket`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html)
 	 */
-	async createBucket(name: string, options?: BucketCreationOptions) {
+	async createBucket(name: string, options: BucketCreationOptions = {}) {
 		let body: string | undefined;
 		if (options) {
 			const location =
@@ -989,8 +991,10 @@ export default class S3Client {
 			: undefined;
 
 		const response = await this[kSignedRequest](
-			this.#options.region,
-			this.#options.endpoint,
+			options.region ? ensureValidRegion(options.region) : this.#options.region,
+			options.endpoint
+				? ensureValidEndpoint(options.endpoint)
+				: this.#options.endpoint,
 			ensureValidBucketName(name),
 			"PUT",
 			"" as ObjectKey,
@@ -999,7 +1003,7 @@ export default class S3Client {
 			additionalSignedHeaders,
 			undefined,
 			undefined,
-			options?.signal,
+			options.signal,
 		);
 
 		if (400 <= response.statusCode && response.statusCode < 500) {

@@ -2,6 +2,8 @@ declare const __brand: unique symbol;
 type Brand<B> = { [__brand]: B };
 export type Branded<T, B> = T & Brand<B>;
 
+export type AccessKeyId = Branded<string, "AccessKeyId">;
+export type SecretAccessKey = Branded<string, "SecretAccessKey">;
 export type BucketName = Branded<string, "BucketName">;
 export type ObjectKey = Branded<string, "ObjectKey">;
 export type Endpoint = Branded<string, "Endpoint">;
@@ -30,6 +32,32 @@ export function ensureValidBucketName(bucket: string): BucketName {
 		throw new Error("`bucket` must not contain two adjacent periods (..)");
 	}
 	return bucket as BucketName;
+}
+
+export function ensureValidAccessKeyId(accessKeyId: string): AccessKeyId {
+	if (typeof accessKeyId !== "string") {
+		throw new TypeError("`AccessKeyId` is required and must be a `string`.");
+	}
+	if (accessKeyId.length < 1) {
+		throw new RangeError("`AccessKeyId` must be at least 1 character long.");
+	}
+	return accessKeyId as AccessKeyId;
+}
+
+export function ensureValidSecretAccessKey(
+	secretAccessKey: string,
+): SecretAccessKey {
+	if (typeof secretAccessKey !== "string") {
+		throw new TypeError(
+			"`SecretAccessKey` is required and must be a `string`.",
+		);
+	}
+	if (secretAccessKey.length < 1) {
+		throw new RangeError(
+			"`SecretAccessKey` must be at least 1 character long.",
+		);
+	}
+	return secretAccessKey as SecretAccessKey;
 }
 
 export function ensureValidPath(path: string): ObjectKey {

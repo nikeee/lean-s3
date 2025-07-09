@@ -27,14 +27,18 @@ import type {
 import { fromStatusCode, getResponseError } from "./error.ts";
 import { getAuthorizationHeader } from "./request.ts";
 import {
+	ensureValidAccessKeyId,
 	ensureValidBucketName,
 	ensureValidEndpoint,
 	ensureValidPath,
 	ensureValidRegion,
+	ensureValidSecretAccessKey,
+	type AccessKeyId,
 	type BucketName,
 	type Endpoint,
 	type ObjectKey,
 	type Region,
+	type SecretAccessKey,
 } from "./branded.ts";
 import {
 	encodeURIComponentExtended,
@@ -73,8 +77,8 @@ interface InternalS3ClientOptions {
 	bucket: BucketName;
 	region: Region;
 	endpoint: Endpoint;
-	accessKeyId: string;
-	secretAccessKey: string;
+	accessKeyId: AccessKeyId;
+	secretAccessKey: SecretAccessKey;
 	sessionToken?: string;
 }
 
@@ -385,8 +389,8 @@ export default class S3Client {
 		}
 
 		this.#options = {
-			accessKeyId,
-			secretAccessKey,
+			accessKeyId: ensureValidAccessKeyId(options.accessKeyId),
+			secretAccessKey: ensureValidSecretAccessKey(options.secretAccessKey),
 			endpoint: ensureValidEndpoint(options.endpoint),
 			region: ensureValidRegion(options.region),
 			bucket: ensureValidBucketName(options.bucket),
@@ -1472,7 +1476,7 @@ export default class S3Client {
 					authorization: getAuthorizationHeader(
 						this.#keyCache,
 						method,
-						url.pathname,
+						url.pathname as ObjectKey,
 						query ?? "",
 						now,
 						headersToBeSigned,
@@ -1541,7 +1545,7 @@ export default class S3Client {
 					authorization: getAuthorizationHeader(
 						this.#keyCache,
 						"PUT",
-						url.pathname,
+						url.pathname as ObjectKey,
 						url.search,
 						now,
 						headersToBeSigned,
@@ -1625,7 +1629,7 @@ export default class S3Client {
 						authorization: getAuthorizationHeader(
 							this.#keyCache,
 							"GET",
-							url.pathname,
+							url.pathname as ObjectKey,
 							url.search,
 							now,
 							headersToBeSigned,

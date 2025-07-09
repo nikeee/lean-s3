@@ -417,9 +417,9 @@ export default class S3Client {
 		bucket: string | undefined | null,
 	): [region: Region, endpoint: Endpoint, bucket: BucketName] {
 		return [
-			ensureValidRegion(region ?? this.#options.region),
-			ensureValidEndpoint(endpoint ?? this.#options.endpoint),
-			ensureValidBucketName(bucket ?? this.#options.bucket),
+			region ? ensureValidRegion(region) : this.#options.region,
+			endpoint ? ensureValidEndpoint(endpoint) : this.#options.endpoint,
+			bucket ? ensureValidBucketName(bucket) : this.#options.bucket,
 		];
 	}
 

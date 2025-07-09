@@ -1,8 +1,8 @@
 import { after, before, describe } from "node:test";
 import { expect } from "expect";
 
-import { runTests } from "./test-common.ts";
-import { S3Client } from "./index.ts";
+import { runTests } from "./common.ts";
+import { S3Client } from "../index.ts";
 import { CephContainer } from "./CephContainer.ts";
 
 describe("ceph", async () => {

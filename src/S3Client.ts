@@ -410,6 +410,7 @@ export default class S3Client {
 		};
 	}
 
+	/** @internal */
 	[kGetEffectiveParams](
 		region: string | undefined | null,
 		endpoint: string | undefined | null,

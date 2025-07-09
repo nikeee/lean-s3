@@ -596,9 +596,6 @@ export default class S3Client {
 		key: string,
 		options: CreateMultipartUploadOptions = {},
 	): Promise<CreateMultipartUploadResult> {
-		if (key.length < 1) {
-		}
-
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,

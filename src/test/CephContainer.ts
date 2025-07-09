@@ -18,6 +18,9 @@ const MGR_USERNAME = "admin";
 const MGR_PASSWORD = "admin";
 const CEPH_DEMO_UID = "admin";
 
+/**
+ * @remarks We use 127.0.0.1 instead of this.getHost() and stuff because ceph uses "localhost" wrongly as a bucket name.
+ */
 export class CephContainer extends GenericContainer {
 	constructor() {
 		super("clevercloud/testcontainer-ceph:reef-20250526");
@@ -30,7 +33,14 @@ export class CephContainer extends GenericContainer {
 				MGR_PASSWORD: MGR_PASSWORD,
 				NETWORK_AUTO_DETECT: "1",
 			})
-			.withWaitStrategy(Wait.forLogMessage("Dashboard API is working"));
+			.withWaitStrategy(
+				Wait.forAll([
+					Wait.forLogMessage("Dashboard API is working"),
+					Wait.forHttp("/", RGW_PORT)
+						.withHeaders({ host: "127.0.0.1" })
+						.forStatusCode(200),
+				]),
+			);
 	}
 
 	override async start(): Promise<StartedCephContainer> {
@@ -53,6 +63,6 @@ export class StartedCephContainer extends AbstractStartedContainer {
 	}
 
 	getRGWUri(): string {
-		return `http://${this.getHost()}:${this.getMappedPort(RGW_PORT)}`;
+		return `http://127.0.0.1:${this.getMappedPort(RGW_PORT)}`;
 	}
 }

@@ -1,4 +1,10 @@
 import type { AmzDate } from "./AmzDate.ts";
+import type {
+	AccessKeyId,
+	ObjectKey,
+	Region,
+	SecretAccessKey,
+} from "./branded.ts";
 import type { HttpMethod } from "./index.ts";
 import type KeyCache from "./KeyCache.ts";
 
@@ -7,14 +13,14 @@ import * as sign from "./sign.ts";
 export function getAuthorizationHeader(
 	keyCache: KeyCache,
 	method: HttpMethod,
-	path: string,
+	path: ObjectKey,
 	query: string,
 	date: AmzDate,
 	sortedSignedHeaders: Record<string, string>,
-	region: string,
+	region: Region,
 	contentHashStr: string,
-	accessKeyId: string,
-	secretAccessKey: string,
+	accessKeyId: AccessKeyId,
+	secretAccessKey: SecretAccessKey,
 ) {
 	const dataDigest = sign.createCanonicalDataDigest(
 		method,

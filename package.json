@@ -2,7 +2,7 @@
   "name": "lean-s3",
   "author": "Niklas Mollenhauer",
   "license": "MIT",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "description": "A server-side S3 API for the regular user.",
   "keywords": [
     "s3",
@@ -35,7 +35,7 @@
   "scripts": {
     "build": "tsup",
     "test": "tsgo && tsx --test src/*.test.ts src/*/*.test.ts",
-    "test:integration": "tsgo && tsx --test src/test.integration.ts",
+    "test:integration": "tsgo && tsx --test src/test/test.integration.ts",
     "ci": "biome ci ./src",
     "docs": "typedoc",
     "lint": "biome lint ./src",
@@ -47,13 +47,13 @@
     "undici": "^7.11.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.0.6",
-    "@testcontainers/localstack": "^11.2.0",
-    "@testcontainers/minio": "^11.2.0",
+    "@biomejs/biome": "2.1.1",
+    "@testcontainers/localstack": "^11.2.1",
+    "@testcontainers/minio": "^11.2.1",
     "@types/node": "^24.0.10",
-    "@typescript/native-preview": "^7.0.0-dev.20250705.1",
+    "@typescript/native-preview": "^7.0.0-dev.20250708.1",
     "expect": "^30.0.4",
-    "lefthook": "^1.11.16",
+    "lefthook": "^1.12.0",
     "testcontainers": "^11.2.1",
     "tsup": "^8.5.0",
     "tsx": "^4.20.3",

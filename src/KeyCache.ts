@@ -1,5 +1,6 @@
 import * as sign from "./sign.ts";
 import type { AmzDate } from "./AmzDate.ts";
+import type { AccessKeyId, Region, SecretAccessKey } from "./branded.ts";
 
 export default class KeyCache {
 	#lastNumericDay = -1;
@@ -7,9 +8,9 @@ export default class KeyCache {
 
 	computeIfAbsent(
 		date: AmzDate,
-		region: string,
-		accessKeyId: string,
-		secretAccessKey: string,
+		region: Region,
+		accessKeyId: AccessKeyId,
+		secretAccessKey: SecretAccessKey,
 	): Buffer {
 		if (date.numericDayStart !== this.#lastNumericDay) {
 			this.#keys.clear();

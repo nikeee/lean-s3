@@ -100,12 +100,8 @@ export default class S3File {
 	 * @throws {Error} If the server returns an invalid response.
 	 */
 	async stat(options: S3StatOptions = {}): Promise<S3Stat> {
-		// TODO: Support all options
-		const [region, endpoint, bucket] = this.#client[kGetEffectiveParams](
-			options.region,
-			options.endpoint,
-			options.bucket,
-		);
+		const [region, endpoint, bucket] =
+			this.#client[kGetEffectiveParams](options);
 
 		const response = await this.#client[kSignedRequest](
 			region,
@@ -149,12 +145,8 @@ export default class S3File {
 	 * @remarks Uses [`HeadObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html).
 	 */
 	async exists(options: S3FileExistsOptions = {}): Promise<boolean> {
-		// TODO: Support all options
-		const [region, endpoint, bucket] = this.#client[kGetEffectiveParams](
-			options.region,
-			options.endpoint,
-			options.bucket,
-		);
+		const [region, endpoint, bucket] =
+			this.#client[kGetEffectiveParams](options);
 
 		const response = await this.#client[kSignedRequest](
 			region,
@@ -213,13 +205,8 @@ export default class S3File {
 	 * ```
 	 */
 	async delete(options: S3FileDeleteOptions = {}): Promise<void> {
-		// TODO: Support all options
-
-		const [region, endpoint, bucket] = this.#client[kGetEffectiveParams](
-			options.region,
-			options.endpoint,
-			options.bucket,
-		);
+		const [region, endpoint, bucket] =
+			this.#client[kGetEffectiveParams](options);
 
 		const response = await this.#client[kSignedRequest](
 			region,
@@ -349,16 +336,6 @@ export default class S3File {
 			signal,
 		);
 	}
-
-	/*
-	// Future API?
-	setTags(): Promise<void> {
-		throw new Error("Not implemented");
-	}
-	getTags(): Promise<unknown> {
-		throw new Error("Not implemented");
-	}
-	*/
 }
 
 export interface S3FileDeleteOptions extends OverridableS3ClientOptions {

@@ -4,8 +4,8 @@ import { describe, before, after } from "node:test";
 
 import { expect } from "expect";
 
-import { runTests } from "./test-common.ts";
-import { S3Client } from "./index.ts";
+import { runTests } from "./common.ts";
+import { S3Client } from "../index.ts";
 
 const env = process.env;
 

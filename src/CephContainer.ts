@@ -20,7 +20,7 @@ const MGR_PASSWORD = "admin";
 const CEPH_DEMO_UID = "admin";
 
 export class CephContainer extends GenericContainer {
-	constructor(features: string[] = ["radosgw", "rbd"]) {
+	constructor(features: string[] = ["radosgw rbd"]) {
 		super("clevercloud/testcontainer-ceph:reef-20250526");
 		this.withExposedPorts(MON_PORT, RGW_PORT, MGR_PORT)
 			.withEnvironment({
@@ -41,10 +41,6 @@ export class CephContainer extends GenericContainer {
 }
 
 export class StartedCephContainer extends AbstractStartedContainer {
-	getDashboardApiUrl(): string {
-		return `http://${this.getHost()}:${this.getMappedPort(MGR_PORT)}/api`;
-	}
-
 	getRGWAccessKey(): string {
 		return CEPH_RGW_ACCESS_KEY;
 	}
@@ -57,19 +53,7 @@ export class StartedCephContainer extends AbstractStartedContainer {
 		return CEPH_DEMO_UID;
 	}
 
-	getRGWPort(): number {
-		return this.getMappedPort(RGW_PORT);
-	}
-
-	getRGWHost(): string {
-		return this.getHost();
-	}
-
-	getRGWProtocol(): string {
-		return CEPH_RGW_PROTOCOL;
-	}
-
 	getRGWUri(): string {
-		return `${this.getRGWProtocol()}://${this.getRGWHost()}:${this.getRGWPort()}`;
+		return `${CEPH_RGW_PROTOCOL}://${this.getHost()}:${this.getMappedPort(RGW_PORT)}`;
 	}
 }

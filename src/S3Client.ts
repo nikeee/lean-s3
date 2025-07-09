@@ -1461,7 +1461,7 @@ export default class S3Client {
 		additionalSignedHeaders: Record<string, string> | undefined,
 		additionalUnsignedHeaders: Record<string, string> | undefined,
 		contentHash: Buffer | undefined,
-		signal: AbortSignal | undefined = undefined,
+		signal: AbortSignal | undefined,
 	) {
 		const url = buildRequestUrl(endpoint, bucket, region, pathWithoutBucket);
 		if (query) {

@@ -14,17 +14,16 @@ const MGR_PORT = 8080;
 
 const CEPH_RGW_ACCESS_KEY = "radosgwadmin";
 const CEPH_RGW_SECRET_KEY = "radosgwadmin";
-const CEPH_RGW_PROTOCOL = "http";
 const MGR_USERNAME = "admin";
 const MGR_PASSWORD = "admin";
 const CEPH_DEMO_UID = "admin";
 
 export class CephContainer extends GenericContainer {
-	constructor(features: string[] = ["radosgw rbd"]) {
+	constructor() {
 		super("clevercloud/testcontainer-ceph:reef-20250526");
 		this.withExposedPorts(MON_PORT, RGW_PORT, MGR_PORT)
 			.withEnvironment({
-				FEATURES: features.join(" "),
+				FEATURES: "radosgw rbd",
 				ACCESS_KEY: CEPH_RGW_ACCESS_KEY,
 				SECRET_KEY: CEPH_RGW_SECRET_KEY,
 				MGR_USERNAME: MGR_USERNAME,
@@ -54,6 +53,6 @@ export class StartedCephContainer extends AbstractStartedContainer {
 	}
 
 	getRGWUri(): string {
-		return `${CEPH_RGW_PROTOCOL}://${this.getHost()}:${this.getMappedPort(RGW_PORT)}`;
+		return `http://${this.getHost()}:${this.getMappedPort(RGW_PORT)}`;
 	}
 }

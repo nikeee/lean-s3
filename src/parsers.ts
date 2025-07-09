@@ -115,6 +115,11 @@ export const parseListBucketResult = buildParser({
 					item: {
 						type: "object",
 						children: {
+							//#region returned by ceph
+							rgwxTag: { type: "ignored", tagName: "RgwxTag", optional: true },
+							type: { type: "ignored", tagName: "Type", optional: true },
+							//#endregion
+
 							key: { type: "string", tagName: "Key" },
 							size: { type: "integer", tagName: "Size" },
 							lastModified: { type: "date", tagName: "LastModified" },

@@ -16,6 +16,32 @@ export class Parser {
 	//#region primitives
 
 	/** Assumes {@link TokenKind.startTag} was already consumed. */
+	parseIgnoredTag(tagName: string): void {
+		this.parseIdentifier(tagName);
+
+		if (this.token === TokenKind.endSelfClosing) {
+			this.nextToken();
+			return;
+		}
+
+		this.parseExpected(TokenKind.endTag);
+
+		if (this.token === TokenKind.startClosingTag) {
+			this.nextToken();
+			this.parseIdentifier(tagName);
+			this.parseExpected(TokenKind.endTag);
+			return;
+		}
+
+		if (this.token !== TokenKind.textNode) {
+			throw new Error(`Expected text content for tag "${tagName}".`);
+		}
+
+		this.nextToken();
+		this.parseClosingTag(tagName);
+	}
+
+	/** Assumes {@link TokenKind.startTag} was already consumed. */
 	parseStringTag(tagName: string): string | undefined {
 		this.parseIdentifier(tagName);
 

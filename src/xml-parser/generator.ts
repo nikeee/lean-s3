@@ -10,6 +10,7 @@ function emitSpecParser(
 	}
 
 	switch (spec.type) {
+		case "ignored":
 		case "string":
 		case "integer":
 		case "boolean":
@@ -29,6 +30,8 @@ function emitParserCall(
 	globals: Map<unknown, string>,
 ): string {
 	switch (spec.type) {
+		case "ignored":
+			return `this.parseIgnoredTag(${asLiteral(tagName)})`;
 		case "string":
 			return `(this.parseStringTag(${asLiteral(tagName)})${spec.emptyIsAbsent ? " || undefined" : ""})`;
 		case "integer":
@@ -245,6 +248,7 @@ type ParseSpec<T extends string> =
 	| ObjectSpec<T>
 	| ArraySpec<T>
 	| StringSpec
+	| IgnoredSpec
 	| BooleanSpec
 	| IntegerSpec
 	| DateSpec;
@@ -267,6 +271,11 @@ type ArraySpec<T extends string> = {
 	optional?: boolean;
 	defaultEmpty?: boolean;
 	item: ParseSpec<T>;
+};
+type IgnoredSpec = {
+	type: "ignored";
+	tagName?: string;
+	optional: true;
 };
 type StringSpec = {
 	type: "string";

@@ -412,14 +412,16 @@ export default class S3Client {
 
 	/** @internal */
 	[kGetEffectiveParams](
-		region: string | undefined | null,
-		endpoint: string | undefined | null,
-		bucket: string | undefined | null,
+		options: OverridableS3ClientOptions,
 	): [region: Region, endpoint: Endpoint, bucket: BucketName] {
 		return [
-			region ? ensureValidRegion(region) : this.#options.region,
-			endpoint ? ensureValidEndpoint(endpoint) : this.#options.endpoint,
-			bucket ? ensureValidBucketName(bucket) : this.#options.bucket,
+			options.region ? ensureValidRegion(options.region) : this.#options.region,
+			options.endpoint
+				? ensureValidEndpoint(options.endpoint)
+				: this.#options.endpoint,
+			options.bucket
+				? ensureValidBucketName(options.bucket)
+				: this.#options.bucket,
 		];
 	}
 
@@ -503,11 +505,7 @@ export default class S3Client {
 		const method = options.method ?? "GET";
 		const contentType = options.type ?? undefined;
 
-		const [region, endpoint, bucket] = this[kGetEffectiveParams](
-			options.region,
-			options.endpoint,
-			options.bucket,
-		);
+		const [region, endpoint, bucket] = this[kGetEffectiveParams](options);
 		const responseOptions = options.response;
 
 		const contentDisposition = responseOptions?.contentDisposition;

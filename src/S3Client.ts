@@ -375,29 +375,13 @@ export default class S3Client {
 			throw new Error("`options` is required.");
 		}
 
-		const {
-			accessKeyId,
-			secretAccessKey,
-			endpoint,
-			region,
-			bucket,
-			sessionToken,
-		} = options;
+		const { accessKeyId, secretAccessKey, sessionToken } = options;
 
 		if (!accessKeyId || typeof accessKeyId !== "string") {
 			throw new Error("`accessKeyId` is required.");
 		}
 		if (!secretAccessKey || typeof secretAccessKey !== "string") {
 			throw new Error("`secretAccessKey` is required.");
-		}
-		if (!endpoint || typeof endpoint !== "string") {
-			throw new Error("`endpoint` is required.");
-		}
-		if (!region || typeof region !== "string") {
-			throw new Error("`region` is required.");
-		}
-		if (!bucket || typeof bucket !== "string") {
-			throw new Error("`bucket` is required.");
 		}
 
 		this.#options = {

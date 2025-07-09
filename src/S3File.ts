@@ -340,16 +340,6 @@ export default class S3File {
 			signal,
 		);
 	}
-
-	/*
-	// Future API?
-	setTags(): Promise<void> {
-		throw new Error("Not implemented");
-	}
-	getTags(): Promise<unknown> {
-		throw new Error("Not implemented");
-	}
-	*/
 }
 
 export interface S3FileDeleteOptions extends OverridableS3ClientOptions {

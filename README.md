@@ -186,7 +186,7 @@ Popular S3 provider missing? Open an issue or file a PR!
 To ensure compability across various providers and self-hosted services, all tests are run on:
 - Amazon AWS S3
 - Hetzner Object Storage
-- Cloudlfare R2
+- Cloudflare R2
 - Garage
 - Minio
 - LocalStack

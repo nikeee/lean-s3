@@ -881,13 +881,19 @@ export function runTests(
 		});
 	});
 
-	/*
 	describe("bucket cors", () => {
 		test("put", async () => {
+			if (bucket.endsWith("-minio")) {
+				// Minio doesn't support PutBucketCors
+				// https://github.com/minio/minio/issues/15874#issuecomment-1279771751
+				return;
+			}
+
 			await client.putBucketCors([
 				{
 					allowedMethods: ["GET"],
 					allowedOrigins: ["https://example.com"],
+					allowedHeaders: ["*"],
 				},
 			]);
 
@@ -896,9 +902,16 @@ export function runTests(
 				{
 					allowedMethods: ["GET"],
 					allowedOrigins: ["https://example.com"],
+					allowedHeaders: undefined,
+					exposeHeaders: undefined,
+					id: undefined,
+					maxAgeSeconds: undefined,
 				},
 			]);
+
+			await client.deleteBucketCors();
+
+			expect(client.getBucketCors()).rejects.toThrow();
 		});
 	});
-	*/
 }

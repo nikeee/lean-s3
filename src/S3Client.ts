@@ -1593,7 +1593,6 @@ export default class S3Client {
 
 		const headersToBeSigned = prepareHeadersForSigning({
 			"amz-sdk-invocation-id": crypto.randomUUID(),
-			// TODO: Maybe support retries and do "amz-sdk-request": attempt=1; max=3
 			host: url.host,
 			range,
 			// Hetzner doesnt care if the x-amz-content-sha256 header is missing, R2 requires it to be present

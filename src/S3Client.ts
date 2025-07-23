@@ -92,6 +92,7 @@ export type CreateFileInstanceOptions = {
 };
 
 export type DeleteObjectsOptions = {
+	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
 	/** Signal to abort the request. */
 	signal?: AbortSignal;
@@ -142,6 +143,7 @@ export interface S3FilePresignOptions extends OverridableS3ClientOptions {
 }
 
 export type ListObjectsOptions = {
+	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
 
 	prefix?: string;
@@ -164,6 +166,7 @@ export type ListObjectsIteratingOptions = {
 
 //#region ListMultipartUploads
 export type ListMultipartUploadsOptions = {
+	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
 	delimiter?: string;
 	keyMarker?: string;
@@ -207,6 +210,7 @@ export type MultipartUpload = {
 };
 //#endregion
 export type CreateMultipartUploadOptions = {
+	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
 	/** Signal to abort the request. */
 	signal?: AbortSignal;
@@ -217,12 +221,14 @@ export type CreateMultipartUploadResult = {
 	uploadId: string;
 };
 export type AbortMultipartUploadOptions = {
+	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
 	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 
 export type CompleteMultipartUploadOptions = {
+	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
 	/** Signal to abort the request. */
 	signal?: AbortSignal;
@@ -244,6 +250,7 @@ export type MultipartUploadPart = {
 	etag: string;
 };
 export type UploadPartOptions = {
+	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
 	/** Signal to abort the request. */
 	signal?: AbortSignal;
@@ -261,6 +268,7 @@ export type ListPartsOptions = {
 	signal?: AbortSignal;
 };
 export type ListPartsResult = {
+	/** Name of the bucket. */
 	bucket: string;
 	key: string;
 	uploadId: string;
@@ -312,7 +320,9 @@ export type ListObjectsResult = {
 };
 
 export type BucketCreationOptions = {
+	/** Set this to override the {@link S3ClientOptions#endpoint} that was passed on creation of the {@link S3Client}. */
 	endpoint?: string;
+	/** Set this to override the {@link S3ClientOptions#region} that was passed on creation of the {@link S3Client}. */
 	region?: string;
 	locationConstraint?: string;
 	location?: BucketLocationInfo;
@@ -344,17 +354,20 @@ export type BucketCorsRule = {
 	maxAgeSeconds?: number;
 };
 export type PutBucketCorsOptions = {
+	/** The CORS rules to set on the bucket. Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
 	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 export type DeleteBucketCorsOptions = {
+	/** The name of the bucket to delete the CORS configuration for. Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
 	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 
 export type GetBucketCorsOptions = {
+	/** The name of the bucket to get the CORS configuration for. Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
 	/** Signal to abort the request. */
 	signal?: AbortSignal;

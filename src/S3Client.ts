@@ -65,10 +65,41 @@ const xmlBuilder = new XMLBuilder({
 });
 
 export interface S3ClientOptions {
+	/**
+	 * The name of the bucket to operate on.
+	 * Different S3 providers have different limitations here. All of them require:
+	 * - Must be at least 3 characters long
+	 * - Must be at most 63 characters long
+	 * - Must not start or end with a period (.)
+	 * - Must not contain two adjacent periods (..)
+	 * - Must only contain lowercase letters, numbers, periods (.), and hyphens (-).
+	 */
 	bucket: string;
+	/**
+	 * The region of the S3 bucket.
+	 * This value is required for all S3 proviers. However, some providers don't care about its actual value.
+	 */
 	region: string;
+	/**
+	 * The endpoint of the S3 service.
+	 * This is required for all S3 providers.
+	 *
+	 * The endpoint may contain placeholders for region and bucket, which will be replaced internally with the actual values on use.
+	 *
+	 * For example, `https://{bucket}.s3.{region}.example.com` will be replaced with `https://my-bucket.s3.us-west-2.example.com` if the bucket is `my-bucket` and the region is `us-west-2`.
+	 *
+	 * If the endpoint does not contain a placeholder for the bucket, it will be appended to the path of the endpoint.
+	 */
 	endpoint: string;
+	/**
+	 * The access key ID to use for authentication.
+	 * This is required for all S3 providers.
+	 */
 	accessKeyId: string;
+	/**
+	 * The secret access key to use for authentication.
+	 * This is required for all S3 providers.
+	 */
 	secretAccessKey: string;
 	sessionToken?: string;
 }

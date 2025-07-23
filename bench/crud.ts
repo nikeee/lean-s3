@@ -181,9 +181,7 @@ const clients: ClientWrapper[] = [
 			const r = await collectObjectStream(stream);
 			return r.length;
 		},
-		delete: async (_bucket, _key) => {
-			/* TODO */
-		},
+		delete: async (bucket, key) => await minio.removeObject(bucket, key),
 	},
 	{
 		baseline: true,

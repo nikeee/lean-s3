@@ -67,9 +67,6 @@ export function prepareHeadersForSigning(
 ): Record<string, string> {
 	const result: Record<string, string> = {};
 
-	// TODO: `Object.keys(headersUnsorted).sort()` is constant in our case,
-	// maybe we want to move this somewhere else to avoid sorting every time
-
 	for (const header of Object.keys(unfilteredHeadersUnsorted).sort()) {
 		const v = unfilteredHeadersUnsorted[header];
 		if (v !== undefined && v !== null) {

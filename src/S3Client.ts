@@ -22,7 +22,6 @@ import type {
 	HttpMethod,
 	PresignableHttpMethod,
 	StorageClass,
-	UndiciBodyInit,
 } from "./index.ts";
 import { fromStatusCode, getResponseError } from "./error.ts";
 import { getAuthorizationHeader } from "./request.ts";
@@ -44,6 +43,7 @@ import {
 	encodeURIComponentExtended,
 	getContentDispositionHeader,
 } from "./encode.ts";
+import type { Readable } from "node:stream";
 
 import {
 	parseListPartsResult,
@@ -69,10 +69,41 @@ const xmlBuilder = new XMLBuilder({
 });
 
 export interface S3ClientOptions {
+	/**
+	 * The name of the bucket to operate on.
+	 * Different S3 providers have different limitations here. All of them require:
+	 * - Must be at least 3 characters long
+	 * - Must be at most 63 characters long
+	 * - Must not start or end with a period (.)
+	 * - Must not contain two adjacent periods (..)
+	 * - Must only contain lowercase letters, numbers, periods (.), and hyphens (-).
+	 */
 	bucket: string;
+	/**
+	 * The region of the S3 bucket.
+	 * This value is required for all S3 proviers. However, some providers don't care about its actual value.
+	 */
 	region: string;
+	/**
+	 * The endpoint of the S3 service.
+	 * This is required for all S3 providers.
+	 *
+	 * The endpoint may contain placeholders for region and bucket, which will be replaced internally with the actual values on use.
+	 *
+	 * For example, `https://{bucket}.s3.{region}.example.com` will be replaced with `https://my-bucket.s3.us-west-2.example.com` if the bucket is `my-bucket` and the region is `us-west-2`.
+	 *
+	 * If the endpoint does not contain a placeholder for the bucket, it will be appended to the path of the endpoint.
+	 */
 	endpoint: string;
+	/**
+	 * The access key ID to use for authentication.
+	 * This is required for all S3 providers.
+	 */
 	accessKeyId: string;
+	/**
+	 * The secret access key to use for authentication.
+	 * This is required for all S3 providers.
+	 */
 	secretAccessKey: string;
 	sessionToken?: string;
 }
@@ -96,7 +127,9 @@ export type CreateFileInstanceOptions = {
 };
 
 export type DeleteObjectsOptions = {
+	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 export type DeleteObjectsResult = {
@@ -145,6 +178,7 @@ export interface S3FilePresignOptions extends OverridableS3ClientOptions {
 }
 
 export type ListObjectsOptions = {
+	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
 
 	prefix?: string;
@@ -152,19 +186,23 @@ export type ListObjectsOptions = {
 	delimiter?: string;
 	startAfter?: string;
 	continuationToken?: string;
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 export type ListObjectsIteratingOptions = {
+	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
 
 	prefix?: string;
 	startAfter?: string;
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 	internalPageSize?: number;
 };
 
 //#region ListMultipartUploads
 export type ListMultipartUploadsOptions = {
+	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
 	delimiter?: string;
 	keyMarker?: string;
@@ -172,9 +210,11 @@ export type ListMultipartUploadsOptions = {
 	prefix?: string;
 	uploadIdMarker?: string;
 
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 export type ListMultipartUploadsResult = {
+	/** Name of the bucket the operation was used upon. */
 	bucket?: string;
 	keyMarker?: string;
 	uploadIdMarker?: string;
@@ -207,33 +247,51 @@ export type MultipartUpload = {
 };
 //#endregion
 export type CreateMultipartUploadOptions = {
+	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 export type CreateMultipartUploadResult = {
+	/** Name of the bucket the multipart upload was created in. */
 	bucket: string;
 	key: string;
 	uploadId: string;
 };
 export type AbortMultipartUploadOptions = {
+	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 
 export type CompleteMultipartUploadOptions = {
+	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 export type CompleteMultipartUploadResult = {
+	/** The URI that identifies the newly created object. */
 	location?: string;
+	/** Name of the bucket the multipart upload was created in. */
 	bucket?: string;
 	key?: string;
 	etag?: string;
+	/** The Base64 encoded, 32-bit `CRC32` checksum of the part. This checksum is present if the multipart upload request was created with the `CRC32` checksum algorithm. */
 	checksumCRC32?: string;
+	/** The Base64 encoded, 32-bit `CRC32C` checksum of the part. This checksum is present if the multipart upload request was created with the `CRC32C` checksum algorithm. */
 	checksumCRC32C?: string;
+	/** The Base64 encoded, 64-bit `CRC64NVME` checksum of the part. This checksum is present if the multipart upload request was created with the `CRC64NVME` checksum algorithm. */
 	checksumCRC64NVME?: string;
+	/** The Base64 encoded, 160-bit `SHA1` checksum of the part. This checksum is present if the multipart upload request was created with the `SHA1` checksum algorithm. */
 	checksumSHA1?: string;
+	/** The Base64 encoded, 256-bit `SHA256` checksum of the part. This checksum is present if the multipart upload request was created with the `SHA256` checksum algorithm. */
 	checksumSHA256?: string;
+	/**
+	 * The checksum type, which determines how part-level checksums are combined to create an object-level checksum for multipart objects.
+	 * You can use this header as a data integrity check to verify that the checksum type that is received is the same checksum type that was specified during the `CreateMultipartUpload` request.
+	 */
 	checksumType?: ChecksumType;
 };
 export type MultipartUploadPart = {
@@ -241,7 +299,9 @@ export type MultipartUploadPart = {
 	etag: string;
 };
 export type UploadPartOptions = {
+	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 export type UploadPartResult = {
@@ -252,10 +312,13 @@ export type ListPartsOptions = {
 	maxParts?: number;
 	partNumberMarker?: string;
 
+	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 export type ListPartsResult = {
+	/** Name of the bucket. */
 	bucket: string;
 	key: string;
 	uploadId: string;
@@ -264,10 +327,15 @@ export type ListPartsResult = {
 	maxParts?: number;
 	isTruncated: boolean;
 	parts: Array<{
+		/** The Base64 encoded, 32-bit `CRC32` checksum of the part. This checksum is present if the multipart upload request was created with the `CRC32` checksum algorithm. */
 		checksumCRC32?: string;
+		/** The Base64 encoded, 32-bit `CRC32C` checksum of the part. This checksum is present if the multipart upload request was created with the `CRC32C` checksum algorithm. */
 		checksumCRC32C?: string;
+		/** The Base64 encoded, 64-bit `CRC64NVME` checksum of the part. This checksum is present if the multipart upload request was created with the `CRC64NVME` checksum algorithm. */
 		checksumCRC64NVME?: string;
+		/** The Base64 encoded, 160-bit `SHA1` checksum of the part. This checksum is present if the multipart upload request was created with the `SHA1` checksum algorithm. */
 		checksumSHA1?: string;
+		/** The Base64 encoded, 256-bit `SHA256` checksum of the part. This checksum is present if the multipart upload request was created with the `SHA256` checksum algorithm. */
 		checksumSHA256?: string;
 		etag: string;
 		lastModified: Date;
@@ -293,17 +361,22 @@ export type ListObjectsResult = {
 };
 
 export type BucketCreationOptions = {
+	/** Set this to override the {@link S3ClientOptions#endpoint} that was passed on creation of the {@link S3Client}. */
 	endpoint?: string;
+	/** Set this to override the {@link S3ClientOptions#region} that was passed on creation of the {@link S3Client}. */
 	region?: string;
 	locationConstraint?: string;
 	location?: BucketLocationInfo;
 	info?: BucketInfo;
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 export type BucketDeletionOptions = {
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 export type BucketExistsOptions = {
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 
@@ -322,16 +395,22 @@ export type BucketCorsRule = {
 	maxAgeSeconds?: number;
 };
 export type PutBucketCorsOptions = {
+	/** The CORS rules to set on the bucket. Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 export type DeleteBucketCorsOptions = {
+	/** The name of the bucket to delete the CORS configuration for. Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 
 export type GetBucketCorsOptions = {
+	/** The name of the bucket to get the CORS configuration for. Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 export type GetBucketCorsResult = {
@@ -762,7 +841,7 @@ export default class S3Client {
 	async uploadPart(
 		path: string,
 		uploadId: string,
-		data: UndiciBodyInit,
+		data: string | Buffer | Uint8Array | Readable,
 		partNumber: number,
 		options: UploadPartOptions = {},
 	): Promise<UploadPartResult> {
@@ -1357,7 +1436,7 @@ export default class S3Client {
 		method: HttpMethod,
 		pathWithoutBucket: ObjectKey,
 		query: string | undefined,
-		body: UndiciBodyInit | undefined,
+		body: string | Buffer | Uint8Array | Readable | undefined,
 		additionalSignedHeaders: Record<string, string> | undefined,
 		additionalUnsignedHeaders: Record<string, string> | undefined,
 		contentHash: Buffer | undefined,
@@ -1414,13 +1493,10 @@ export default class S3Client {
 		}
 	}
 
-	/**
-	 * @internal
-	 * @param {import("./index.d.ts").UndiciBodyInit} data TODO
-	 */
+	/** @internal */
 	async [kWrite](
 		path: ObjectKey,
-		data: UndiciBodyInit,
+		data: string | Buffer | Uint8Array | Readable,
 		contentType: string,
 		contentLength: number | undefined,
 		contentHash: Buffer | undefined,
@@ -1500,7 +1576,7 @@ export default class S3Client {
 		contentHash: Buffer | undefined,
 		rageStart: number | undefined,
 		rangeEndExclusive: number | undefined,
-	) {
+	): ReadableStream<Uint8Array> {
 		const bucket = this.#options.bucket;
 		const endpoint = this.#options.endpoint;
 		const region = this.#options.region;
@@ -1513,7 +1589,6 @@ export default class S3Client {
 
 		const headersToBeSigned = prepareHeadersForSigning({
 			"amz-sdk-invocation-id": crypto.randomUUID(),
-			// TODO: Maybe support retries and do "amz-sdk-request": attempt=1; max=3
 			host: url.host,
 			range,
 			// Hetzner doesnt care if the x-amz-content-sha256 header is missing, R2 requires it to be present

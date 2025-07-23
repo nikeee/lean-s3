@@ -15,11 +15,6 @@ import { fromStatusCode, getResponseError } from "./error.ts";
 import assertNever from "./assertNever.ts";
 import type { ObjectKey } from "./branded.ts";
 
-export type S3FileWriteOptions = {
-	/** Content-Type of the file. */
-	type?: string;
-};
-
 // TODO: If we want to hack around, we can use this to access the private implementation of the "get stream" algorithm used by Node.js's blob internally
 // We probably have to do this some day if the fetch implementation is moved to internals.
 // If this happens, fetch will probably use `[kHandle].getReader()` instead of .stream() to read the Blob
@@ -256,7 +251,6 @@ export default class S3File {
 		}).blob();
 	}
 
-	/** @returns {ReadableStream<Uint8Array>} */
 	stream(): ReadableStream<Uint8Array> {
 		// This function is called for every operation on the blob
 		return this.#client[kStream](this.#path, undefined, this.#start, this.#end);
@@ -266,7 +260,7 @@ export default class S3File {
 		data: ByteSource,
 	): Promise<
 		[
-			buffer: import("./index.d.ts").UndiciBodyInit,
+			buffer: string | Buffer | Uint8Array | Readable,
 			size: number | undefined,
 			hash: Buffer | undefined,
 		]
@@ -319,9 +313,6 @@ export default class S3File {
 		data: ByteSource,
 		options: S3FileWriteOptions = {},
 	): Promise<void> {
-		/** @type {AbortSignal | undefined} */
-		const signal: AbortSignal | undefined = undefined; // TODO: Take this as param
-
 		// TODO: Support S3File as input and maybe use CopyObject
 		// TODO: Support Request and Response as input?
 		const [bytes, length, hash] = await this.#transformData(data);
@@ -333,17 +324,26 @@ export default class S3File {
 			hash,
 			this.#start,
 			this.#end,
-			signal,
+			options.signal,
 		);
 	}
 }
 
 export interface S3FileDeleteOptions extends OverridableS3ClientOptions {
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 }
 export interface S3StatOptions extends OverridableS3ClientOptions {
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 }
 export interface S3FileExistsOptions extends OverridableS3ClientOptions {
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 }
+export type S3FileWriteOptions = {
+	/** Content-Type of the file. */
+	type?: string;
+	/** Signal to abort the request. */
+	signal?: AbortSignal;
+};

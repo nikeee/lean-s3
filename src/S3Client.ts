@@ -1595,7 +1595,7 @@ export default class S3Client {
 		contentHash: Buffer | undefined,
 		rageStart: number | undefined,
 		rangeEndExclusive: number | undefined,
-	) {
+	): ReadableStream<Uint8Array> {
 		const bucket = this.#options.bucket;
 		const endpoint = this.#options.endpoint;
 		const region = this.#options.region;

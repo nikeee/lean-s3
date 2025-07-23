@@ -251,7 +251,6 @@ export default class S3File {
 		}).blob();
 	}
 
-	/** @returns {ReadableStream<Uint8Array>} */
 	stream(): ReadableStream<Uint8Array> {
 		// This function is called for every operation on the blob
 		return this.#client[kStream](this.#path, undefined, this.#start, this.#end);

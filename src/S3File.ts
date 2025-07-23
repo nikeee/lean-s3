@@ -18,6 +18,8 @@ import type { ObjectKey } from "./branded.ts";
 export type S3FileWriteOptions = {
 	/** Content-Type of the file. */
 	type?: string;
+	/** Signal to abort the request. */
+	signal?: AbortSignal;
 };
 
 // TODO: If we want to hack around, we can use this to access the private implementation of the "get stream" algorithm used by Node.js's blob internally
@@ -319,9 +321,6 @@ export default class S3File {
 		data: ByteSource,
 		options: S3FileWriteOptions = {},
 	): Promise<void> {
-		/** @type {AbortSignal | undefined} */
-		const signal: AbortSignal | undefined = undefined; // TODO: Take this as param
-
 		// TODO: Support S3File as input and maybe use CopyObject
 		// TODO: Support Request and Response as input?
 		const [bytes, length, hash] = await this.#transformData(data);
@@ -333,7 +332,7 @@ export default class S3File {
 			hash,
 			this.#start,
 			this.#end,
-			signal,
+			options.signal,
 		);
 	}
 }

@@ -22,7 +22,6 @@ import type {
 	HttpMethod,
 	PresignableHttpMethod,
 	StorageClass,
-	UndiciBodyInit,
 } from "./index.ts";
 import { fromStatusCode, getResponseError } from "./error.ts";
 import { getAuthorizationHeader } from "./request.ts";
@@ -44,6 +43,7 @@ import {
 	encodeURIComponentExtended,
 	getContentDispositionHeader,
 } from "./encode.ts";
+import type { Readable } from "node:stream";
 
 export const kWrite = Symbol("kWrite");
 export const kStream = Symbol("kStream");
@@ -839,7 +839,7 @@ export default class S3Client {
 	async uploadPart(
 		path: string,
 		uploadId: string,
-		data: UndiciBodyInit,
+		data: string | Buffer | Uint8Array | Readable,
 		partNumber: number,
 		options: UploadPartOptions = {},
 	): Promise<UploadPartResult> {
@@ -1465,7 +1465,7 @@ export default class S3Client {
 		method: HttpMethod,
 		pathWithoutBucket: ObjectKey,
 		query: string | undefined,
-		body: UndiciBodyInit | undefined,
+		body: string | Buffer | Uint8Array | Readable | undefined,
 		additionalSignedHeaders: Record<string, string> | undefined,
 		additionalUnsignedHeaders: Record<string, string> | undefined,
 		contentHash: Buffer | undefined,
@@ -1522,13 +1522,10 @@ export default class S3Client {
 		}
 	}
 
-	/**
-	 * @internal
-	 * @param {import("./index.d.ts").UndiciBodyInit} data TODO
-	 */
+	/** @internal */
 	async [kWrite](
 		path: ObjectKey,
-		data: UndiciBodyInit,
+		data: string | Buffer | Uint8Array | Readable,
 		contentType: string,
 		contentLength: number | undefined,
 		contentHash: Buffer | undefined,

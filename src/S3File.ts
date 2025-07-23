@@ -260,7 +260,7 @@ export default class S3File {
 		data: ByteSource,
 	): Promise<
 		[
-			buffer: import("./index.d.ts").UndiciBodyInit,
+			buffer: string | Buffer | Uint8Array | Readable,
 			size: number | undefined,
 			hash: Buffer | undefined,
 		]

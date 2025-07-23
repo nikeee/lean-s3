@@ -186,6 +186,7 @@ export type ListObjectsOptions = {
 	signal?: AbortSignal;
 };
 export type ListObjectsIteratingOptions = {
+	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
 
 	prefix?: string;
@@ -209,6 +210,7 @@ export type ListMultipartUploadsOptions = {
 	signal?: AbortSignal;
 };
 export type ListMultipartUploadsResult = {
+	/** Name of the bucket the operation was used upon. */
 	bucket?: string;
 	keyMarker?: string;
 	uploadIdMarker?: string;
@@ -247,6 +249,7 @@ export type CreateMultipartUploadOptions = {
 	signal?: AbortSignal;
 };
 export type CreateMultipartUploadResult = {
+	/** Name of the bucket the multipart upload was created in. */
 	bucket: string;
 	key: string;
 	uploadId: string;
@@ -265,15 +268,26 @@ export type CompleteMultipartUploadOptions = {
 	signal?: AbortSignal;
 };
 export type CompleteMultipartUploadResult = {
+	/** The URI that identifies the newly created object. */
 	location?: string;
+	/** Name of the bucket the multipart upload was created in. */
 	bucket?: string;
 	key?: string;
 	etag?: string;
+	/** The Base64 encoded, 32-bit `CRC32` checksum of the part. This checksum is present if the multipart upload request was created with the `CRC32` checksum algorithm. */
 	checksumCRC32?: string;
+	/** The Base64 encoded, 32-bit `CRC32C` checksum of the part. This checksum is present if the multipart upload request was created with the `CRC32C` checksum algorithm. */
 	checksumCRC32C?: string;
+	/** The Base64 encoded, 64-bit `CRC64NVME` checksum of the part. This checksum is present if the multipart upload request was created with the `CRC64NVME` checksum algorithm. */
 	checksumCRC64NVME?: string;
+	/** The Base64 encoded, 160-bit `SHA1` checksum of the part. This checksum is present if the multipart upload request was created with the `SHA1` checksum algorithm. */
 	checksumSHA1?: string;
+	/** The Base64 encoded, 256-bit `SHA256` checksum of the part. This checksum is present if the multipart upload request was created with the `SHA256` checksum algorithm. */
 	checksumSHA256?: string;
+	/**
+	 * The checksum type, which determines how part-level checksums are combined to create an object-level checksum for multipart objects.
+	 * You can use this header as a data integrity check to verify that the checksum type that is received is the same checksum type that was specified during the `CreateMultipartUpload` request.
+	 */
 	checksumType?: ChecksumType;
 };
 export type MultipartUploadPart = {
@@ -294,6 +308,7 @@ export type ListPartsOptions = {
 	maxParts?: number;
 	partNumberMarker?: string;
 
+	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
 	/** Signal to abort the request. */
 	signal?: AbortSignal;
@@ -308,10 +323,15 @@ export type ListPartsResult = {
 	maxParts?: number;
 	isTruncated: boolean;
 	parts: Array<{
+		/** The Base64 encoded, 32-bit `CRC32` checksum of the part. This checksum is present if the multipart upload request was created with the `CRC32` checksum algorithm. */
 		checksumCRC32?: string;
+		/** The Base64 encoded, 32-bit `CRC32C` checksum of the part. This checksum is present if the multipart upload request was created with the `CRC32C` checksum algorithm. */
 		checksumCRC32C?: string;
+		/** The Base64 encoded, 64-bit `CRC64NVME` checksum of the part. This checksum is present if the multipart upload request was created with the `CRC64NVME` checksum algorithm. */
 		checksumCRC64NVME?: string;
+		/** The Base64 encoded, 160-bit `SHA1` checksum of the part. This checksum is present if the multipart upload request was created with the `SHA1` checksum algorithm. */
 		checksumSHA1?: string;
+		/** The Base64 encoded, 256-bit `SHA256` checksum of the part. This checksum is present if the multipart upload request was created with the `SHA256` checksum algorithm. */
 		checksumSHA256?: string;
 		etag: string;
 		lastModified: Date;

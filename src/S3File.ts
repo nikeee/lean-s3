@@ -15,13 +15,6 @@ import { fromStatusCode, getResponseError } from "./error.ts";
 import assertNever from "./assertNever.ts";
 import type { ObjectKey } from "./branded.ts";
 
-export type S3FileWriteOptions = {
-	/** Content-Type of the file. */
-	type?: string;
-	/** Signal to abort the request. */
-	signal?: AbortSignal;
-};
-
 // TODO: If we want to hack around, we can use this to access the private implementation of the "get stream" algorithm used by Node.js's blob internally
 // We probably have to do this some day if the fetch implementation is moved to internals.
 // If this happens, fetch will probably use `[kHandle].getReader()` instead of .stream() to read the Blob
@@ -338,11 +331,20 @@ export default class S3File {
 }
 
 export interface S3FileDeleteOptions extends OverridableS3ClientOptions {
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 }
 export interface S3StatOptions extends OverridableS3ClientOptions {
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 }
 export interface S3FileExistsOptions extends OverridableS3ClientOptions {
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 }
+export type S3FileWriteOptions = {
+	/** Content-Type of the file. */
+	type?: string;
+	/** Signal to abort the request. */
+	signal?: AbortSignal;
+};

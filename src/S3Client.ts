@@ -93,6 +93,7 @@ export type CreateFileInstanceOptions = {
 
 export type DeleteObjectsOptions = {
 	bucket?: string;
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 export type DeleteObjectsResult = {
@@ -148,6 +149,7 @@ export type ListObjectsOptions = {
 	delimiter?: string;
 	startAfter?: string;
 	continuationToken?: string;
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 export type ListObjectsIteratingOptions = {
@@ -155,6 +157,7 @@ export type ListObjectsIteratingOptions = {
 
 	prefix?: string;
 	startAfter?: string;
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 	internalPageSize?: number;
 };
@@ -168,6 +171,7 @@ export type ListMultipartUploadsOptions = {
 	prefix?: string;
 	uploadIdMarker?: string;
 
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 export type ListMultipartUploadsResult = {
@@ -204,6 +208,7 @@ export type MultipartUpload = {
 //#endregion
 export type CreateMultipartUploadOptions = {
 	bucket?: string;
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 export type CreateMultipartUploadResult = {
@@ -213,11 +218,13 @@ export type CreateMultipartUploadResult = {
 };
 export type AbortMultipartUploadOptions = {
 	bucket?: string;
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 
 export type CompleteMultipartUploadOptions = {
 	bucket?: string;
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 export type CompleteMultipartUploadResult = {
@@ -238,6 +245,7 @@ export type MultipartUploadPart = {
 };
 export type UploadPartOptions = {
 	bucket?: string;
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 export type UploadPartResult = {
@@ -249,6 +257,7 @@ export type ListPartsOptions = {
 	partNumberMarker?: string;
 
 	bucket?: string;
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 export type ListPartsResult = {
@@ -308,12 +317,15 @@ export type BucketCreationOptions = {
 	locationConstraint?: string;
 	location?: BucketLocationInfo;
 	info?: BucketInfo;
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 export type BucketDeletionOptions = {
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 export type BucketExistsOptions = {
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 
@@ -333,15 +345,18 @@ export type BucketCorsRule = {
 };
 export type PutBucketCorsOptions = {
 	bucket?: string;
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 export type DeleteBucketCorsOptions = {
 	bucket?: string;
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 
 export type GetBucketCorsOptions = {
 	bucket?: string;
+	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
 export type GetBucketCorsResult = {

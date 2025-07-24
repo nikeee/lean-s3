@@ -48,13 +48,13 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.1.2",
-    "@testcontainers/localstack": "^11.3.2",
-    "@testcontainers/minio": "^11.3.2",
+    "@testcontainers/localstack": "^11.4.0",
+    "@testcontainers/minio": "^11.4.0",
     "@types/node": "^24.1.0",
-    "@typescript/native-preview": "^7.0.0-dev.20250723.1",
+    "@typescript/native-preview": "^7.0.0-dev.20250724.1",
     "expect": "^30.0.5",
     "lefthook": "^1.12.2",
-    "testcontainers": "^11.3.2",
+    "testcontainers": "^11.4.0",
     "tsup": "^8.5.0",
     "tsx": "^4.20.3",
     "typedoc": "^0.28.7"

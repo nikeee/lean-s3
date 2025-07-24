@@ -621,10 +621,25 @@ export function runTests(
 			}
 		});
 
-		test(".write() with weird keys", async () => {
+		test(".write() with weird keys 0", async () => {
 			const testId = crypto.randomUUID();
 
-			const key = "Sun Jun 15 2025 00:57:03 GMT+0200 , (test)";
+			const key = "Sun Jun 15 2025 00:57:03 * ' GMT+0200 (test)`";
+			const f = client.file(`${runId}/${testId}/${key}`);
+			const content = crypto.randomUUID();
+			await f.write(content);
+			try {
+				expect(await f.exists()).toBe(true);
+				expect(await f.text()).toBe(content);
+			} finally {
+				await f.delete();
+			}
+		});
+
+		test(".write() with weird keys 1", async () => {
+			const testId = crypto.randomUUID();
+
+			const key = "weird:key+with(some)characters,that'need*escaping `.json";
 			const f = client.file(`${runId}/${testId}/${key}`);
 			const content = crypto.randomUUID();
 			await f.write(content);

@@ -128,4 +128,46 @@ describe("buildRequestUrl", () => {
 			new URL("https://fsn1.your-objectstorage.com/mybucket/object.json"),
 		);
 	});
+
+	test("weird key", () => {
+		expect(
+			buildRequestUrl(
+				"https://{bucket}.s3.{region}.amazonaws.com" as Endpoint,
+				"mybucket" as BucketName,
+				"us-west-1" as Region,
+				"weird:key+with(some)characters,that'need*escaping `.json" as ObjectKey,
+			),
+		).toStrictEqual(
+			new URL(
+				"https://mybucket.s3.us-west-1.amazonaws.com/weird%3Akey%2Bwith%28some%29characters%2Cthat%27need%2Aescaping%20%60.json",
+			),
+		);
+	});
+
+	test("slashes shouldn't be escaped", () => {
+		expect(
+			buildRequestUrl(
+				"https://{bucket}.s3.{region}.amazonaws.com" as Endpoint,
+				"mybucket" as BucketName,
+				"us-west-1" as Region,
+				"weird/key/with/slashes" as ObjectKey,
+			),
+		).toStrictEqual(
+			new URL(
+				"https://mybucket.s3.us-west-1.amazonaws.com/weird/key/with/slashes",
+			),
+		);
+		expect(
+			buildRequestUrl(
+				"https://{bucket}.s3.{region}.amazonaws.com" as Endpoint,
+				"mybucket" as BucketName,
+				"us-west-1" as Region,
+				"weird/key/with/slashes/:key+with(some)characters,that'need*escaping `.json" as ObjectKey,
+			),
+		).toStrictEqual(
+			new URL(
+				"https://mybucket.s3.us-west-1.amazonaws.com/weird/key/with/slashes/%3Akey%2Bwith%28some%29characters%2Cthat%27need%2Aescaping%20%60.json",
+			),
+		);
+	});
 });

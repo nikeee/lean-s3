@@ -11,10 +11,10 @@
   "license": "MIT",
   "type": "module",
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.859.0",
-    "@aws-sdk/s3-request-presigner": "^3.859.0",
+    "@aws-sdk/client-s3": "^3.864.0",
+    "@aws-sdk/s3-request-presigner": "^3.864.0",
     "@monstermann/tinybench-pretty-printer": "^0.1.0",
-    "@testcontainers/minio": "^11.5.0",
+    "@testcontainers/minio": "^11.5.1",
     "aws4fetch": "^1.0.20",
     "bun": "^1.2.19",
     "fast-xml-parser": "^5.2.5",

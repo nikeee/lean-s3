@@ -2,7 +2,7 @@
   "name": "lean-s3",
   "author": "Niklas Mollenhauer",
   "license": "MIT",
-  "version": "0.7.9",
+  "version": "0.7.11",
   "description": "A server-side S3 API for the regular user.",
   "keywords": [
     "s3",
@@ -44,20 +44,20 @@
   },
   "dependencies": {
     "fast-xml-parser": "^5.2.5",
-    "undici": "^7.12.0"
+    "undici": "^7.13.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.1.2",
-    "@testcontainers/localstack": "^11.4.0",
-    "@testcontainers/minio": "^11.4.0",
-    "@types/node": "^24.1.0",
-    "@typescript/native-preview": "^7.0.0-dev.20250724.1",
+    "@biomejs/biome": "2.1.4",
+    "@testcontainers/localstack": "^11.5.1",
+    "@testcontainers/minio": "^11.5.1",
+    "@types/node": "^24.2.1",
+    "@typescript/native-preview": "^7.0.0-dev.20250812.1",
     "expect": "^30.0.5",
-    "lefthook": "^1.12.2",
-    "testcontainers": "^11.4.0",
+    "lefthook": "^1.12.3",
+    "testcontainers": "^11.5.1",
     "tsup": "^8.5.0",
     "tsx": "^4.20.3",
-    "typedoc": "^0.28.7"
+    "typedoc": "^0.28.10"
   },
   "engines": {
     "node": "^20.19.3 || ^22.17.0 || ^24.4.0"

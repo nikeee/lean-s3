@@ -23,7 +23,7 @@ const CEPH_DEMO_UID = "admin";
  */
 export class CephContainer extends GenericContainer {
 	constructor() {
-		super("clevercloud/testcontainer-ceph:reef-20250526");
+		super("ghcr.io/nikeee/lean-s3-ci-images/ceph:latest");
 		this.withExposedPorts(MON_PORT, RGW_PORT, MGR_PORT)
 			.withEnvironment({
 				FEATURES: "radosgw rbd",

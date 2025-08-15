@@ -350,11 +350,9 @@ class Scanner {
 			++tokenValueStart;
 		}
 
-		while (
-			this.pos < this.end &&
-			this.text.charCodeAt(this.pos) !== CharCode.lessThan
-		) {
-			++this.pos;
+		this.pos = this.text.indexOf("<", this.pos + 1);
+		if (this.pos === -1) {
+			throw new Error("Unterminated text node.");
 		}
 
 		let tokenValueEnd = this.pos;

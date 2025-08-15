@@ -397,14 +397,23 @@ class Scanner {
 
 	#skipPreamble(): void {
 		++this.pos; // consume ?
-		while (
-			this.pos + 1 < this.end &&
-			this.text.charCodeAt(this.pos) !== CharCode.questionMark &&
-			this.text.charCodeAt(this.pos + 1) !== CharCode.greaterThan
-		) {
-			++this.pos;
+
+		let questionMarkIndex: number;
+		while (true) {
+			questionMarkIndex = this.text.indexOf("?", this.pos);
+			if (questionMarkIndex === -1) {
+				throw new Error("Unterminated XML preamble.");
+			}
+			const greaterThanIndex = questionMarkIndex + 1;
+			if (greaterThanIndex >= this.end) {
+				throw new Error("Unterminated XML preamble.");
+			}
+
+			if (this.text.charCodeAt(greaterThanIndex) === CharCode.greaterThan) {
+				this.pos = greaterThanIndex + 1; // consume >
+				break;
+			}
 		}
-		this.pos += 2; // consume ?>
 	}
 }
 

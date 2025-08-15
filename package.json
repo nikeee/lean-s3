@@ -47,16 +47,16 @@
     "undici": "^7.13.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.1.4",
+    "@biomejs/biome": "2.2.0",
     "@testcontainers/localstack": "^11.5.1",
     "@testcontainers/minio": "^11.5.1",
-    "@types/node": "^24.2.1",
-    "@typescript/native-preview": "^7.0.0-dev.20250812.1",
+    "@types/node": "^24.3.0",
+    "@typescript/native-preview": "^7.0.0-dev.20250815.1",
     "expect": "^30.0.5",
     "lefthook": "^1.12.3",
     "testcontainers": "^11.5.1",
     "tsup": "^8.5.0",
-    "tsx": "^4.20.3",
+    "tsx": "^4.20.4",
     "typedoc": "^0.28.10"
   },
   "engines": {

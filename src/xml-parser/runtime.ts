@@ -350,7 +350,7 @@ class Scanner {
 			++tokenValueStart;
 		}
 
-		this.pos = this.text.indexOf("<", this.pos + 1);
+		this.pos = this.text.indexOf("<", tokenValueStart + 1);
 		if (this.pos === -1) {
 			throw new Error("Unterminated text node.");
 		}

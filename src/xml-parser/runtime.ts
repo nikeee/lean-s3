@@ -368,11 +368,10 @@ class Scanner {
 
 	skipQuotedString() {
 		++this.pos; // consume opening "
-		while (
-			this.pos < this.end &&
-			this.text.charCodeAt(this.pos) !== CharCode.doubleQuote
-		) {
-			++this.pos;
+
+		this.pos = this.text.indexOf('"', this.pos);
+		if (this.pos === -1) {
+			throw new Error("Unterminated quote.");
 		}
 
 		++this.pos; // consume closing "

@@ -44,14 +44,14 @@
   },
   "dependencies": {
     "fast-xml-parser": "^5.2.5",
-    "undici": "^7.13.0"
+    "undici": "^7.14.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.0",
     "@testcontainers/localstack": "^11.5.1",
     "@testcontainers/minio": "^11.5.1",
     "@types/node": "^24.3.0",
-    "@typescript/native-preview": "^7.0.0-dev.20250815.1",
+    "@typescript/native-preview": "^7.0.0-dev.20250819.1",
     "expect": "^30.0.5",
     "lefthook": "^1.12.3",
     "testcontainers": "^11.5.1",

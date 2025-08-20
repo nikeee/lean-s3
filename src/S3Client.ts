@@ -1686,8 +1686,8 @@ export default class S3Client {
 									);
 								}
 								return controller.error(
-									new S3Error(error.Code || "Unknown", path, {
-										message: error.Message || undefined, // Message might be "",
+									new S3Error(error.Error.Code || "Unknown", path, {
+										message: error.Error.Message || undefined, // Message might be "",
 									}),
 								);
 							}, onNetworkError);

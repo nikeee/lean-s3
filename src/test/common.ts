@@ -239,17 +239,100 @@ export function runTests(
 		}
 	});
 
-	test("slicing", async () => {
-		const testId = crypto.randomUUID();
-		const f = client.file(`${runId}/slicing.txt`);
-		await f.write(testId);
-		try {
-			const slicedFile = f.slice(10, 20);
-			const s = await slicedFile.text();
-			expect(s).toEqual(testId.substring(10, 20));
-		} finally {
-			await f.delete();
-		}
+	describe("slicing", async () => {
+		test("n-m", async () => {
+			const testId = crypto.randomUUID();
+			const f = client.file(`${runId}/${testId}/slicing.txt`);
+			await f.write(testId);
+			try {
+				const slicedFile = f.slice(10, 20);
+				const s = await slicedFile.text();
+				expect(s).toEqual(testId.substring(10, 20));
+			} finally {
+				await f.delete();
+			}
+		});
+		test("n-m, n > m, Invalid slice `end`", async () => {
+			const testId = crypto.randomUUID();
+			const f = client.file(`${runId}/${testId}/slicing.txt`);
+			expect(() => f.slice(20, 10)).toThrow(new Error("Invalid slice `end`."));
+		});
+		test("n-m, m < 0, Invalid slice `end`", async () => {
+			const testId = crypto.randomUUID();
+			const f = client.file(`${runId}/${testId}/slicing.txt`);
+			expect(() => f.slice(20, -1)).toThrow(new Error("Invalid slice `end`."));
+		});
+		test("n-m, n < 0, Invalid slice `start`", async () => {
+			const testId = crypto.randomUUID();
+			const f = client.file(`${runId}/${testId}/slicing.txt`);
+			expect(() => f.slice(-1)).toThrow(new Error("Invalid slice `start`."));
+		});
+		test("0-m", async () => {
+			const testId = crypto.randomUUID();
+			const f = client.file(`${runId}/${testId}/slicing.txt`);
+			await f.write(testId);
+			try {
+				const slicedFile = f.slice(0, 20);
+				const s = await slicedFile.text();
+				expect(s).toEqual(testId.substring(0, 20));
+			} finally {
+				await f.delete();
+			}
+		});
+		test("undefined-m", async () => {
+			const testId = crypto.randomUUID();
+			const f = client.file(`${runId}/${testId}/slicing.txt`);
+			await f.write(testId);
+			try {
+				const slicedFile = f.slice(undefined, 20);
+				const s = await slicedFile.text();
+				expect(s).toEqual(testId.substring(0, 20));
+			} finally {
+				await f.delete();
+			}
+		});
+		test("0", async () => {
+			const testId = crypto.randomUUID();
+			const f = client.file(`${runId}/${testId}/slicing.txt`);
+			await f.write(testId);
+			try {
+				const slicedFile = f.slice(0);
+				const s = await slicedFile.text();
+				expect(s).toEqual(testId.substring(0));
+			} finally {
+				await f.delete();
+			}
+		});
+		test("n", async () => {
+			const testId = crypto.randomUUID();
+			const f = client.file(`${runId}/${testId}/slicing.txt`);
+			await f.write(testId);
+			try {
+				const slicedFile = f.slice(10);
+				const s = await slicedFile.text();
+				expect(s).toEqual(testId.substring(10));
+			} finally {
+				await f.delete();
+			}
+		});
+		test("n too large", async () => {
+			const testId = crypto.randomUUID();
+			const path = `${runId}/${testId}/slicing.txt`;
+			const f = client.file(path);
+			await f.write(testId);
+			try {
+				const slicedFile = f.slice(10000);
+				expect(async () => await slicedFile.text()).rejects.toThrow(
+					expect.objectContaining({
+						...new S3Error("InvalidRange", path),
+						name: expect.any(String),
+						message: expect.any(String),
+					}),
+				);
+			} finally {
+				await f.delete();
+			}
+		});
 	});
 
 	test("listIterating", async () => {

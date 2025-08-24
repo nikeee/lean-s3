@@ -10,6 +10,7 @@ import * as sign from "./sign.ts";
 import {
 	buildRequestUrl,
 	getRangeHeader,
+	normalizePath,
 	prepareHeadersForSigning,
 } from "./url.ts";
 import type {
@@ -685,8 +686,9 @@ export default class S3Client {
 			: this.#options.bucket;
 
 		// The value must be URL-encoded.
+		const normalizedSourceKey = normalizePath(ensureValidPath(sourceKey));
 		const copySource = encodeURIComponent(
-			`/${sourceBucket}/${ensureValidPath(sourceKey)}`,
+			`/${sourceBucket}/${normalizedSourceKey}`,
 		);
 
 		const response = await this[kSignedRequest](

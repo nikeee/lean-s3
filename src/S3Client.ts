@@ -173,6 +173,24 @@ export interface S3FilePresignOptions extends OverridableS3ClientOptions {
 	};
 }
 
+export type CopyObjectOptions = {
+	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
+	sourceBucket?: string;
+	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
+	destinationBucket?: string;
+	/** Signal to abort the request. */
+	signal?: AbortSignal;
+};
+
+export type CopyObjectResult = {
+	etag?: string;
+	lastModified?: Date;
+	checksumCRC32?: string;
+	checksumCRC32C?: string;
+	checksumSHA1?: string;
+	checksumSHA256?: string;
+};
+
 export type ListObjectsOptions = {
 	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
@@ -648,6 +666,60 @@ export default class S3Client {
 		// See `buildSearchParams` for casing on this parameter
 		res.search = `${query}&X-Amz-Signature=${signature}`;
 		return res.toString();
+	}
+
+	/**
+	 * Copies an object from a source to a destination.
+	 * @remarks Uses [`CopyObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html).
+	 */
+	async copyObject(
+		sourceKey: string,
+		destinationKey: string,
+		options: CopyObjectOptions = {},
+	): Promise<CopyObjectResult> {
+		const sourceBucket = options.sourceBucket
+			? ensureValidBucketName(options.sourceBucket)
+			: this.#options.bucket;
+		const destinationBucket = options.destinationBucket
+			? ensureValidBucketName(options.destinationBucket)
+			: this.#options.bucket;
+
+		// The value must be URL-encoded.
+		const copySource = encodeURIComponent(
+			`/${sourceBucket}/${ensureValidPath(sourceKey)}`,
+		);
+
+		const response = await this[kSignedRequest](
+			this.#options.region,
+			this.#options.endpoint,
+			destinationBucket,
+			"PUT",
+			ensureValidPath(destinationKey),
+			undefined,
+			undefined,
+			{
+				"x-amz-copy-source": copySource,
+			},
+			undefined,
+			undefined,
+			options.signal,
+		);
+
+		if (response.statusCode !== 200) {
+			throw await getResponseError(response, destinationKey);
+		}
+
+		const text = await response.body.text();
+		const res = ensureParsedXml(text).CopyObjectResult ?? {};
+
+		return {
+			etag: res.ETag,
+			lastModified: res.LastModified ? new Date(res.LastModified) : undefined,
+			checksumCRC32: res.ChecksumCRC32,
+			checksumCRC32C: res.ChecksumCRC32C,
+			checksumSHA1: res.ChecksumSHA1,
+			checksumSHA256: res.ChecksumSHA256,
+		};
 	}
 
 	//#region multipart uploads

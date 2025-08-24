@@ -823,6 +823,33 @@ export function runTests(
 		});
 	});
 
+	describe("copyObject", () => {
+		test("copies an object", async () => {
+			const testId = crypto.randomUUID();
+			const sourceKey = `${runId}/${testId}/source.txt`;
+			const destinationKey = `${runId}/${testId}/destination.txt`;
+			const content = crypto.randomUUID();
+
+			const sourceFile = client.file(sourceKey);
+			const destinationFile = client.file(destinationKey);
+
+			try {
+				await sourceFile.write(content);
+				expect(await sourceFile.exists()).toBe(true);
+				expect(await destinationFile.exists()).toBe(false);
+
+				await sourceFile.copyTo(destinationFile);
+
+				expect(await destinationFile.exists()).toBe(true);
+				const copiedContent = await destinationFile.text();
+				expect(copiedContent).toBe(content);
+			} finally {
+				await sourceFile.delete();
+				await destinationFile.delete();
+			}
+		});
+	});
+
 	describe("multipart uploads", () => {
 		test("create + abort multipart upload", async () => {
 			const testId = crypto.randomUUID();

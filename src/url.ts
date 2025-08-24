@@ -50,7 +50,7 @@ function replaceDomainPlaceholders(
 /**
  * Removes trailing and leading slash.
  */
-function normalizePath(path: string): string {
+export function normalizePath(path: string): string {
 	const start = path[0] === "/" ? 1 : 0;
 	const end = path[path.length - 1] === "/" ? path.length - 1 : path.length;
 	return path.substring(start, end);

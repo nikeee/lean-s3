@@ -331,16 +331,14 @@ export default class S3File {
 
 	/**
 	 * Copies this file to a new destination.
-	 * @param destination The destination path, can be a string or another S3File instance.
+	 * @param destination The destination path.
 	 * @param options Options for the copy operation.
 	 */
 	async copyTo(
-		destination: string | S3File,
+		destination: string,
 		options: CopyObjectOptions = {},
 	): Promise<void> {
-		const destinationKey =
-			typeof destination === "string" ? destination : destination.#path;
-		await this.#client.copyObject(this.#path, destinationKey, options);
+		await this.#client.copyObject(this.#path, destination, options);
 	}
 }
 

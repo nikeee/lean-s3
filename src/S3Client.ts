@@ -688,7 +688,7 @@ export default class S3Client {
 		// The value must be URL-encoded.
 		const normalizedSourceKey = normalizePath(ensureValidPath(sourceKey));
 		const copySource = encodeURIComponent(
-			`/${sourceBucket}/${normalizedSourceKey}`,
+			`${sourceBucket}/${normalizedSourceKey}`,
 		);
 
 		const response = await this[kSignedRequest](

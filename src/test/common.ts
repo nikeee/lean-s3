@@ -838,7 +838,7 @@ export function runTests(
 				expect(await sourceFile.exists()).toBe(true);
 				expect(await destinationFile.exists()).toBe(false);
 
-				await sourceFile.copyTo(destinationFile);
+				await sourceFile.copyTo(destinationKey);
 
 				expect(await destinationFile.exists()).toBe(true);
 				const copiedContent = await destinationFile.text();

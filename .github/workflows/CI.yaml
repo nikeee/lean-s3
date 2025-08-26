@@ -93,6 +93,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run docs
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with:
           path: ./docs

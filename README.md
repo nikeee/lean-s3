@@ -41,6 +41,14 @@ if (exists) {
     });
     await otherFile.write(test);
 
+    // Copy the object to a new key in the same bucket
+    await test.copyTo("/test-copy.json");
+
+    // You can also copy to a different bucket
+    await test.copyTo("/test.json", {
+        destinationBucket: "foo-bucket",
+    });
+
     const firstBytesFile = test.slice(0, 100); // lazy-evaluated slicing
     const firstBytes = await firstBytesFile.bytes(); // evaluated using HTTP range requests
     console.log("First 100 bytes:", firstBytes);
@@ -135,6 +143,7 @@ See [DESIGN_DECISIONS.md](./DESIGN_DECISIONS.md) to read about why this library 
 - ✅ [`DeleteObjects`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html) via `.deleteObjects`
 - ✅ [`DeleteObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html) via `S3File.delete`
 - ✅ [`PutObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html) via `S3File.write`
+- ✅ [`CopyObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html) via `S3File.copyTo` / `.copyObject`
 - ✅ [`HeadObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html) via `S3File.exists`/`S3File.stat`
 - ✅ [`ListMultipartUploads`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html) via `.listMultipartUploads`
 - ✅ [`ListParts`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListParts.html) via `.listParts`

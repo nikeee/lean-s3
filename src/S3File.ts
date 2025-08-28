@@ -9,6 +9,7 @@ import {
 	type OverridableS3ClientOptions,
 	kSignedRequest,
 	kGetEffectiveParams,
+	type CopyObjectOptions,
 } from "./S3Client.ts";
 import { sha256 } from "./sign.ts";
 import { fromStatusCode, getResponseError } from "./error.ts";
@@ -326,6 +327,18 @@ export default class S3File {
 			this.#end,
 			options.signal,
 		);
+	}
+
+	/**
+	 * Copies this file to a new destination.
+	 * @param destination The destination path.
+	 * @param options Options for the copy operation.
+	 */
+	async copyTo(
+		destination: string,
+		options: CopyObjectOptions = {},
+	): Promise<void> {
+		await this.#client.copyObject(this.#path, destination, options);
 	}
 }
 

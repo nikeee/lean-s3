@@ -18,13 +18,13 @@ describe("localstack", async () => {
 		});
 
 		before(async () => {
-			const res = await client.createBucket("test-bucket");
+			const res = await client.createBucket("test-bucket-localstack");
 			expect(res).toBeUndefined();
 		});
 		after(async () => {
-			expect(await client.bucketExists("test-bucket")).toBe(true);
-			await client.deleteBucket("test-bucket");
-			expect(await client.bucketExists("test-bucket")).toBe(false);
+			expect(await client.bucketExists("test-bucket-localstack")).toBe(true);
+			await client.deleteBucket("test-bucket-localstack");
+			expect(await client.bucketExists("test-bucket-localstack")).toBe(false);
 			await s3.stop();
 		});
 	}
@@ -35,6 +35,6 @@ describe("localstack", async () => {
 		"test",
 		"test",
 		"us-east-1",
-		"test-bucket",
+		"test-bucket-localstack",
 	);
 });

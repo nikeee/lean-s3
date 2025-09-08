@@ -47,13 +47,13 @@
     "undici": "^7.15.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.2.2",
+    "@biomejs/biome": "2.2.3",
     "@testcontainers/localstack": "^11.5.1",
     "@testcontainers/minio": "^11.5.1",
-    "@types/node": "^24.3.0",
-    "@typescript/native-preview": "^7.0.0-dev.20250903.1",
+    "@types/node": "^24.3.1",
+    "@typescript/native-preview": "^7.0.0-dev.20250908.1",
     "expect": "^30.1.2",
-    "lefthook": "^1.12.3",
+    "lefthook": "^1.12.4",
     "testcontainers": "^11.5.1",
     "tsup": "^8.5.0",
     "tsx": "^4.20.5",

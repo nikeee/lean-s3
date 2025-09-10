@@ -359,7 +359,9 @@ import * as rt from "./runtime.ts";
 class GeneratedParser extends rt.Parser {
 	${parsingCode}
 }
-new GeneratedParser(\`${text}\`).${rootParseFunctionName}();
+console.log(
+	new GeneratedParser(\`${text}\`).${rootParseFunctionName}()
+);
 `.trimStart();
 }
 

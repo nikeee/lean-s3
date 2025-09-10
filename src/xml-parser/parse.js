@@ -63,6 +63,8 @@ class GeneratedParser extends rt.Parser {
 		}
 	}
 }
-new GeneratedParser(
-	`<?xml version="1.0" encoding="utf-8"?><note></note>`,
-).parse_0();
+console.log(
+	new GeneratedParser(
+		`<?xml version="1.0" encoding="utf-8"?><note></note>`,
+	).parse_0(),
+);

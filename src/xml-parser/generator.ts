@@ -119,34 +119,31 @@ ${parseFn}() {
 		${emitChildFieldInit(children)}
 	};
 
-	this.parseIdentifier(${asLiteral(tagName)});
+	console.assert(this.scanner.getTokenValueEncoded() === ${asLiteral(tagName)});
 
-	if (this.token === ${rt.TokenKind.endSelfClosing} /* TokenKind.endSelfClosing */) {
+	if (this.token === ${rt.TokenKind2.selfClosedTag} /* TokenKind.selfClosedTag */) {
 		this.nextToken();
 		${emitObjectInvariants(children).join("\n\t\t\t\t")}
 		return res;
 	}
 
-	this.parseExpected(${rt.TokenKind.endTag} /* TokenKind.endTag */);
+	this.nextToken();
 
 	while (true) {
 		switch (this.token) {
-			case ${rt.TokenKind.startClosingTag} /* TokenKind.startClosingTag */:
-				this.nextToken(); // consume TokenKind.startClosingTag
-
-				this.parseIdentifier(${asLiteral(tagName)});
-				this.parseExpected(${rt.TokenKind.endTag} /* TokenKind.endTag */);
+			case ${rt.TokenKind2.endTag} /* TokenKind.endTag */:
+				this.parseClosingTag(${asLiteral(tagName)});
 				${emitObjectInvariants(children).join("\n\t\t\t\t")}
 				return res;
-			case ${rt.TokenKind.eof}:
+			case ${rt.TokenKind2.eof}:
 				throw new Error(\`Unterminated tag: "${tagName}"\`);
 			${
 				Object.keys(children).length > 0
 					? `
-			case ${rt.TokenKind.startTag}: {
-				this.nextToken(); // consume TokenKind.startTag
-
-				switch (this.scanner.getTokenValueEncoded()) {
+			case ${rt.TokenKind2.tag}: {
+				const identifier = this.scanner.getTokenValueEncoded();
+				this.nextToken();
+				switch (identifier) {
 					${Object.entries(children)
 						.map(
 							([name, childSpec]) =>
@@ -190,15 +187,13 @@ ${parseFn}() {
 
 	while (true) {
 		switch (this.token) {
-			case ${rt.TokenKind.eof} /* TokenKind.eof */:
+			case ${rt.TokenKind2.eof} /* TokenKind.eof */:
 				${emitObjectInvariants(children).join("\n\t\t\t\t")}
 				return res;
 			${
 				Object.keys(children).length > 0
 					? `
-			case ${rt.TokenKind.startTag} /* TokenKind.startTag */: {
-				this.nextToken(); // consume TokenKind.startTag
-
+			case ${rt.TokenKind2.tag} /* TokenKind.tag */: {
 				switch (this.scanner.getTokenValueEncoded()) {
 					${Object.entries(children)
 						.map(

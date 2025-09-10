@@ -196,20 +196,6 @@ export class Parser {
 		}
 		this.nextToken();
 	}
-
-	parseIdentifier(identifier: string): void {
-		if (this.token !== TokenKind.identifier) {
-			throw new Error(
-				`Wrong token, expected: ${TokenKind.identifier}, got: ${this.token}`,
-			);
-		}
-		if (this.scanner.getTokenValueEncoded() !== identifier) {
-			throw new Error(
-				`Expected identifier: ${identifier}, got: ${this.scanner.getTokenValueEncoded()}`,
-			);
-		}
-		this.nextToken();
-	}
 }
 
 /**
@@ -268,12 +254,9 @@ const enum CharCode {
 }
 
 class Scanner {
-	startPos: number;
 	pos: number;
 	end: number;
 	text: string;
-
-	inTag = false;
 
 	token = -1;
 
@@ -292,15 +275,13 @@ class Scanner {
 
 	constructor(text: string) {
 		// Number(text); // collapse rope structure of V8
-		this.startPos = 0;
 		this.pos = 0;
 		this.end = text.length;
 		this.text = text;
+		this.#skipPreamble();
 	}
 
 	scan(): TokenKind2 {
-		this.startPos = this.pos;
-
 		this.#skipWhitespace();
 
 		if (this.pos >= this.end) {
@@ -310,43 +291,23 @@ class Scanner {
 		let ch = this.text.charCodeAt(this.pos);
 		switch (ch) {
 			case CharCode.lessThan:
-				++this.pos;
+				++this.pos; // consume <
 
 				// assumption: preamble has already been skipped by the parser
 				// -> we can only have a tag start or end here
 				ch = this.text.charCodeAt(this.pos);
 				switch (ch) {
-					case CharCode.slash:
-						++this.pos;
+					case CharCode.slash: {
+						++this.pos; // consume /
 
 						this.tokenValueStart = this.pos; // identifier start
-						this.tokenValueEnd = this.text.indexOf(">", this.pos);
-
-						if (this.tokenValueEnd < 0) {
-							throw new Error("Unterminated tag end.");
-						}
-
-						this.tokenValueEnd = this.#trimPosEnd(this.pos - 1); // -1 to compensate for >
-
-						return (this.token = TokenKind2.endTag);
-					default: {
-						// TODO: Check if there are other cases than a tag start
-
-						if (!isIdentifierStart(ch)) {
-							throw new Error("Expected identifier start");
-						}
-
-						this.tokenValueStart = this.pos; // identifier start
-						this.tokenValueEnd = this.pos = this.text.indexOf(">", this.pos);
+						this.pos = this.text.indexOf(">", this.pos);
 
 						if (this.pos < 0) {
 							throw new Error("Unterminated tag end.");
 						}
 
-						// we now have <identifier attr="a"> or <identifier attr="a" />
-
-						const isSelfClosing =
-							this.text.charCodeAt(this.tokenValueEnd - 1) === CharCode.slash;
+						++this.pos; // consume >
 
 						let identifierEnd = this.tokenValueStart;
 						for (
@@ -357,7 +318,39 @@ class Scanner {
 							c = this.text.charCodeAt(identifierEnd);
 						}
 
-						this.tokenValueEnd = identifierEnd;
+						this.tokenValueEnd = identifierEnd - 1;
+
+						return (this.token = TokenKind2.endTag);
+					}
+					default: {
+						// TODO: Check if there are other cases than a tag start
+
+						if (!isIdentifierStart(ch)) {
+							throw new Error("Expected identifier start");
+						}
+
+						this.tokenValueStart = this.pos; // identifier start
+						this.pos = this.text.indexOf(">", this.pos);
+						if (this.pos < 0) {
+							throw new Error("Unterminated tag end.");
+						}
+
+						// we now have <identifier attr="a"> or <identifier attr="a" />
+						const isSelfClosing =
+							this.text.charCodeAt(this.pos - 1) === CharCode.slash;
+
+						++this.pos; // consume >
+
+						let identifierEnd = this.tokenValueStart;
+						for (
+							let c = this.text.charCodeAt(identifierEnd);
+							isIdentifierPart(c);
+							++identifierEnd
+						) {
+							c = this.text.charCodeAt(identifierEnd);
+						}
+
+						this.tokenValueEnd = identifierEnd - 1;
 
 						// TODO: Make this branchless, so we can OR in isSelfClosing?
 						return (this.token = isSelfClosing
@@ -366,10 +359,13 @@ class Scanner {
 					}
 				}
 			default:
-				// we're at a text node with beginning trimmed away
 				this.tokenValueStart = this.pos;
+				// we're at a text node with beginning trimmed away
 				this.pos = this.text.indexOf("<", this.pos);
-				this.tokenValueEnd = this.#trimPosEnd(this.pos);
+				if (this.pos < 0) {
+					throw new Error("Unterminated text node.");
+				}
+				this.tokenValueEnd = this.#trimPosEnd(this.pos - 1);
 				return (this.token = TokenKind2.textNode);
 		}
 	}
@@ -398,7 +394,7 @@ class Scanner {
 		++this.pos; // consume closing "
 	}
 
-	skipPreamble(): void {
+	#skipPreamble(): void {
 		this.#skipWhitespace();
 		if (
 			this.text.charCodeAt(this.pos) !== CharCode.lessThan ||

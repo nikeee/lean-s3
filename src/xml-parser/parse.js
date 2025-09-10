@@ -4,23 +4,20 @@ class GeneratedParser extends rt.Parser {
 		// Init structure entirely, so v8 can create a single hidden class
 		const res = {};
 
-		this.parseIdentifier("note");
+		console.assert(this.scanner.getTokenValueEncoded() === "note");
 
-		if (this.token === 4 /* TokenKind.endSelfClosing */) {
+		if (this.token === 2 /* TokenKind.selfClosedTag */) {
 			this.nextToken();
 
 			return res;
 		}
 
-		this.parseExpected(2 /* TokenKind.endTag */);
+		this.nextToken();
 
 		while (true) {
 			switch (this.token) {
-				case 3 /* TokenKind.startClosingTag */:
-					this.nextToken(); // consume TokenKind.startClosingTag
-
-					this.parseIdentifier("note");
-					this.parseExpected(2 /* TokenKind.endTag */);
+				case 3 /* TokenKind.endTag */:
+					this.parseClosingTag("note");
 
 					return res;
 				case 0:
@@ -47,9 +44,7 @@ class GeneratedParser extends rt.Parser {
 						);
 					return res;
 
-				case 1 /* TokenKind.startTag */: {
-					this.nextToken(); // consume TokenKind.startTag
-
+				case 1 /* TokenKind.tag */: {
 					switch (this.scanner.getTokenValueEncoded()) {
 						case "note":
 							res.note = this.fn_1_note();
@@ -68,6 +63,6 @@ class GeneratedParser extends rt.Parser {
 		}
 	}
 }
-new GeneratedParser(text).parse_0(
+new GeneratedParser(
 	`<?xml version="1.0" encoding="utf-8"?><note></note>`,
-);
+).parse_0();

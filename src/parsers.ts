@@ -19,6 +19,39 @@ const owner = {
 	},
 } as const;
 
+const checksumZoo = {
+	checksumCRC: {
+		type: "string",
+		tagName: "ChecksumCRC",
+		optional: true,
+	},
+	checksumCRC32: {
+		type: "string",
+		tagName: "ChecksumCRC32",
+		optional: true,
+	},
+	checksumCRC32C: {
+		type: "string",
+		tagName: "ChecksumCRC32C",
+		optional: true,
+	},
+	checksumCRC64NVME: {
+		type: "string",
+		tagName: "ChecksumCRC64NVME",
+		optional: true,
+	},
+	checksumSHA1: {
+		type: "string",
+		tagName: "ChecksumSHA1",
+		optional: true,
+	},
+	checksumSHA256: {
+		type: "string",
+		tagName: "ChecksumSHA256",
+		optional: true,
+	},
+} as const;
+
 export const listPartsResultSpec = {
 	type: "root",
 	children: {
@@ -153,6 +186,21 @@ export const parseInitiateMultipartUploadResult = buildParser({
 				bucket: { type: "string", tagName: "Bucket" },
 				key: { type: "string", tagName: "Key" },
 				uploadId: { type: "string", tagName: "UploadId" },
+			},
+		},
+	},
+});
+
+export const parseCopyObjectResult = buildParser({
+	type: "root",
+	children: {
+		result: {
+			type: "object",
+			tagName: "CopyObjectResult",
+			children: {
+				etag: { type: "string", tagName: "ETag" },
+				lastModified: { type: "date", tagName: "LastModified" },
+				...checksumZoo,
 			},
 		},
 	},

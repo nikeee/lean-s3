@@ -2,7 +2,7 @@
 
 export class Parser {
 	scanner: Scanner;
-	token!: TokenKind;
+	token!: TokenKind2;
 
 	nextToken = () => {
 		this.token = this.scanner.scan();
@@ -17,57 +17,107 @@ export class Parser {
 
 	/** Assumes {@link TokenKind.startTag} was already consumed. */
 	parseIgnoredTag(tagName: string): void {
-		this.parseIdentifier(tagName);
+		if (
+			this.token !== TokenKind2.tag &&
+			this.token !== TokenKind2.selfClosedTag
+		) {
+			throw new Error(
+				`Wrong token, expected: ${TokenKind2.tag} or ${TokenKind2.selfClosedTag}, got: ${this.token}`,
+			);
+		}
 
-		if (this.token === TokenKind.endSelfClosing) {
+		// We can't have escaping here, so we can the diff as is
+		const actualIdentifierLength =
+			this.scanner.tokenValueEnd - this.scanner.tokenValueStart;
+		if (actualIdentifierLength !== tagName.length) {
+			// early exit to skip substring for string compare
+			throw new Error(
+				`Wrong identifier, expected: "${tagName}", got "${this.scanner.getTokenValueEncoded()}"`,
+			);
+		}
+
+		const actualIdentifer = this.scanner.getTokenValueEncoded();
+		if (actualIdentifer !== tagName) {
+			// early exit to skip substring for string compare
+			throw new Error(
+				`Wrong identifier, expected: "${tagName}", got "${actualIdentifer}"`,
+			);
+		}
+
+		if (this.token === TokenKind2.selfClosedTag) {
 			this.nextToken();
 			return;
 		}
 
-		this.parseExpected(TokenKind.endTag);
-
-		if (this.token === TokenKind.startClosingTag) {
-			this.nextToken();
-			this.parseIdentifier(tagName);
-			this.parseExpected(TokenKind.endTag);
-			return;
-		}
-
-		if (this.token !== TokenKind.textNode) {
-			throw new Error(`Expected text content for tag "${tagName}".`);
-		}
-
+		// consume <identifier>
 		this.nextToken();
-		this.parseClosingTag(tagName);
+
+		switch (this.token) {
+			case TokenKind2.endTag:
+				this.parseClosingTag(tagName);
+				return;
+			default: {
+				if (this.token !== TokenKind2.textNode) {
+					throw new Error(`Expected text content for tag "${tagName}".`);
+				}
+				this.nextToken();
+				this.parseClosingTag(tagName);
+				return;
+			}
+		}
 	}
 
-	/** Assumes {@link TokenKind.startTag} was already consumed. */
 	parseStringTag(tagName: string): string | undefined {
-		this.parseIdentifier(tagName);
+		if (
+			this.token !== TokenKind2.tag &&
+			this.token !== TokenKind2.selfClosedTag
+		) {
+			throw new Error(
+				`Wrong token, expected: ${TokenKind2.tag} or ${TokenKind2.selfClosedTag}, got: ${this.token}`,
+			);
+		}
 
-		if (this.token === TokenKind.endSelfClosing) {
+		// We can't have escaping here, so we can the diff as is
+		const actualIdentifierLength =
+			this.scanner.tokenValueEnd - this.scanner.tokenValueStart;
+		if (actualIdentifierLength !== tagName.length) {
+			// early exit to skip substring for string compare
+			throw new Error(
+				`Wrong identifier, expected: "${tagName}", got "${this.scanner.getTokenValueEncoded()}"`,
+			);
+		}
+
+		const actualIdentifer = this.scanner.getTokenValueEncoded();
+		if (actualIdentifer !== tagName) {
+			// early exit to skip substring for string compare
+			throw new Error(
+				`Wrong identifier, expected: "${tagName}", got "${actualIdentifer}"`,
+			);
+		}
+
+		if (this.token === TokenKind2.selfClosedTag) {
 			this.nextToken();
 			return undefined;
 		}
 
-		this.parseExpected(TokenKind.endTag);
-
-		if (this.token === TokenKind.startClosingTag) {
-			this.nextToken();
-			this.parseIdentifier(tagName);
-			this.parseExpected(TokenKind.endTag);
-			return "";
-		}
-
-		if (this.token !== TokenKind.textNode) {
-			throw new Error(`Expected text content for tag "${tagName}".`);
-		}
-
-		const value = this.scanner.getTokenValueDecoded();
+		// consume <identifier>
 		this.nextToken();
 
-		this.parseClosingTag(tagName);
-		return value;
+		switch (this.token) {
+			case TokenKind2.endTag:
+				this.parseClosingTag(tagName);
+				return "";
+			default: {
+				if (this.token !== TokenKind2.textNode) {
+					throw new Error(`Expected text content for tag "${tagName}".`);
+				}
+
+				const value = this.scanner.getTokenValueDecoded();
+				this.nextToken();
+				this.parseClosingTag(tagName);
+				return value;
+			}
+		}
 	}
 
 	/** Assumes {@link TokenKind.startTag} was already consumed. */
@@ -113,12 +163,34 @@ export class Parser {
 	//#endregion
 
 	parseClosingTag(tagName: string): void {
-		this.parseExpected(TokenKind.startClosingTag);
-		this.parseIdentifier(tagName);
-		this.parseExpected(TokenKind.endTag);
+		if (this.token !== TokenKind2.endTag) {
+			throw new Error(
+				`Wrong token, expected: ${TokenKind2.endTag}, got: ${this.token}`,
+			);
+		}
+
+		// We can't have escaping here, so we can the diff as is
+		const actualIdentifierLength =
+			this.scanner.tokenValueEnd - this.scanner.tokenValueStart;
+		if (actualIdentifierLength !== tagName.length) {
+			// early exit to skip substring for string compare
+			throw new Error(
+				`Wrong identifier for closing tag, expected: "${tagName}", got "${this.scanner.getTokenValueEncoded()}"`,
+			);
+		}
+
+		const actualIdentifer = this.scanner.getTokenValueEncoded();
+		if (actualIdentifer !== tagName) {
+			// early exit to skip substring for string compare
+			throw new Error(
+				`Wrong identifier for closing tag, expected: "${tagName}", got "${actualIdentifer}"`,
+			);
+		}
+
+		this.nextToken();
 	}
 
-	parseExpected(expected: TokenKind): void {
+	parseExpected(expected: TokenKind2): void {
 		if (this.token !== expected) {
 			throw new Error(`Wrong token, expected: ${expected}, got: ${this.token}`);
 		}
@@ -146,14 +218,12 @@ export class Parser {
  *
  * @remarks This enum cannot be used in runtime code, since it's `const` and will not exist in the parsing stage. Values have to be inlined by the generator
  */
-export const enum TokenKind {
+export const enum TokenKind2 {
 	eof = 0,
-	startTag = 1, // <
-	endTag = 2, // >
-	startClosingTag = 3, // </
-	endSelfClosing = 4, // />
-	identifier = 5,
-	textNode = 6,
+	tag = 1, // <tagIdentifier
+	selfClosedTag = 2, // <tagIdentifier />
+	endTag = 3, // </tagIdentifier>
+	textNode = 4,
 }
 
 const entityPattern = /&(quot|apos|lt|gt|amp);/g;
@@ -228,142 +298,93 @@ class Scanner {
 		this.text = text;
 	}
 
-	scan(): TokenKind {
+	scan(): TokenKind2 {
 		this.startPos = this.pos;
 
-		while (true) {
-			if (this.pos >= this.end) {
-				return (this.token = TokenKind.eof);
-			}
+		this.#skipWhitespace();
 
-			const ch = this.text.charCodeAt(this.pos);
-			switch (ch) {
-				case CharCode.lineFeed:
-				case CharCode.carriageReturn:
-				case CharCode.lineSeparator:
-				case CharCode.paragraphSeparator:
-				case CharCode.nextLine:
-				case CharCode.tab:
-				case CharCode.verticalTab:
-				case CharCode.formFeed:
-				case CharCode.space:
-				case CharCode.nonBreakingSpace:
-					++this.pos;
-					continue;
-				case CharCode.equals: {
-					if (this.inTag) {
-						// equals are skipped in the handler for the identifier
-						throw new Error(
-							"Equals cannot appear in a tag without a leading identifier.",
-						);
-					}
+		if (this.pos >= this.end) {
+			return (this.token = TokenKind2.eof);
+		}
 
-					const textNode = this.#scanTextNode();
-					if (textNode === undefined) {
-						continue;
+		let ch = this.text.charCodeAt(this.pos);
+		switch (ch) {
+			case CharCode.lessThan:
+				++this.pos;
+
+				// assumption: preamble has already been skipped by the parser
+				// -> we can only have a tag start or end here
+				ch = this.text.charCodeAt(this.pos);
+				switch (ch) {
+					case CharCode.slash:
+						++this.pos;
+
+						this.tokenValueStart = this.pos; // identifier start
+						this.tokenValueEnd = this.text.indexOf(">", this.pos);
+
+						if (this.tokenValueEnd < 0) {
+							throw new Error("Unterminated tag end.");
+						}
+
+						this.tokenValueEnd = this.#trimPosEnd(this.pos - 1); // -1 to compensate for >
+
+						return (this.token = TokenKind2.endTag);
+					default: {
+						// TODO: Check if there are other cases than a tag start
+
+						if (!isIdentifierStart(ch)) {
+							throw new Error("Expected identifier start");
+						}
+
+						this.tokenValueStart = this.pos; // identifier start
+						this.tokenValueEnd = this.pos = this.text.indexOf(">", this.pos);
+
+						if (this.pos < 0) {
+							throw new Error("Unterminated tag end.");
+						}
+
+						// we now have <identifier attr="a"> or <identifier attr="a" />
+
+						const isSelfClosing =
+							this.text.charCodeAt(this.tokenValueEnd - 1) === CharCode.slash;
+
+						let identifierEnd = this.tokenValueStart;
+						for (
+							let c = this.text.charCodeAt(identifierEnd);
+							isIdentifierPart(c);
+							++identifierEnd
+						) {
+							c = this.text.charCodeAt(identifierEnd);
+						}
+
+						this.tokenValueEnd = identifierEnd;
+
+						// TODO: Make this branchless, so we can OR in isSelfClosing?
+						return (this.token = isSelfClosing
+							? TokenKind2.selfClosedTag
+							: TokenKind2.tag);
 					}
-					return textNode;
 				}
-				case CharCode.lessThan:
-					++this.pos;
-
-					this.inTag = true;
-
-					if (this.pos < this.end) {
-						switch (this.text.charCodeAt(this.pos)) {
-							case CharCode.slash:
-								++this.pos;
-								return (this.token = TokenKind.startClosingTag);
-							case CharCode.questionMark:
-								this.inTag = false;
-								this.#skipPreamble();
-								continue;
-							default:
-								break;
-						}
-					}
-					return (this.token = TokenKind.startTag);
-				case CharCode.greaterThan:
-					++this.pos;
-					this.inTag = false;
-					return (this.token = TokenKind.endTag);
-				case CharCode.slash:
-					if (!this.inTag) {
-						const textNode = this.#scanTextNode();
-						if (textNode === undefined) {
-							continue;
-						}
-						return textNode;
-					}
-
-					++this.pos;
-					if (this.pos < this.end) {
-						const nextChar = this.text.charCodeAt(this.pos);
-						if (nextChar === CharCode.greaterThan) {
-							++this.pos;
-							return (this.token = TokenKind.endSelfClosing);
-						}
-					}
-					return (this.token = TokenKind.endTag);
-
-				case CharCode.doubleQuote: {
-					if (this.inTag) {
-						// quotes are skipped in the handler for the identifier
-						throw new Error(
-							"Double quotes cannot appear in a tag without a leading equals.",
-						);
-					}
-					const textNode = this.#scanTextNode();
-					if (textNode === undefined) {
-						continue;
-					}
-					return textNode;
-				}
-				default:
-					if (!this.inTag) {
-						return this.#scanTextNode();
-					}
-
-					if (isIdentifierStart(ch)) {
-						// We actually don't care about attributes, just skip them entirely in this case
-						const token = this.#scanIdentifier();
-
-						if (this.text.charCodeAt(this.pos) === CharCode.equals) {
-							++this.pos; // consume =
-							if (this.text.charCodeAt(this.pos) !== CharCode.doubleQuote) {
-								throw new Error("Equals must be followed by a quoted string.");
-							}
-							this.skipQuotedString();
-							continue;
-						}
-						return token;
-					}
-					continue;
-			}
+			default:
+				// we're at a text node with beginning trimmed away
+				this.tokenValueStart = this.pos;
+				this.pos = this.text.indexOf("<", this.pos);
+				this.tokenValueEnd = this.#trimPosEnd(this.pos);
+				return (this.token = TokenKind2.textNode);
 		}
 	}
 
-	#scanTextNode(): TokenKind.textNode {
-		// Read text node
-		let tokenValueStart = this.pos;
+	#skipWhitespace() {
 		while (isWhitespace(this.text.charCodeAt(this.pos))) {
-			++tokenValueStart;
+			++this.pos;
 		}
+	}
 
-		this.pos = this.text.indexOf("<", tokenValueStart + 1);
-		if (this.pos === -1) {
-			throw new Error("Unterminated text node.");
+	#trimPosEnd(start: number) {
+		while (isWhitespace(this.text.charCodeAt(start))) {
+			--start;
 		}
-
-		let tokenValueEnd = this.pos;
-		do {
-			--tokenValueEnd;
-		} while (isWhitespace(this.text.charCodeAt(tokenValueEnd)));
-		++tokenValueEnd;
-
-		this.tokenValueStart = tokenValueStart;
-		this.tokenValueEnd = tokenValueEnd;
-		return (this.token = TokenKind.textNode);
+		return start;
 	}
 
 	skipQuotedString() {
@@ -377,26 +398,16 @@ class Scanner {
 		++this.pos; // consume closing "
 	}
 
-	#skipIdentifier(): void {
-		++this.pos; // consume first char
-		while (
-			this.pos < this.end &&
-			isIdentifierPart(this.text.charCodeAt(this.pos))
+	skipPreamble(): void {
+		this.#skipWhitespace();
+		if (
+			this.text.charCodeAt(this.pos) !== CharCode.lessThan ||
+			this.text.charCodeAt(this.pos + 1) !== CharCode.questionMark
 		) {
-			++this.pos;
+			return;
 		}
-	}
 
-	#scanIdentifier(): TokenKind.identifier {
-		const identifierStart = this.pos;
-		this.#skipIdentifier();
-		this.tokenValueStart = identifierStart;
-		this.tokenValueEnd = this.pos;
-		return (this.token = TokenKind.identifier);
-	}
-
-	#skipPreamble(): void {
-		++this.pos; // consume ?
+		++this.pos; // consume <
 
 		const closingIndex = this.text.indexOf(">", this.pos);
 		if (closingIndex === -1) {

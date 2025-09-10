@@ -140,6 +140,7 @@ ${parseFn}() {
 			${
 				Object.keys(children).length > 0
 					? `
+			case ${rt.TokenKind2.selfClosedTag} /* TokenKind.selfClosedTag */:
 			case ${rt.TokenKind2.tag}: {
 				const identifier = this.scanner.getTokenValueEncoded();
 				switch (identifier) {

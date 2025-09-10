@@ -53,10 +53,12 @@ export class Parser {
 		this.nextToken();
 
 		switch (this.token) {
+			// @ts-expect-error nextToken changes this.token
 			case TokenKind2.endTag:
 				this.parseClosingTag(tagName);
 				return;
 			default: {
+				// @ts-expect-error nextToken changes this.token
 				if (this.token !== TokenKind2.textNode) {
 					throw new Error(`Expected text content for tag "${tagName}".`);
 				}
@@ -104,10 +106,12 @@ export class Parser {
 		this.nextToken();
 
 		switch (this.token) {
+			// @ts-expect-error nextToken changes this.token
 			case TokenKind2.endTag:
 				this.parseClosingTag(tagName);
 				return "";
 			default: {
+				// @ts-expect-error nextToken changes this.token
 				if (this.token !== TokenKind2.textNode) {
 					throw new Error(`Expected text content for tag "${tagName}".`);
 				}

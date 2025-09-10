@@ -15,7 +15,6 @@ export class Parser {
 
 	//#region primitives
 
-	/** Assumes {@link TokenKind.startTag} was already consumed. */
 	parseIgnoredTag(tagName: string): void {
 		if (
 			this.token !== TokenKind.tag &&
@@ -23,16 +22,6 @@ export class Parser {
 		) {
 			throw new Error(
 				`Wrong token, expected: ${TokenKind.tag} or ${TokenKind.tagSelfClosing}, got: ${this.token}`,
-			);
-		}
-
-		// We can't have escaping here, so we can the diff as is
-		const actualIdentifierLength =
-			this.scanner.tokenValueEnd - this.scanner.tokenValueStart;
-		if (actualIdentifierLength !== tagName.length) {
-			// early exit to skip substring for string compare
-			throw new Error(
-				`Wrong identifier, expected: "${tagName}", got "${this.scanner.getTokenValueEncoded()}"`,
 			);
 		}
 
@@ -79,16 +68,6 @@ export class Parser {
 			);
 		}
 
-		// We can't have escaping here, so we can the diff as is
-		const actualIdentifierLength =
-			this.scanner.tokenValueEnd - this.scanner.tokenValueStart;
-		if (actualIdentifierLength !== tagName.length) {
-			// early exit to skip substring for string compare
-			throw new Error(
-				`Wrong identifier, expected: "${tagName}", got "${this.scanner.getTokenValueEncoded()}"`,
-			);
-		}
-
 		const actualIdentifer = this.scanner.getTokenValueEncoded();
 		if (actualIdentifer !== tagName) {
 			// early exit to skip substring for string compare
@@ -124,7 +103,6 @@ export class Parser {
 		}
 	}
 
-	/** Assumes {@link TokenKind.startTag} was already consumed. */
 	parseDateTag(tagName: string): Date | undefined {
 		const value = this.parseStringTag(tagName);
 		if (value === undefined) {
@@ -138,7 +116,6 @@ export class Parser {
 		return r;
 	}
 
-	/** Assumes {@link TokenKind.startTag} was already consumed. */
 	parseIntegerTag(tagName: string): number | undefined {
 		const value = this.parseStringTag(tagName);
 		if (value === undefined) {
@@ -152,7 +129,6 @@ export class Parser {
 		return n;
 	}
 
-	/** Assumes {@link TokenKind.startTag} was already consumed. */
 	parseBooleanTag(tagName: string): boolean | undefined {
 		const value = this.parseStringTag(tagName);
 		return value === undefined
@@ -170,16 +146,6 @@ export class Parser {
 		if (this.token !== TokenKind.endTag) {
 			throw new Error(
 				`Wrong token, expected: ${TokenKind.endTag}, got: ${this.token}`,
-			);
-		}
-
-		// We can't have escaping here, so we can the diff as is
-		const actualIdentifierLength =
-			this.scanner.tokenValueEnd - this.scanner.tokenValueStart;
-		if (actualIdentifierLength !== tagName.length) {
-			// early exit to skip substring for string compare
-			throw new Error(
-				`Wrong identifier for closing tag, expected: "${tagName}", got "${this.scanner.getTokenValueEncoded()}"`,
 			);
 		}
 

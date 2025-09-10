@@ -305,36 +305,7 @@ export const parseCompleteMultipartUploadResult = buildParser({
 				bucket: { type: "string", tagName: "Bucket" },
 				key: { type: "string", tagName: "Key" },
 				etag: { type: "string", tagName: "ETag" },
-				checksumCRC: {
-					type: "string",
-					tagName: "ChecksumCRC",
-					optional: true,
-				},
-				checksumCRC32: {
-					type: "string",
-					tagName: "ChecksumCRC32",
-					optional: true,
-				},
-				checksumCRC32C: {
-					type: "string",
-					tagName: "ChecksumCRC32C",
-					optional: true,
-				},
-				checksumCRC64NVME: {
-					type: "string",
-					tagName: "ChecksumCRC64NVME",
-					optional: true,
-				},
-				checksumSHA1: {
-					type: "string",
-					tagName: "ChecksumSHA1",
-					optional: true,
-				},
-				checksumSHA256: {
-					type: "string",
-					tagName: "ChecksumSHA256",
-					optional: true,
-				},
+				...checksumZoo,
 				checksumType: {
 					type: "string",
 					tagName: "ChecksumType",

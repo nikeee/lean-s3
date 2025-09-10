@@ -301,24 +301,25 @@ class Scanner {
 						++this.pos; // consume /
 
 						this.tokenValueStart = this.pos; // identifier start
-						this.pos = this.text.indexOf(">", this.pos);
+						// TODO: Check for isIdentifierStart
 
+						let c = this.text.charCodeAt(this.pos);
+						if (!isIdentifierStart(c)) {
+							throw new Error(`Invalid identifier start at offset ${this.pos}`);
+						}
+						++this.pos; // consume identifier start
+
+						do {
+							c = this.text.charCodeAt(++this.pos);
+						} while (isIdentifierPart(c));
+
+						this.tokenValueEnd = this.pos;
+
+						this.pos = this.text.indexOf(">", this.pos);
 						if (this.pos < 0) {
 							throw new Error("Unterminated tag end.");
 						}
-
 						++this.pos; // consume >
-
-						let identifierEnd = this.tokenValueStart;
-						for (
-							let c = this.text.charCodeAt(identifierEnd);
-							isIdentifierPart(c);
-							++identifierEnd
-						) {
-							c = this.text.charCodeAt(identifierEnd);
-						}
-
-						this.tokenValueEnd = identifierEnd - 1;
 
 						return (this.token = TokenKind2.endTag);
 					}

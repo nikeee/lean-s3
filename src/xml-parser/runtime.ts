@@ -329,8 +329,6 @@ class Scanner {
 						return (this.token = TokenKind2.endTag);
 					}
 					default: {
-						// TODO: Check if there are other cases than a tag start
-
 						if (!isIdentifierStart(ch)) {
 							throw new Error("Expected identifier start");
 						}

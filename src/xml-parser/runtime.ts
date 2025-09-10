@@ -379,17 +379,6 @@ class Scanner {
 		}
 	}
 
-	skipQuotedString() {
-		++this.pos; // consume opening "
-
-		this.pos = this.text.indexOf('"', this.pos);
-		if (this.pos === -1) {
-			throw new Error("Unterminated quote.");
-		}
-
-		++this.pos; // consume closing "
-	}
-
 	#skipPreamble(): void {
 		while (isWhitespace(this.text.charCodeAt(this.pos))) {
 			++this.pos;

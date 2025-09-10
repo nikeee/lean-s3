@@ -259,7 +259,6 @@ const enum CharCode {
 
 class Scanner {
 	pos: number;
-	end: number;
 	text: string;
 
 	token = -1;
@@ -280,7 +279,6 @@ class Scanner {
 	constructor(text: string) {
 		// Number(text); // collapse rope structure of V8
 		this.pos = 0;
-		this.end = text.length;
 		this.text = text;
 		this.#skipPreamble();
 	}
@@ -290,7 +288,7 @@ class Scanner {
 			++this.pos;
 		}
 
-		if (this.pos >= this.end) {
+		if (this.pos >= this.text.length) {
 			return (this.token = TokenKind2.eof);
 		}
 

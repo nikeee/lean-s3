@@ -19,10 +19,10 @@ export class Parser {
 	parseIgnoredTag(tagName: string): void {
 		if (
 			this.token !== TokenKind2.tag &&
-			this.token !== TokenKind2.selfClosedTag
+			this.token !== TokenKind2.tagSelfClosing
 		) {
 			throw new Error(
-				`Wrong token, expected: ${TokenKind2.tag} or ${TokenKind2.selfClosedTag}, got: ${this.token}`,
+				`Wrong token, expected: ${TokenKind2.tag} or ${TokenKind2.tagSelfClosing}, got: ${this.token}`,
 			);
 		}
 
@@ -44,7 +44,7 @@ export class Parser {
 			);
 		}
 
-		if (this.token === TokenKind2.selfClosedTag) {
+		if (this.token === TokenKind2.tagSelfClosing) {
 			this.nextToken();
 			return;
 		}
@@ -72,10 +72,10 @@ export class Parser {
 	parseStringTag(tagName: string): string | undefined {
 		if (
 			this.token !== TokenKind2.tag &&
-			this.token !== TokenKind2.selfClosedTag
+			this.token !== TokenKind2.tagSelfClosing
 		) {
 			throw new Error(
-				`Wrong token, expected: ${TokenKind2.tag} or ${TokenKind2.selfClosedTag}, got: ${this.token}`,
+				`Wrong token, expected: ${TokenKind2.tag} or ${TokenKind2.tagSelfClosing}, got: ${this.token}`,
 			);
 		}
 
@@ -97,7 +97,7 @@ export class Parser {
 			);
 		}
 
-		if (this.token === TokenKind2.selfClosedTag) {
+		if (this.token === TokenKind2.tagSelfClosing) {
 			this.nextToken();
 			return undefined;
 		}
@@ -209,10 +209,11 @@ export class Parser {
  * @remarks This enum cannot be used in runtime code, since it's `const` and will not exist in the parsing stage. Values have to be inlined by the generator
  */
 export const enum TokenKind2 {
-	eof = 0,
-	tag = 1, // <tagIdentifier
-	selfClosedTag = 2, // <tagIdentifier />
-	endTag = 3, // </tagIdentifier>
+	/** this is 0, so tagSelfClosing can be created by `tag | 1`, saving a branch */
+	tag = 0, // <tagIdentifier
+	tagSelfClosing = 1, // <tagIdentifier />
+	endTag = 2, // </tagIdentifier>
+	eof = 3,
 	textNode = 4,
 }
 
@@ -349,15 +350,13 @@ class Scanner {
 						}
 
 						// we now have <identifier attr="a"> or <identifier attr="a" />
-						const isSelfClosing =
-							this.text.charCodeAt(this.pos - 1) === CharCode.slash;
+						const selfClosingFlag = Number(
+							this.text.charCodeAt(this.pos - 1) === CharCode.slash,
+						);
 
 						++this.pos; // consume >
 
-						// TODO: Make this branchless, so we can OR in isSelfClosing?
-						return (this.token = isSelfClosing
-							? TokenKind2.selfClosedTag
-							: TokenKind2.tag);
+						return (this.token = TokenKind2.tag | selfClosingFlag);
 					}
 				}
 			default:

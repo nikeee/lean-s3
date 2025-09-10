@@ -121,7 +121,7 @@ ${parseFn}() {
 
 	console.assert(this.scanner.getTokenValueEncoded() === ${asLiteral(tagName)});
 
-	if (this.token === ${rt.TokenKind2.selfClosedTag} /* TokenKind.selfClosedTag */) {
+	if (this.token === ${rt.TokenKind2.tagSelfClosing} /* TokenKind.tagSelfClosing */) {
 		this.nextToken();
 		${emitObjectInvariants(children).join("\n\t\t\t\t")}
 		return res;
@@ -140,7 +140,7 @@ ${parseFn}() {
 			${
 				Object.keys(children).length > 0
 					? `
-			case ${rt.TokenKind2.selfClosedTag} /* TokenKind.selfClosedTag */:
+			case ${rt.TokenKind2.tagSelfClosing} /* TokenKind.tagSelfClosing */:
 			case ${rt.TokenKind2.tag}: {
 				const identifier = this.scanner.getTokenValueEncoded();
 				switch (identifier) {
@@ -194,7 +194,7 @@ ${parseFn}() {
 				Object.keys(children).length > 0
 					? `
 			/* TODO: Only emit self-closing tags if the child supports it? */
-			case ${rt.TokenKind2.selfClosedTag} /* TokenKind.selfClosedTag */:
+			case ${rt.TokenKind2.tagSelfClosing} /* TokenKind.tagSelfClosing */:
 			case ${rt.TokenKind2.tag} /* TokenKind.tag */: {
 				switch (this.scanner.getTokenValueEncoded()) {
 					${Object.entries(children)

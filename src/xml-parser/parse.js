@@ -9,7 +9,7 @@ class GeneratedParser extends rt.Parser {
 
 		console.assert(this.scanner.getTokenValueEncoded() === "note");
 
-		if (this.token === 2 /* TokenKind.selfClosedTag */) {
+		if (this.token === 2 /* TokenKind.tagSelfClosing */) {
 			this.nextToken();
 			if (res.to === undefined)
 				throw new TypeError(
@@ -79,7 +79,7 @@ class GeneratedParser extends rt.Parser {
 					return res;
 
 				/* TODO: Only emit self-closing tags if the child supports it? */
-				case 2 /* TokenKind.selfClosedTag */:
+				case 2 /* TokenKind.tagSelfClosing */:
 				case 1 /* TokenKind.tag */: {
 					switch (this.scanner.getTokenValueEncoded()) {
 						case "note":

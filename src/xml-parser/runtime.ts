@@ -286,7 +286,9 @@ class Scanner {
 	}
 
 	scan(): TokenKind2 {
-		this.#skipWhitespace();
+		while (isWhitespace(this.text.charCodeAt(this.pos))) {
+			++this.pos;
+		}
 
 		if (this.pos >= this.end) {
 			return (this.token = TokenKind2.eof);
@@ -377,12 +379,6 @@ class Scanner {
 		}
 	}
 
-	#skipWhitespace() {
-		while (isWhitespace(this.text.charCodeAt(this.pos))) {
-			++this.pos;
-		}
-	}
-
 	skipQuotedString() {
 		++this.pos; // consume opening "
 
@@ -395,7 +391,10 @@ class Scanner {
 	}
 
 	#skipPreamble(): void {
-		this.#skipWhitespace();
+		while (isWhitespace(this.text.charCodeAt(this.pos))) {
+			++this.pos;
+		}
+
 		if (
 			this.text.charCodeAt(this.pos) !== CharCode.lessThan ||
 			this.text.charCodeAt(this.pos + 1) !== CharCode.questionMark

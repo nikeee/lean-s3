@@ -121,7 +121,7 @@ ${parseFn}() {
 
 	console.assert(this.scanner.getTokenValueEncoded() === ${asLiteral(tagName)});
 
-	if (this.token === ${rt.TokenKind2.tagSelfClosing} /* TokenKind.tagSelfClosing */) {
+	if (this.token === ${rt.TokenKind.tagSelfClosing} /* TokenKind.tagSelfClosing */) {
 		this.nextToken();
 		${emitObjectInvariants(children).join("\n\t\t\t\t")}
 		return res;
@@ -131,17 +131,17 @@ ${parseFn}() {
 
 	while (true) {
 		switch (this.token) {
-			case ${rt.TokenKind2.endTag} /* TokenKind.endTag */:
+			case ${rt.TokenKind.endTag} /* TokenKind.endTag */:
 				this.parseClosingTag(${asLiteral(tagName)});
 				${emitObjectInvariants(children).join("\n\t\t\t\t")}
 				return res;
-			case ${rt.TokenKind2.eof}:
+			case ${rt.TokenKind.eof}:
 				throw new Error(\`Unterminated tag: "${tagName}"\`);
 			${
 				Object.keys(children).length > 0
 					? `
-			case ${rt.TokenKind2.tagSelfClosing} /* TokenKind.tagSelfClosing */:
-			case ${rt.TokenKind2.tag}: {
+			case ${rt.TokenKind.tagSelfClosing} /* TokenKind.tagSelfClosing */:
+			case ${rt.TokenKind.tag}: {
 				const identifier = this.scanner.getTokenValueEncoded();
 				switch (identifier) {
 					${Object.entries(children)
@@ -187,15 +187,15 @@ ${parseFn}() {
 
 	while (true) {
 		switch (this.token) {
-			case ${rt.TokenKind2.eof} /* TokenKind.eof */:
+			case ${rt.TokenKind.eof} /* TokenKind.eof */:
 				${emitObjectInvariants(children).join("\n\t\t\t\t")}
 				return res;
 			${
 				Object.keys(children).length > 0
 					? `
 			/* TODO: Only emit self-closing tags if the child supports it? */
-			case ${rt.TokenKind2.tagSelfClosing} /* TokenKind.tagSelfClosing */:
-			case ${rt.TokenKind2.tag} /* TokenKind.tag */: {
+			case ${rt.TokenKind.tagSelfClosing} /* TokenKind.tagSelfClosing */:
+			case ${rt.TokenKind.tag} /* TokenKind.tag */: {
 				switch (this.scanner.getTokenValueEncoded()) {
 					${Object.entries(children)
 						.map(

@@ -2,7 +2,7 @@
 
 export class Parser {
 	scanner: Scanner;
-	token!: TokenKind2;
+	token!: TokenKind;
 
 	nextToken = () => {
 		this.token = this.scanner.scan();
@@ -18,11 +18,11 @@ export class Parser {
 	/** Assumes {@link TokenKind.startTag} was already consumed. */
 	parseIgnoredTag(tagName: string): void {
 		if (
-			this.token !== TokenKind2.tag &&
-			this.token !== TokenKind2.tagSelfClosing
+			this.token !== TokenKind.tag &&
+			this.token !== TokenKind.tagSelfClosing
 		) {
 			throw new Error(
-				`Wrong token, expected: ${TokenKind2.tag} or ${TokenKind2.tagSelfClosing}, got: ${this.token}`,
+				`Wrong token, expected: ${TokenKind.tag} or ${TokenKind.tagSelfClosing}, got: ${this.token}`,
 			);
 		}
 
@@ -44,7 +44,7 @@ export class Parser {
 			);
 		}
 
-		if (this.token === TokenKind2.tagSelfClosing) {
+		if (this.token === TokenKind.tagSelfClosing) {
 			this.nextToken();
 			return;
 		}
@@ -54,12 +54,12 @@ export class Parser {
 
 		switch (this.token) {
 			// @ts-expect-error nextToken changes this.token
-			case TokenKind2.endTag:
+			case TokenKind.endTag:
 				this.parseClosingTag(tagName);
 				return;
 			default: {
 				// @ts-expect-error nextToken changes this.token
-				if (this.token !== TokenKind2.textNode) {
+				if (this.token !== TokenKind.textNode) {
 					throw new Error(`Expected text content for tag "${tagName}".`);
 				}
 				this.nextToken();
@@ -71,11 +71,11 @@ export class Parser {
 
 	parseStringTag(tagName: string): string | undefined {
 		if (
-			this.token !== TokenKind2.tag &&
-			this.token !== TokenKind2.tagSelfClosing
+			this.token !== TokenKind.tag &&
+			this.token !== TokenKind.tagSelfClosing
 		) {
 			throw new Error(
-				`Wrong token, expected: ${TokenKind2.tag} or ${TokenKind2.tagSelfClosing}, got: ${this.token}`,
+				`Wrong token, expected: ${TokenKind.tag} or ${TokenKind.tagSelfClosing}, got: ${this.token}`,
 			);
 		}
 
@@ -97,7 +97,7 @@ export class Parser {
 			);
 		}
 
-		if (this.token === TokenKind2.tagSelfClosing) {
+		if (this.token === TokenKind.tagSelfClosing) {
 			this.nextToken();
 			return undefined;
 		}
@@ -107,12 +107,12 @@ export class Parser {
 
 		switch (this.token) {
 			// @ts-expect-error nextToken changes this.token
-			case TokenKind2.endTag:
+			case TokenKind.endTag:
 				this.parseClosingTag(tagName);
 				return "";
 			default: {
 				// @ts-expect-error nextToken changes this.token
-				if (this.token !== TokenKind2.textNode) {
+				if (this.token !== TokenKind.textNode) {
 					throw new Error(`Expected text content for tag "${tagName}".`);
 				}
 
@@ -167,9 +167,9 @@ export class Parser {
 	//#endregion
 
 	parseClosingTag(tagName: string): void {
-		if (this.token !== TokenKind2.endTag) {
+		if (this.token !== TokenKind.endTag) {
 			throw new Error(
-				`Wrong token, expected: ${TokenKind2.endTag}, got: ${this.token}`,
+				`Wrong token, expected: ${TokenKind.endTag}, got: ${this.token}`,
 			);
 		}
 
@@ -194,7 +194,7 @@ export class Parser {
 		this.nextToken();
 	}
 
-	parseExpected(expected: TokenKind2): void {
+	parseExpected(expected: TokenKind): void {
 		if (this.token !== expected) {
 			throw new Error(`Wrong token, expected: ${expected}, got: ${this.token}`);
 		}
@@ -208,7 +208,7 @@ export class Parser {
  *
  * @remarks This enum cannot be used in runtime code, since it's `const` and will not exist in the parsing stage. Values have to be inlined by the generator
  */
-export const enum TokenKind2 {
+export const enum TokenKind {
 	/** this is 0, so tagSelfClosing can be created by `tag | 1`, saving a branch */
 	tag = 0, // <tagIdentifier
 	tagSelfClosing = 1, // <tagIdentifier />
@@ -284,13 +284,13 @@ class Scanner {
 		this.#skipPreamble();
 	}
 
-	scan(): TokenKind2 {
+	scan(): TokenKind {
 		while (isWhitespace(this.text.charCodeAt(this.pos))) {
 			++this.pos;
 		}
 
 		if (this.pos >= this.text.length) {
-			return (this.token = TokenKind2.eof);
+			return (this.token = TokenKind.eof);
 		}
 
 		let ch = this.text.charCodeAt(this.pos);
@@ -326,7 +326,7 @@ class Scanner {
 						}
 						++this.pos; // consume >
 
-						return (this.token = TokenKind2.endTag);
+						return (this.token = TokenKind.endTag);
 					}
 					default: {
 						if (!isIdentifierStart(ch)) {
@@ -354,7 +354,7 @@ class Scanner {
 
 						++this.pos; // consume >
 
-						return (this.token = TokenKind2.tag | selfClosingFlag);
+						return (this.token = TokenKind.tag | selfClosingFlag);
 					}
 				}
 			default:
@@ -370,7 +370,7 @@ class Scanner {
 					--this.tokenValueEnd;
 				}
 
-				return (this.token = TokenKind2.textNode);
+				return (this.token = TokenKind.textNode);
 		}
 	}
 

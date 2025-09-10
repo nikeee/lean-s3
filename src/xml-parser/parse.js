@@ -44,6 +44,7 @@ class GeneratedParser extends rt.Parser {
 						);
 					return res;
 
+				case 2 /* TokenKind.selfClosedTag */:
 				case 1 /* TokenKind.tag */: {
 					switch (this.scanner.getTokenValueEncoded()) {
 						case "note":

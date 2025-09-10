@@ -367,7 +367,12 @@ class Scanner {
 				if (this.pos < 0) {
 					throw new Error("Unterminated text node.");
 				}
-				this.tokenValueEnd = this.#trimPosEnd(this.pos);
+
+				this.tokenValueEnd = this.pos;
+				while (isWhitespace(this.text.charCodeAt(this.tokenValueEnd))) {
+					--this.tokenValueEnd;
+				}
+
 				return (this.token = TokenKind2.textNode);
 		}
 	}
@@ -376,13 +381,6 @@ class Scanner {
 		while (isWhitespace(this.text.charCodeAt(this.pos))) {
 			++this.pos;
 		}
-	}
-
-	#trimPosEnd(start: number) {
-		while (isWhitespace(this.text.charCodeAt(start))) {
-			--start;
-		}
-		return start;
 	}
 
 	skipQuotedString() {

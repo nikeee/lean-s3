@@ -200,8 +200,6 @@ const enum CharCode {
 	lessThan = 0x3c,
 	greaterThan = 0x3e,
 	slash = 0x2f,
-	equals = 0x3d,
-	doubleQuote = 0x22,
 	A = 0x41,
 	Z = 0x5a,
 	a = 0x61,
@@ -219,9 +217,7 @@ const enum CharCode {
 	lineSeparator = 0x2028,
 	paragraphSeparator = 0x2029,
 	nextLine = 0x85,
-	exclamationMark = 0x21,
 	questionMark = 0x3f,
-	minus = 0x2d,
 }
 
 class Scanner {

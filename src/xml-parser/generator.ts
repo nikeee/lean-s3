@@ -142,7 +142,6 @@ ${parseFn}() {
 					? `
 			case ${rt.TokenKind2.tag}: {
 				const identifier = this.scanner.getTokenValueEncoded();
-				this.nextToken();
 				switch (identifier) {
 					${Object.entries(children)
 						.map(

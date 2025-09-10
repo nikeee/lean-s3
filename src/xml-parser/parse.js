@@ -42,7 +42,6 @@ class GeneratedParser extends rt.Parser {
 
 				case 1: {
 					const identifier = this.scanner.getTokenValueEncoded();
-					this.nextToken();
 					switch (identifier) {
 						case "to":
 							res.to = this.parseStringTag("to");

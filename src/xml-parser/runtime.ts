@@ -363,7 +363,7 @@ class Scanner {
 				if (this.pos < 0) {
 					throw new Error("Unterminated text node.");
 				}
-				this.tokenValueEnd = this.#trimPosEnd(this.pos - 1);
+				this.tokenValueEnd = this.#trimPosEnd(this.pos);
 				return (this.token = TokenKind2.textNode);
 		}
 	}

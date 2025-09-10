@@ -226,12 +226,13 @@ class Scanner {
 
 	token = -1;
 
-	tokenValueStart = -1;
-	tokenValueEnd = -1;
+	// biome-ignore lint/style/noNonNullAssertion: filled in scanning
+	tokenValue: string = null!;
 
-	getTokenValueEncoded() {
-		return this.text.substring(this.tokenValueStart, this.tokenValueEnd);
+	getTokenValueEncoded(): string {
+		return this.tokenValue;
 	}
+
 	getTokenValueDecoded() {
 		return this.getTokenValueEncoded().replace(
 			entityPattern,
@@ -267,8 +268,7 @@ class Scanner {
 					case CharCode.slash: {
 						++this.pos; // consume /
 
-						this.tokenValueStart = this.pos; // identifier start
-						// TODO: Check for isIdentifierStart
+						const tokenValueStart = this.pos; // identifier start
 
 						ch = this.text.charCodeAt(this.pos);
 						if (!isIdentifierStart(ch)) {
@@ -280,7 +280,7 @@ class Scanner {
 							ch = this.text.charCodeAt(++this.pos);
 						} while (isIdentifierPart(ch));
 
-						this.tokenValueEnd = this.pos;
+						this.tokenValue = this.text.substring(tokenValueStart, this.pos);
 
 						this.pos = this.text.indexOf(">", this.pos);
 						if (this.pos < 0) {
@@ -295,14 +295,14 @@ class Scanner {
 							throw new Error("Expected identifier start");
 						}
 
-						this.tokenValueStart = this.pos; // identifier start
+						const tokenValueStart = this.pos; // identifier start
 						++this.pos; // consume identifier start
 
 						do {
 							ch = this.text.charCodeAt(++this.pos);
 						} while (isIdentifierPart(ch));
 
-						this.tokenValueEnd = this.pos;
+						this.tokenValue = this.text.substring(tokenValueStart, this.pos);
 
 						this.pos = this.text.indexOf(">", this.pos);
 						if (this.pos < 0) {
@@ -319,20 +319,23 @@ class Scanner {
 						return (this.token = TokenKind.tag | selfClosingFlag);
 					}
 				}
-			default:
-				this.tokenValueStart = this.pos;
+			default: {
+				const tokenValueStart = this.pos;
 				// we're at a text node with beginning trimmed away
 				this.pos = this.text.indexOf("<", this.pos);
 				if (this.pos < 0) {
 					throw new Error("Unterminated text node.");
 				}
 
-				this.tokenValueEnd = this.pos;
-				while (isWhitespace(this.text.charCodeAt(this.tokenValueEnd))) {
-					--this.tokenValueEnd;
+				let tokenValueEnd = this.pos;
+				while (isWhitespace(this.text.charCodeAt(tokenValueEnd))) {
+					--tokenValueEnd;
 				}
 
+				this.tokenValue = this.text.substring(tokenValueStart, tokenValueEnd);
+
 				return (this.token = TokenKind.textNode);
+			}
 		}
 	}
 

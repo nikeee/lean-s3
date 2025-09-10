@@ -41,7 +41,7 @@ summary(() => {
 			});
 			*/
 
-			bench("custom parser (runtime-generated)", () => {
+			bench("xml parser of lean-s3", () => {
 				for (let i = 0; i < 10000; ++i) {
 					runtimeGeneratedParser(s);
 				}

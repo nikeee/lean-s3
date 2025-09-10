@@ -14,11 +14,18 @@ const source = buildStaticParserSourceWithText(
 		children: {
 			note: {
 				type: "object",
-				children: {},
+				children: {
+					to: {
+						type: "string",
+					},
+					from: {
+						type: "string",
+					},
+				},
 			},
 		},
 	},
-	`<?xml version="1.0" encoding="utf-8"?><note></note>`,
+	`<?xml version="1.0" encoding="UTF-8"?><note><to>Alice</to><from>Bob</from></note>`,
 );
 
 console.log(source);

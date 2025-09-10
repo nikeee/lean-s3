@@ -193,6 +193,7 @@ ${parseFn}() {
 			${
 				Object.keys(children).length > 0
 					? `
+			/* TODO: Only emit self-closing tags if the child supports it? */
 			case ${rt.TokenKind2.selfClosedTag} /* TokenKind.selfClosedTag */:
 			case ${rt.TokenKind2.tag} /* TokenKind.tag */: {
 				switch (this.scanner.getTokenValueEncoded()) {

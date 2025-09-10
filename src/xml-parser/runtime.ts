@@ -303,15 +303,15 @@ class Scanner {
 						this.tokenValueStart = this.pos; // identifier start
 						// TODO: Check for isIdentifierStart
 
-						let c = this.text.charCodeAt(this.pos);
-						if (!isIdentifierStart(c)) {
+						ch = this.text.charCodeAt(this.pos);
+						if (!isIdentifierStart(ch)) {
 							throw new Error(`Invalid identifier start at offset ${this.pos}`);
 						}
 						++this.pos; // consume identifier start
 
 						do {
-							c = this.text.charCodeAt(++this.pos);
-						} while (isIdentifierPart(c));
+							ch = this.text.charCodeAt(++this.pos);
+						} while (isIdentifierPart(ch));
 
 						this.tokenValueEnd = this.pos;
 
@@ -331,6 +331,14 @@ class Scanner {
 						}
 
 						this.tokenValueStart = this.pos; // identifier start
+						++this.pos; // consume identifier start
+
+						do {
+							ch = this.text.charCodeAt(++this.pos);
+						} while (isIdentifierPart(ch));
+
+						this.tokenValueEnd = this.pos;
+
 						this.pos = this.text.indexOf(">", this.pos);
 						if (this.pos < 0) {
 							throw new Error("Unterminated tag end.");
@@ -341,17 +349,6 @@ class Scanner {
 							this.text.charCodeAt(this.pos - 1) === CharCode.slash;
 
 						++this.pos; // consume >
-
-						let identifierEnd = this.tokenValueStart;
-						for (
-							let c = this.text.charCodeAt(identifierEnd);
-							isIdentifierPart(c);
-							++identifierEnd
-						) {
-							c = this.text.charCodeAt(identifierEnd);
-						}
-
-						this.tokenValueEnd = identifierEnd - 1;
 
 						// TODO: Make this branchless, so we can OR in isSelfClosing?
 						return (this.token = isSelfClosing

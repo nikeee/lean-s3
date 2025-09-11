@@ -189,11 +189,14 @@ const enum CharCode {
 	questionMark = 0x3f,
 }
 
+/**
+ * I know, this class looks wicked. We had to cut some corners to make it faster.
+ */
 class Scanner {
 	pos: number;
 	text: string;
 
-	token = -1;
+	token: TokenKind;
 
 	// biome-ignore lint/style/noNonNullAssertion: filled in scanning
 	tokenValue: string = null!;
@@ -210,9 +213,9 @@ class Scanner {
 	}
 
 	constructor(text: string) {
-		// Number(text); // collapse rope structure of V8
 		this.pos = 0;
 		this.text = text;
+		this.token = TokenKind.eof; // should be initialized by parser
 		this.#skipPreamble();
 	}
 
@@ -239,11 +242,10 @@ class Scanner {
 
 						const tokenValueStart = this.pos; // identifier start
 
-						ch = this.text.charCodeAt(this.pos);
+						ch = this.text.charCodeAt(this.pos++); // consume identifier start
 						if (!isIdentifierStart(ch)) {
 							throw new Error(`Invalid identifier start at offset ${this.pos}`);
 						}
-						++this.pos; // consume identifier start
 
 						do {
 							ch = this.text.charCodeAt(++this.pos);
@@ -264,8 +266,7 @@ class Scanner {
 							throw new Error("Expected identifier start");
 						}
 
-						const tokenValueStart = this.pos; // identifier start
-						++this.pos; // consume identifier start
+						const tokenValueStart = this.pos++; // identifier start + consume
 
 						do {
 							ch = this.text.charCodeAt(++this.pos);
@@ -320,9 +321,7 @@ class Scanner {
 			return;
 		}
 
-		++this.pos; // consume <
-
-		const closingIndex = this.text.indexOf(">", this.pos);
+		const closingIndex = this.text.indexOf(">", ++this.pos); // consume <
 		if (closingIndex === -1) {
 			throw new Error("Unterminated XML preamble.");
 		}

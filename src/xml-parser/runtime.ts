@@ -4,9 +4,7 @@ export class Parser {
 	scanner: Scanner;
 	token!: TokenKind;
 
-	nextToken = () => {
-		this.token = this.scanner.scan();
-	};
+	nextToken = () => (this.token = this.scanner.scan());
 
 	constructor(text: string) {
 		this.scanner = new Scanner(text);
@@ -28,10 +26,9 @@ export class Parser {
 			return;
 		}
 
-		// consume <identifier>
-		this.nextToken();
-
-		switch (this.token) {
+		switch (
+			this.nextToken() // consume <identifier>
+		) {
 			case TokenKind.endTag:
 				this.parseClosingTag(tagName);
 				return;
@@ -40,10 +37,7 @@ export class Parser {
 					throw new Error(`Expected text content for tag "${tagName}".`);
 				}
 
-				this.nextToken();
-
-				// @ts-expect-error this.token is set by this.nextToken()
-				if (this.token !== TokenKind.endTag) {
+				if (this.nextToken() !== TokenKind.endTag) {
 					throw new Error(
 						`Wrong token, expected: ${TokenKind.endTag}, got: ${this.token}`,
 					);
@@ -68,10 +62,9 @@ export class Parser {
 			return undefined;
 		}
 
-		// consume <identifier>
-		this.nextToken();
-
-		switch (this.token) {
+		switch (
+			this.nextToken() // consume <identifier>
+		) {
 			case TokenKind.endTag:
 				this.parseClosingTag(tagName);
 				return "";
@@ -81,10 +74,7 @@ export class Parser {
 				}
 
 				const value = this.scanner.getTokenValueDecoded();
-				this.nextToken();
-
-				// @ts-expect-error this.token is set by this.nextToken()
-				if (this.token !== TokenKind.endTag) {
+				if (this.nextToken() !== TokenKind.endTag) {
 					throw new Error(
 						`Wrong token, expected: ${TokenKind.endTag}, got: ${this.token}`,
 					);

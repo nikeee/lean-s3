@@ -39,7 +39,16 @@ export class Parser {
 				if (this.token !== TokenKind.textNode) {
 					throw new Error(`Expected text content for tag "${tagName}".`);
 				}
+
 				this.nextToken();
+
+				// @ts-expect-error this.token is set by this.nextToken()
+				if (this.token !== TokenKind.endTag) {
+					throw new Error(
+						`Wrong token, expected: ${TokenKind.endTag}, got: ${this.token}`,
+					);
+				}
+
 				this.parseClosingTag(tagName);
 				return;
 			}
@@ -73,6 +82,14 @@ export class Parser {
 
 				const value = this.scanner.getTokenValueDecoded();
 				this.nextToken();
+
+				// @ts-expect-error this.token is set by this.nextToken()
+				if (this.token !== TokenKind.endTag) {
+					throw new Error(
+						`Wrong token, expected: ${TokenKind.endTag}, got: ${this.token}`,
+					);
+				}
+
 				this.parseClosingTag(tagName);
 				return value;
 			}
@@ -119,17 +136,10 @@ export class Parser {
 	//#endregion
 
 	parseClosingTag(tagName: string): void {
-		if (this.token !== TokenKind.endTag) {
+		const identifier = this.scanner.getTokenValueEncoded();
+		if (identifier !== tagName) {
 			throw new Error(
-				`Wrong token, expected: ${TokenKind.endTag}, got: ${this.token}`,
-			);
-		}
-
-		const actualIdentifer = this.scanner.getTokenValueEncoded();
-		if (actualIdentifer !== tagName) {
-			// early exit to skip substring for string compare
-			throw new Error(
-				`Wrong identifier for closing tag, expected: "${tagName}", got "${actualIdentifer}"`,
+				`Wrong identifier for closing tag, expected: "${tagName}", got "${identifier}"`,
 			);
 		}
 

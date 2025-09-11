@@ -255,12 +255,12 @@ describe("optimizations", () => {
 
 		function isWhitespaceBinary(ch: number) {
 			return (
-				(ch >= 0x09 && ch <= 0x0d) ||
-				ch === 0x20 ||
-				ch === 0xa0 || // NBSP
-				ch === 0x85 || // Next line
-				ch === 0x2028 || // Line separator
-				ch === 0x2029 // Paragraph separator
+				ch === CharCode.space ||
+				(ch >= CharCode.tab && ch <= CharCode.carriageReturn) ||
+				ch === CharCode.nonBreakingSpace || // NBSP
+				ch === CharCode.nextLine || // Next line
+				ch === CharCode.lineSeparator || // Line separator
+				ch === CharCode.paragraphSeparator // Paragraph separator
 			);
 		}
 		for (let i = 0; i < 0x3000; ++i) {

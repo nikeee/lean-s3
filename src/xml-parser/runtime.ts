@@ -116,7 +116,7 @@ export class Parser {
 		}
 
 		const n = Number(value);
-		if (!Number.isInteger(n)) {
+		if (!Number.isSafeInteger(n)) {
 			throw new Error(`Value is not an integer: "${value}"`);
 		}
 		return n;

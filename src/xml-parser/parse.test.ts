@@ -210,3 +210,61 @@ describe("xml parsing", () => {
 		});
 	});
 });
+
+describe("optimizations", () => {
+	test("is whitespace", () => {
+		// biome-ignore lint/suspicious/noConstEnum: will be inlined by the compiler
+		const enum CharCode {
+			lessThan = 0x3c,
+			greaterThan = 0x3e,
+			slash = 0x2f,
+			A = 0x41,
+			Z = 0x5a,
+			a = 0x61,
+			z = 0x7a,
+			_ = 0x5f,
+			_0 = 0x30,
+			_9 = 0x39,
+			tab = 0x09,
+			space = 0x20,
+			lineFeed = 0x0a,
+			carriageReturn = 0x0d,
+			verticalTab = 0x0b, // \v
+			formFeed = 0x0c, // \f
+			nonBreakingSpace = 0xa0, //
+			lineSeparator = 0x2028,
+			paragraphSeparator = 0x2029,
+			nextLine = 0x85,
+			questionMark = 0x3f,
+		}
+
+		function isWhitespaceReference(ch: number) {
+			return (
+				ch === CharCode.space ||
+				ch === CharCode.tab ||
+				ch === CharCode.lineFeed ||
+				ch === CharCode.carriageReturn ||
+				ch === CharCode.verticalTab ||
+				ch === CharCode.formFeed ||
+				ch === CharCode.nonBreakingSpace ||
+				ch === CharCode.lineSeparator ||
+				ch === CharCode.paragraphSeparator ||
+				ch === CharCode.nextLine
+			);
+		}
+
+		function isWhitespaceBinary(ch: number) {
+			return (
+				(ch >= 0x09 && ch <= 0x0d) ||
+				ch === 0x20 ||
+				ch === 0xa0 || // NBSP
+				ch === 0x85 || // Next line
+				ch === 0x2028 || // Line separator
+				ch === 0x2029 // Paragraph separator
+			);
+		}
+		for (let i = 0; i < 0x3000; ++i) {
+			expect(isWhitespaceBinary(i)).toBe(isWhitespaceReference(i));
+		}
+	});
+});

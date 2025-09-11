@@ -1,7 +1,7 @@
 //@ts-check
 import { createHash } from "node:crypto";
 
-import { summary, group, bench, run, do_not_optimize } from "mitata";
+import { summary, group, bench, run, do_not_optimize, barplot } from "mitata";
 
 /**
  * @module Case study whether to use URLSearchParams or manual string concat for simple search params and some other micro benchmarks to determine how we should do things.
@@ -448,6 +448,122 @@ summary(() => {
 				});
 			},
 		);
+	});
+
+	barplot(() => {
+		group("is whitespace", () => {
+			const CharCode = {
+				lessThan: 0x3c,
+				greaterThan: 0x3e,
+				slash: 0x2f,
+				A: 0x41,
+				Z: 0x5a,
+				a: 0x61,
+				z: 0x7a,
+				_: 0x5f,
+				_0: 0x30,
+				_9: 0x39,
+				tab: 0x09,
+				space: 0x20,
+				lineFeed: 0x0a,
+				carriageReturn: 0x0d,
+				verticalTab: 0x0b, // \v
+				formFeed: 0x0c, // \f
+				nonBreakingSpace: 0xa0, //
+				lineSeparator: 0x2028,
+				paragraphSeparator: 0x2029,
+				nextLine: 0x85,
+				questionMark: 0x3f,
+			};
+
+			const whitespaceSet = new Set([
+				CharCode.space,
+				CharCode.tab,
+				CharCode.lineFeed,
+				CharCode.carriageReturn,
+				CharCode.verticalTab,
+				CharCode.formFeed,
+				CharCode.nonBreakingSpace,
+				CharCode.lineSeparator,
+				CharCode.paragraphSeparator,
+				CharCode.nextLine,
+			]);
+
+			function isWhitespaceLogical(ch) {
+				return (
+					ch === 0x20 || // CharCode.space
+					ch === 0x09 || // CharCode.tab
+					ch === 0x0a || // CharCode.lineFeed
+					ch === 0x0d || // CharCode.carriageReturn
+					ch === 0x0b || // CharCode.verticalTab
+					ch === 0x0c || // CharCode.formFeed
+					ch === 0xa0 || // CharCode.nonBreakingSpace
+					ch === 0x2028 || // CharCode.lineSeparator
+					ch === 0x2029 || // CharCode.paragraphSeparator
+					ch === 0x85 // CharCode.nextLine
+				);
+			}
+
+			const whitespaceTable = {
+				[CharCode.space]: true,
+				[CharCode.tab]: true,
+				[CharCode.lineFeed]: true,
+				[CharCode.carriageReturn]: true,
+				[CharCode.verticalTab]: true,
+				[CharCode.formFeed]: true,
+				[CharCode.nonBreakingSpace]: true,
+				[CharCode.lineSeparator]: true,
+				[CharCode.paragraphSeparator]: true,
+				[CharCode.nextLine]: true,
+			};
+
+			function isWhitespaceBinary(ch) {
+				return (
+					(ch >= 0x09 && ch <= 0x0d) ||
+					ch === 0x20 ||
+					ch === 0xa0 || // NBSP
+						ch === 0x85 || // Next line
+						ch === 0x2028 || // Line separator
+					ch === 0x2029 // Paragraph separator
+				);
+			}
+
+			bench("set", () => {
+				for (let i = 0; i < 1000; ++i) {
+					// we should probably use more realistic values, so branch prediction can work better
+					for (let i = 0; i < 128; ++i) {
+						const a = whitespaceSet.has(i);
+					}
+				}
+			});
+
+			bench("lookup table", () => {
+				for (let i = 0; i < 1000; ++i) {
+					// we should probably use more realistic values, so branch prediction can work better
+					for (let i = 0; i < 128; ++i) {
+						const a = !!whitespaceTable[i];
+					}
+				}
+			});
+
+			bench("logical or", () => {
+				for (let i = 0; i < 1000; ++i) {
+					// we should probably use more realistic values, so branch prediction can work better
+					for (let i = 0; i < 128; ++i) {
+						const a = isWhitespaceLogical(i);
+					}
+				}
+			});
+
+			bench("binary ops", () => {
+				for (let i = 0; i < 1000; ++i) {
+					// we should probably use more realistic values, so branch prediction can work better
+					for (let i = 0; i < 128; ++i) {
+						const a = isWhitespaceBinary(i);
+					}
+				}
+			}).baseline(true);
+		});
 	});
 });
 

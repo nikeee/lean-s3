@@ -16,20 +16,10 @@ export class Parser {
 	//#region primitives
 
 	parseIgnoredTag(tagName: string): void {
-		if (
-			this.token !== TokenKind.tag &&
-			this.token !== TokenKind.tagSelfClosing
-		) {
+		const identifier = this.scanner.getTokenValueEncoded();
+		if (identifier !== tagName) {
 			throw new Error(
-				`Wrong token, expected: ${TokenKind.tag} or ${TokenKind.tagSelfClosing}, got: ${this.token}`,
-			);
-		}
-
-		const actualIdentifer = this.scanner.getTokenValueEncoded();
-		if (actualIdentifer !== tagName) {
-			// early exit to skip substring for string compare
-			throw new Error(
-				`Wrong identifier, expected: "${tagName}", got "${actualIdentifer}"`,
+				`Wrong identifier, expected: "${tagName}", got "${identifier}"`,
 			);
 		}
 
@@ -42,12 +32,10 @@ export class Parser {
 		this.nextToken();
 
 		switch (this.token) {
-			// @ts-expect-error nextToken changes this.token
 			case TokenKind.endTag:
 				this.parseClosingTag(tagName);
 				return;
 			default: {
-				// @ts-expect-error nextToken changes this.token
 				if (this.token !== TokenKind.textNode) {
 					throw new Error(`Expected text content for tag "${tagName}".`);
 				}
@@ -59,20 +47,10 @@ export class Parser {
 	}
 
 	parseStringTag(tagName: string): string | undefined {
-		if (
-			this.token !== TokenKind.tag &&
-			this.token !== TokenKind.tagSelfClosing
-		) {
+		const identifier = this.scanner.getTokenValueEncoded();
+		if (identifier !== tagName) {
 			throw new Error(
-				`Wrong token, expected: ${TokenKind.tag} or ${TokenKind.tagSelfClosing}, got: ${this.token}`,
-			);
-		}
-
-		const actualIdentifer = this.scanner.getTokenValueEncoded();
-		if (actualIdentifer !== tagName) {
-			// early exit to skip substring for string compare
-			throw new Error(
-				`Wrong identifier, expected: "${tagName}", got "${actualIdentifer}"`,
+				`Wrong identifier, expected: "${tagName}", got "${identifier}"`,
 			);
 		}
 
@@ -85,12 +63,10 @@ export class Parser {
 		this.nextToken();
 
 		switch (this.token) {
-			// @ts-expect-error nextToken changes this.token
 			case TokenKind.endTag:
 				this.parseClosingTag(tagName);
 				return "";
 			default: {
-				// @ts-expect-error nextToken changes this.token
 				if (this.token !== TokenKind.textNode) {
 					throw new Error(`Expected text content for tag "${tagName}".`);
 				}

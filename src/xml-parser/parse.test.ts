@@ -257,10 +257,10 @@ describe("optimizations", () => {
 			return (
 				ch === CharCode.space ||
 				(ch >= CharCode.tab && ch <= CharCode.carriageReturn) ||
-				ch === CharCode.nonBreakingSpace || // NBSP
-				ch === CharCode.nextLine || // Next line
-				ch === CharCode.lineSeparator || // Line separator
-				ch === CharCode.paragraphSeparator // Paragraph separator
+				ch === CharCode.nonBreakingSpace ||
+				ch === CharCode.nextLine ||
+				ch === CharCode.lineSeparator ||
+				ch === CharCode.paragraphSeparator
 			);
 		}
 		for (let i = 0; i < 0x3000; ++i) {

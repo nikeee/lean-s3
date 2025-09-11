@@ -159,13 +159,6 @@ export class Parser {
 
 		this.nextToken();
 	}
-
-	parseExpected(expected: TokenKind): void {
-		if (this.token !== expected) {
-			throw new Error(`Wrong token, expected: ${expected}, got: ${this.token}`);
-		}
-		this.nextToken();
-	}
 }
 
 /**

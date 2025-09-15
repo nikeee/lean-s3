@@ -50,14 +50,14 @@
     "@biomejs/biome": "2.2.4",
     "@testcontainers/localstack": "^11.5.1",
     "@testcontainers/minio": "^11.5.1",
-    "@types/node": "^24.3.3",
-    "@typescript/native-preview": "^7.0.0-dev.20250913.1",
+    "@types/node": "^24.4.0",
+    "@typescript/native-preview": "^7.0.0-dev.20250915.1",
     "expect": "^30.1.2",
     "lefthook": "^1.13.0",
     "testcontainers": "^11.5.1",
     "tsup": "^8.5.0",
     "tsx": "^4.20.5",
-    "typedoc": "^0.28.12"
+    "typedoc": "^0.28.13"
   },
   "engines": {
     "node": "^20.19.3 || ^22.17.0 || ^24.4.0"

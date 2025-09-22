@@ -14,7 +14,7 @@
     "@aws-sdk/client-s3": "^3.888.0",
     "@aws-sdk/s3-request-presigner": "^3.888.0",
     "@monstermann/tinybench-pretty-printer": "^0.2.0",
-    "@testcontainers/minio": "^11.5.1",
+    "@testcontainers/minio": "^11.6.0",
     "aws4fetch": "^1.0.20",
     "bun": "^1.2.22",
     "fast-xml-parser": "^5.2.5",

@@ -51,12 +51,12 @@
     "@testcontainers/localstack": "^11.6.0",
     "@testcontainers/minio": "^11.6.0",
     "@types/node": "^24.5.2",
-    "@typescript/native-preview": "^7.0.0-dev.20250922.1",
+    "@typescript/native-preview": "^7.0.0-dev.20250926.1",
     "expect": "^30.1.2",
-    "lefthook": "^1.13.2",
+    "lefthook": "^1.13.4",
     "testcontainers": "^11.6.0",
     "tsup": "^8.5.0",
-    "tsx": "^4.20.5",
+    "tsx": "^4.20.6",
     "typedoc": "^0.28.13"
   },
   "engines": {

@@ -889,9 +889,7 @@ export default class S3Client {
 			options.signal,
 		);
 
-		// garage returns 200 even though the spec states 204 should be returned
-		// fix @ garage proposed in https://git.deuxfleurs.fr/Deuxfleurs/garage/pulls/1095
-		if (response.statusCode !== 204 && response.statusCode !== 200) {
+		if (response.statusCode !== 204) {
 			throw await getResponseError(response, path);
 		}
 	}

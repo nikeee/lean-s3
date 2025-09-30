@@ -2,7 +2,7 @@
   "name": "lean-s3",
   "author": "Niklas Mollenhauer",
   "license": "MIT",
-  "version": "0.8.6",
+  "version": "0.8.7",
   "description": "A server-side S3 API for the regular user.",
   "keywords": [
     "s3",

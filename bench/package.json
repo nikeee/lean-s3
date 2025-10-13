@@ -20,7 +20,7 @@
     "fast-xml-parser": "^5.3.0",
     "minio": "^8.0.6",
     "mitata": "^1.0.34",
-    "s3mini": "^0.5.0",
+    "s3mini": "^0.6.0",
     "tinybench": "^5.0.1"
   }
 }

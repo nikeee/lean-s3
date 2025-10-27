@@ -23,7 +23,7 @@
     "minio": "^8.0.6",
     "mitata": "^1.0.34",
     "s3mini": "^0.6.0",
-    "tinybench": "^5.0.1"
+    "tinybench": "^5.1.0"
   },
   "devDependencies": {
     "@aws-lite/s3-types": "^0.2.6"

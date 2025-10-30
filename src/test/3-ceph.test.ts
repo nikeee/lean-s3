@@ -7,6 +7,8 @@ import { CephContainer } from "./CephContainer.ts";
 
 describe("ceph", async () => {
 	const s3 = await new CephContainer().start();
+	const region = "default";
+	const bucket = "test-bucket-ceph";
 
 	const runId = Date.now();
 	{
@@ -14,17 +16,17 @@ describe("ceph", async () => {
 			endpoint: s3.getRGWUri(),
 			accessKeyId: s3.getRGWAccessKey(),
 			secretAccessKey: s3.getRGWSecretKey(),
-			region: "default",
+			region,
 			bucket: "none", // intentionally set to a non-existent one, so we catch cases where the bucket is not passed correctly
 		});
 		before(async () => {
-			const res = await client.createBucket("test-bucket-ceph");
+			const res = await client.createBucket(bucket);
 			expect(res).toBeUndefined();
 		});
 		after(async () => {
-			expect(await client.bucketExists("test-bucket-ceph")).toBe(true);
-			await client.deleteBucket("test-bucket-ceph");
-			expect(await client.bucketExists("test-bucket-ceph")).toBe(false);
+			expect(await client.bucketExists(bucket)).toBe(true);
+			await client.deleteBucket(bucket);
+			expect(await client.bucketExists(bucket)).toBe(false);
 			await s3.stop();
 		});
 	}
@@ -33,7 +35,7 @@ describe("ceph", async () => {
 		s3.getRGWUri(),
 		s3.getRGWAccessKey(),
 		s3.getRGWSecretKey(),
-		"default",
-		"test-bucket-ceph",
+		region,
+		bucket,
 	);
 });

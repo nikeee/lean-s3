@@ -7,6 +7,8 @@ import { GarageContainer } from "./GarageContainer.ts";
 
 describe("garage", async () => {
 	const s3 = await new GarageContainer().start();
+	const region = "garage";
+	const bucket = "test-bucket-garage";
 
 	const runId = Date.now();
 	{
@@ -14,17 +16,17 @@ describe("garage", async () => {
 			endpoint: s3.getConnectionUrl(),
 			accessKeyId: s3.getAccessKeyId(),
 			secretAccessKey: s3.getSecretAccessKey(),
-			region: "garage",
+			region,
 			bucket: "none", // intentionally set to a non-existent one, so we catch cases where the bucket is not passed correctly
 		});
 		before(async () => {
-			const res = await client.createBucket("test-bucket-garage");
+			const res = await client.createBucket(bucket);
 			expect(res).toBeUndefined();
 		});
 		after(async () => {
-			expect(await client.bucketExists("test-bucket-garage")).toBe(true);
-			await client.deleteBucket("test-bucket-garage");
-			expect(await client.bucketExists("test-bucket-garage")).toBe(false);
+			expect(await client.bucketExists(bucket)).toBe(true);
+			await client.deleteBucket(bucket);
+			expect(await client.bucketExists(bucket)).toBe(false);
 			await s3.stop();
 		});
 	}
@@ -33,7 +35,7 @@ describe("garage", async () => {
 		s3.getConnectionUrl(),
 		s3.getAccessKeyId(),
 		s3.getSecretAccessKey(),
-		"garage",
-		"test-bucket-garage",
+		region,
+		bucket,
 	);
 });

@@ -7,31 +7,34 @@ import { RustFsContainer } from "./RustFsContainer.ts";
 
 describe("rustfs", async () => {
 	const s3 = await new RustFsContainer("rustfs/rustfs:latest").start();
+	const region = "auto";
+	const bucketName = "test-bucket-rustfs";
+
 	const runId = Date.now();
 	{
 		const client = new S3Client({
 			endpoint: s3.getConnectionUrl(),
 			accessKeyId: s3.getAccessKeyId(),
 			secretAccessKey: s3.getSecretAccessKey(),
-			region: "rustfs",
+			region,
 			bucket: "none", // intentionally set to a non-existent one, so we catch cases where the bucket is not passed correctly
 		});
 		before(async () => {
-			const res = await client.createBucket("test-bucket-rustfs");
+			const res = await client.createBucket(bucketName);
 			expect(res).toBeUndefined();
 		});
 		after(async () => {
 			// you can use this to debug leftover files:
 			// for await (const f of client.listIterating({
 			// 	prefix: runId.toString(),
-			// 	bucket: "test-bucket-rustfs",
+			// 	bucket: bucketName,
 			// })) {
 			// 	console.log(`Leftover: ${f.key}`);
 			// }
 
-			expect(await client.bucketExists("test-bucket-rustfs")).toBe(true);
-			await client.deleteBucket("test-bucket-rustfs");
-			expect(await client.bucketExists("test-bucket-rustfs")).toBe(false);
+			expect(await client.bucketExists(bucketName)).toBe(true);
+			await client.deleteBucket(bucketName);
+			expect(await client.bucketExists(bucketName)).toBe(false);
 			await s3.stop();
 		});
 	}
@@ -41,7 +44,7 @@ describe("rustfs", async () => {
 		s3.getConnectionUrl(),
 		s3.getAccessKeyId(),
 		s3.getSecretAccessKey(),
-		"us-east-1",
-		"test-bucket-rustfs",
+		region,
+		bucketName,
 	);
 });

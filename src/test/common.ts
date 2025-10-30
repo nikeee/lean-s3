@@ -324,7 +324,7 @@ export function runTests(
 				const slicedFile = f.slice(10000);
 				expect(async () => await slicedFile.text()).rejects.toThrow(
 					expect.objectContaining({
-						...new S3Error("InvalidRange", path),
+						...new S3Error("InvalidRange", path, { status: 416 }),
 						name: expect.any(String),
 						message: expect.any(String),
 					}),

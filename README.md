@@ -200,3 +200,4 @@ To ensure compability across various providers and self-hosted services, all tes
 - Minio
 - LocalStack
 - Ceph
+- S3Mock

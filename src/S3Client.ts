@@ -1833,6 +1833,7 @@ export default class S3Client {
 									return controller.error(
 										new S3Error("Unknown", path, {
 											message: "Could not parse XML error response.",
+											status: response.statusCode,
 											cause,
 										}),
 									);
@@ -1840,6 +1841,7 @@ export default class S3Client {
 								return controller.error(
 									new S3Error(error.Error.Code || "Unknown", path, {
 										message: error.Error.Message || undefined, // Message might be "",
+										status: response.statusCode,
 									}),
 								);
 							}, onNetworkError);
@@ -1847,6 +1849,7 @@ export default class S3Client {
 
 						return controller.error(
 							new S3Error("Unknown", path, {
+								status: response.statusCode,
 								message: undefined,
 								cause: responseText,
 							}),

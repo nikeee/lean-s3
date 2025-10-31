@@ -3,8 +3,6 @@ export default class S3Error extends Error {
 	/** Path/key of the affected object. */
 	readonly path: string;
 	override readonly message: string;
-	readonly requestId: string | undefined;
-	readonly hostId: string | undefined;
 	/** The HTTP status code. */
 	readonly status: number | undefined;
 
@@ -13,8 +11,6 @@ export default class S3Error extends Error {
 		path: string,
 		{
 			message = undefined,
-			requestId = undefined,
-			hostId = undefined,
 			cause = undefined,
 			status = undefined,
 		}: S3ErrorOptions = {},
@@ -23,16 +19,12 @@ export default class S3Error extends Error {
 		this.code = code;
 		this.path = path;
 		this.message = message ?? "Some unknown error occurred.";
-		this.requestId = requestId;
-		this.hostId = hostId;
 		this.status = status;
 	}
 }
 
 export type S3ErrorOptions = {
 	message?: string | undefined;
-	requestId?: string | undefined;
-	hostId?: string | undefined;
 	cause?: unknown;
 	status?: number;
 };

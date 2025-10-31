@@ -199,4 +199,5 @@ To ensure compability across various providers and self-hosted services, all tes
 - Garage
 - Minio
 - LocalStack
+- RustFS
 - Ceph

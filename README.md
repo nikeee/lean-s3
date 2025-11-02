@@ -201,3 +201,4 @@ To ensure compability across various providers and self-hosted services, all tes
 - LocalStack
 - RustFS
 - Ceph
+- S3Mock

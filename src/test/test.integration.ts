@@ -11,7 +11,7 @@ const env = process.env;
 
 const runId = Date.now();
 
-for (const provider of ["hetzner", "aws", "cloudflare"]) {
+for (const provider of ["hetzner", "aws", "cloudflare", "backblaze"]) {
 	describe(`integration with ${provider}@runId:${runId}`, () => {
 		const p = provider.toUpperCase();
 

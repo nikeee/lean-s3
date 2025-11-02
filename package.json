@@ -39,7 +39,7 @@
     "ci": "biome ci ./src",
     "docs": "typedoc",
     "lint": "biome lint ./src",
-    "format": "biome format --write ./src && biome lint --write ./src && biome check --write ./src",
+    "format": "biome check --write ./src",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {

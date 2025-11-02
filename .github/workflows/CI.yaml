@@ -74,6 +74,12 @@ jobs:
           HETZNER_S3_ACCESS_KEY_ID: ${{ secrets.HETZNER_S3_ACCESS_KEY_ID }}
           HETZNER_S3_SECRET_KEY: ${{ secrets.HETZNER_S3_SECRET_KEY }}
 
+          BACKBLAZE_S3_ENDPOINT: ${{ secrets.BACKBLAZE_S3_ENDPOINT }}
+          BACKBLAZE_S3_REGION: ${{ secrets.BACKBLAZE_S3_REGION }}
+          BACKBLAZE_S3_BUCKET: ${{ secrets.BACKBLAZE_S3_BUCKET }}
+          BACKBLAZE_S3_ACCESS_KEY_ID: ${{ secrets.BACKBLAZE_S3_ACCESS_KEY_ID }}
+          BACKBLAZE_S3_SECRET_KEY: ${{ secrets.BACKBLAZE_S3_SECRET_KEY }}
+
       - uses: nikeee/tap-summary@dist
         continue-on-error: true
         if: always()

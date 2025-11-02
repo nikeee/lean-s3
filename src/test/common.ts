@@ -409,7 +409,9 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								storageClass: "STANDARD",
+								// all implementations return STANDARD, except S3Mock, which omits it when it's STANDARD
+								// storageClass: "STANDARD",
+
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
 							}),
@@ -418,7 +420,9 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								storageClass: "STANDARD",
+								// all implementations return STANDARD, except S3Mock, which omits it when it's STANDARD
+								// storageClass: "STANDARD",
+
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
 							}),
@@ -427,7 +431,9 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								storageClass: "STANDARD",
+								// all implementations return STANDARD, except S3Mock, which omits it when it's STANDARD
+								// storageClass: "STANDARD",
+
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
 							}),
@@ -436,7 +442,9 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								storageClass: "STANDARD",
+								// all implementations return STANDARD, except S3Mock, which omits it when it's STANDARD
+								// storageClass: "STANDARD",
+
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
 							}),
@@ -464,7 +472,9 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								storageClass: "STANDARD",
+								// all implementations return STANDARD, except S3Mock, which omits it when it's STANDARD
+								// storageClass: "STANDARD",
+
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
 							}),
@@ -473,7 +483,9 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								storageClass: "STANDARD",
+								// all implementations return STANDARD, except S3Mock, which omits it when it's STANDARD
+								// storageClass: "STANDARD",
+
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType minio returns something, localstack doesn't
 							}),
@@ -502,7 +514,9 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								storageClass: "STANDARD",
+								// all implementations return STANDARD, except S3Mock, which omits it when it's STANDARD
+								// storageClass: "STANDARD",
+
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
 							}),
@@ -511,7 +525,9 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								storageClass: "STANDARD",
+								// all implementations return STANDARD, except S3Mock, which omits it when it's STANDARD
+								// storageClass: "STANDARD",
+
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
 							}),
@@ -539,7 +555,9 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								storageClass: "STANDARD",
+								// all implementations return STANDARD, except S3Mock, which omits it when it's STANDARD
+								// storageClass: "STANDARD",
+
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
 							}),
@@ -548,7 +566,9 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								storageClass: "STANDARD",
+								// all implementations return STANDARD, except S3Mock, which omits it when it's STANDARD
+								// storageClass: "STANDARD",
+
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
 							}),
@@ -606,7 +626,8 @@ export function runTests(
 								size: expect.any(Number),
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								storageClass: "STANDARD",
+								// all implementations return STANDARD, except S3Mock, which omits it when it's STANDARD
+								// storageClass: "STANDARD",
 							}),
 						],
 					}),

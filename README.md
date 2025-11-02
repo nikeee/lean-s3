@@ -210,6 +210,7 @@ To ensure compability across various providers and self-hosted services, all tes
 - Hetzner Object Storage
 - Cloudflare R2
 - Garage
+- Backblaze B2
 - Minio
 - LocalStack
 - RustFS

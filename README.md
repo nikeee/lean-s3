@@ -194,7 +194,7 @@ const client = new S3Client({
 // Docs: https://www.backblaze.com/apidocs/introduction-to-the-s3-compatible-api
 const client = new S3Client({
     // keep {region} placeholders (it is used internally).
-    endpoint: "s3.{region}.backblazeb2.com",
+    endpoint: "https://s3.{region}.backblazeb2.com",
     region: "<your-region>", // something like "eu-central-003"
     bucket: "<your-bucket-name>",
     accessKeyId: process.env.S3_ACCESS_KEY_ID, // <your-application-key-id>,

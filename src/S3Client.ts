@@ -54,6 +54,7 @@ import {
 	parseCompleteMultipartUploadResult,
 	parseDeleteResult,
 	parseGetBucketCorsResult,
+	parseCopyObjectResult,
 } from "./parsers.ts";
 
 export const kWrite = Symbol("kWrite");
@@ -702,16 +703,9 @@ export default class S3Client {
 		}
 
 		const text = await response.body.text();
-		const res = ensureParsedXml(text).CopyObjectResult ?? {};
 
-		return {
-			etag: res.ETag,
-			lastModified: res.LastModified ? new Date(res.LastModified) : undefined,
-			checksumCRC32: res.ChecksumCRC32,
-			checksumCRC32C: res.ChecksumCRC32C,
-			checksumSHA1: res.ChecksumSHA1,
-			checksumSHA256: res.ChecksumSHA256,
-		};
+		// biome-ignore lint/suspicious/noExplicitAny: PoC
+		return parseCopyObjectResult(text) as any as CopyObjectResult;
 	}
 
 	//#region multipart uploads

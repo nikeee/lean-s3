@@ -331,7 +331,16 @@ export function runTests(
 				await f.delete();
 			}
 		});
-		test("n too large", async () => {
+		test("n too large", async t => {
+			if (implementation === "rustfs" || implementation === "s3mock") {
+				// Refs:
+				// https://github.com/rustfs/rustfs/issues/762
+				//  https://github.com/adobe/S3Mock/pull/2731
+				t.todo(
+					`S3 implementation "${implementation}" does not implement this correctly; upstream fix underway`,
+				);
+			}
+
 			const testId = crypto.randomUUID();
 			const path = `${runId}/${testId}/slicing.txt`;
 			const f = client.file(path);
@@ -387,7 +396,16 @@ export function runTests(
 	});
 
 	describe("list", () => {
-		test("list multiple", async () => {
+		test("list multiple", async t => {
+			if (implementation === "rustfs" || implementation === "s3mock") {
+				// Refs:
+				// https://github.com/rustfs/rustfs/issues/764
+				// https://github.com/adobe/S3Mock/issues/2736
+				t.todo(
+					`S3 implementation "${implementation}" does not implement this correctly; upstream fix underway`,
+				);
+			}
+
 			const testId = crypto.randomUUID();
 			try {
 				await client
@@ -425,8 +443,7 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								storageClass:
-									implementation === "s3mock" ? undefined : "STANDARD",
+								storageClass: "STANDARD",
 
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
@@ -436,8 +453,7 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								storageClass:
-									implementation === "s3mock" ? undefined : "STANDARD",
+								storageClass: "STANDARD",
 
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
@@ -447,8 +463,7 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								storageClass:
-									implementation === "s3mock" ? undefined : "STANDARD",
+								storageClass: "STANDARD",
 
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
@@ -458,8 +473,7 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								storageClass:
-									implementation === "s3mock" ? undefined : "STANDARD",
+								storageClass: "STANDARD",
 
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
@@ -488,8 +502,7 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								storageClass:
-									implementation === "s3mock" ? undefined : "STANDARD",
+								storageClass: "STANDARD",
 
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
@@ -499,8 +512,7 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								storageClass:
-									implementation === "s3mock" ? undefined : "STANDARD",
+								storageClass: "STANDARD",
 
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType minio returns something, localstack doesn't
@@ -530,8 +542,7 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								storageClass:
-									implementation === "s3mock" ? undefined : "STANDARD",
+								storageClass: "STANDARD",
 
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
@@ -541,8 +552,7 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								storageClass:
-									implementation === "s3mock" ? undefined : "STANDARD",
+								storageClass: "STANDARD",
 
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
@@ -571,8 +581,7 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								storageClass:
-									implementation === "s3mock" ? undefined : "STANDARD",
+								storageClass: "STANDARD",
 
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
@@ -582,8 +591,7 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								storageClass:
-									implementation === "s3mock" ? undefined : "STANDARD",
+								storageClass: "STANDARD",
 
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
@@ -619,7 +627,16 @@ export function runTests(
 			);
 		});
 
-		test("list with single result", async () => {
+		test("list with single result", async t => {
+			if (implementation === "rustfs" || implementation === "s3mock") {
+				// Refs:
+				// https://github.com/rustfs/rustfs/issues/764
+				// https://github.com/adobe/S3Mock/issues/2736
+				t.todo(
+					`S3 implementation "${implementation}" does not implement this correctly; upstream fix underway`,
+				);
+			}
+
 			const testId = crypto.randomUUID();
 
 			const f = client.file(`${runId}/${testId}/test-a-0.txt`);
@@ -642,8 +659,7 @@ export function runTests(
 								size: expect.any(Number),
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								storageClass:
-									implementation === "s3mock" ? undefined : "STANDARD",
+								storageClass: "STANDARD",
 							}),
 						],
 					}),
@@ -888,7 +904,15 @@ export function runTests(
 	});
 
 	describe("multipart uploads", () => {
-		test("create + abort multipart upload", async () => {
+		test("create + abort multipart upload", async t => {
+			if (implementation === "rustfs") {
+				// Ref:
+				// https://github.com/rustfs/rustfs/issues/779
+				t.todo(
+					`S3 implementation "${implementation}" does not implement this correctly; upstream fix underway`,
+				);
+			}
+
 			const testId = crypto.randomUUID();
 			const key = `${testId}/foo-key-9000`;
 

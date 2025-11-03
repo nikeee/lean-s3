@@ -52,6 +52,7 @@ describe(
 			s3.getSecretAccessKey(),
 			region,
 			bucketName,
+			"rustfs",
 		);
 	},
 );

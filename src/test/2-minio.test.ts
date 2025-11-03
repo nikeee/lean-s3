@@ -48,5 +48,6 @@ describe("minio", async () => {
 		"minioadmin",
 		region,
 		bucket,
+		"minio",
 	);
 });

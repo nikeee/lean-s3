@@ -43,6 +43,7 @@ describe(
 			s3.getSecretAccessKey(),
 			region,
 			bucket,
+			"s3mock",
 		);
 	},
 );

@@ -32,5 +32,13 @@ describe("localstack", async () => {
 		});
 	}
 
-	runTests(runId, s3.getConnectionUri(), "test", "test", region, bucket);
+	runTests(
+		runId,
+		s3.getConnectionUri(),
+		"test",
+		"test",
+		region,
+		bucket,
+		"localstack",
+	);
 });

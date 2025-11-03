@@ -7,6 +7,21 @@ import { expect } from "expect";
 
 import { S3Client, S3Error, S3Stat } from "../index.ts";
 
+export type S3Implementation =
+	| "aws"
+	| "hetzner"
+	| "cloudflare"
+	| "backblaze"
+	| "minio"
+	| "ceph"
+	| "garage"
+	| "rustfs"
+	| "s3mock"
+	| "localstack";
+
+/**
+ * @param implementation Try to avoid using this parameter in the tests. If some service diverges from the others, evaluate if it should be fixed upstream.
+ */
 export function runTests(
 	runId: number,
 	endpoint: string,
@@ -14,6 +29,7 @@ export function runTests(
 	secretAccessKey: string,
 	region: string,
 	bucket: string,
+	implementation: S3Implementation,
 ) {
 	const client = new S3Client({
 		endpoint,
@@ -409,8 +425,8 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								// all implementations return STANDARD, except S3Mock, which omits it when it's STANDARD
-								// storageClass: "STANDARD",
+								storageClass:
+									implementation === "s3mock" ? undefined : "STANDARD",
 
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
@@ -420,8 +436,8 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								// all implementations return STANDARD, except S3Mock, which omits it when it's STANDARD
-								// storageClass: "STANDARD",
+								storageClass:
+									implementation === "s3mock" ? undefined : "STANDARD",
 
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
@@ -431,8 +447,8 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								// all implementations return STANDARD, except S3Mock, which omits it when it's STANDARD
-								// storageClass: "STANDARD",
+								storageClass:
+									implementation === "s3mock" ? undefined : "STANDARD",
 
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
@@ -442,8 +458,8 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								// all implementations return STANDARD, except S3Mock, which omits it when it's STANDARD
-								// storageClass: "STANDARD",
+								storageClass:
+									implementation === "s3mock" ? undefined : "STANDARD",
 
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
@@ -472,8 +488,8 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								// all implementations return STANDARD, except S3Mock, which omits it when it's STANDARD
-								// storageClass: "STANDARD",
+								storageClass:
+									implementation === "s3mock" ? undefined : "STANDARD",
 
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
@@ -483,8 +499,8 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								// all implementations return STANDARD, except S3Mock, which omits it when it's STANDARD
-								// storageClass: "STANDARD",
+								storageClass:
+									implementation === "s3mock" ? undefined : "STANDARD",
 
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType minio returns something, localstack doesn't
@@ -514,8 +530,8 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								// all implementations return STANDARD, except S3Mock, which omits it when it's STANDARD
-								// storageClass: "STANDARD",
+								storageClass:
+									implementation === "s3mock" ? undefined : "STANDARD",
 
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
@@ -525,8 +541,8 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								// all implementations return STANDARD, except S3Mock, which omits it when it's STANDARD
-								// storageClass: "STANDARD",
+								storageClass:
+									implementation === "s3mock" ? undefined : "STANDARD",
 
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
@@ -555,8 +571,8 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								// all implementations return STANDARD, except S3Mock, which omits it when it's STANDARD
-								// storageClass: "STANDARD",
+								storageClass:
+									implementation === "s3mock" ? undefined : "STANDARD",
 
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
@@ -566,8 +582,8 @@ export function runTests(
 								size: 36,
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								// all implementations return STANDARD, except S3Mock, which omits it when it's STANDARD
-								// storageClass: "STANDARD",
+								storageClass:
+									implementation === "s3mock" ? undefined : "STANDARD",
 
 								// checksumAlgorithm: minio returns something, localstack doesn't
 								// checksumType: minio returns something, localstack doesn't
@@ -626,8 +642,8 @@ export function runTests(
 								size: expect.any(Number),
 								etag: expect.any(String),
 								lastModified: expect.any(Date),
-								// all implementations return STANDARD, except S3Mock, which omits it when it's STANDARD
-								// storageClass: "STANDARD",
+								storageClass:
+									implementation === "s3mock" ? undefined : "STANDARD",
 							}),
 						],
 					}),

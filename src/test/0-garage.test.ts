@@ -37,5 +37,6 @@ describe("garage", async () => {
 		s3.getSecretAccessKey(),
 		region,
 		bucket,
+		"garage",
 	);
 });

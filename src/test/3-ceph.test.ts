@@ -37,5 +37,6 @@ describe("ceph", async () => {
 		s3.getRGWSecretKey(),
 		region,
 		bucket,
+		"ceph",
 	);
 });

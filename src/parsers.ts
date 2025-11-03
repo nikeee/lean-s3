@@ -378,3 +378,18 @@ export const parseGetBucketCorsResult = buildParser({
 		},
 	},
 });
+
+export const parseCopyObjectResult = buildParser({
+	type: "root",
+	children: {
+		result: {
+			type: "object",
+			tagName: "CopyObjectResult",
+			children: {
+				etag: { type: "string", tagName: "ETag" },
+				lastModified: { type: "date", tagName: "LastModified" },
+				...optionalChecksumBag,
+			},
+		},
+	},
+});

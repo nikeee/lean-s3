@@ -11,7 +11,9 @@ const env = process.env;
 
 const runId = Date.now();
 
-for (const provider of ["hetzner", "aws", "cloudflare"]) {
+const providers = ["hetzner", "aws", "cloudflare", "backblaze"] as const;
+
+for (const provider of providers) {
 	describe(`integration with ${provider}@runId:${runId}`, () => {
 		const p = provider.toUpperCase();
 
@@ -54,6 +56,14 @@ for (const provider of ["hetzner", "aws", "cloudflare"]) {
 			});
 		}
 
-		runTests(runId, endpoint, accessKeyId, secretAccessKey, region, bucket);
+		runTests(
+			runId,
+			endpoint,
+			accessKeyId,
+			secretAccessKey,
+			region,
+			bucket,
+			provider,
+		);
 	});
 }

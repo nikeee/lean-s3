@@ -12,10 +12,9 @@ pre-commit:
       run: npm run format
       stage_fixed: true
 
-skip_output:
-  - meta
-  - empty_summary
+output:
+  - summary
   - success
-  - execution_out
+  - failure
   - execution_info
   - skips

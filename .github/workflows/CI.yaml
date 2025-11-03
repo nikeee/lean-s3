@@ -16,11 +16,11 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [20.x, 22.x, 24.x]
+        node-version: [20.x, 22.x, 24.x, 25.x]
 
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
@@ -47,7 +47,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
@@ -74,6 +74,12 @@ jobs:
           HETZNER_S3_ACCESS_KEY_ID: ${{ secrets.HETZNER_S3_ACCESS_KEY_ID }}
           HETZNER_S3_SECRET_KEY: ${{ secrets.HETZNER_S3_SECRET_KEY }}
 
+          BACKBLAZE_S3_ENDPOINT: ${{ secrets.BACKBLAZE_S3_ENDPOINT }}
+          BACKBLAZE_S3_REGION: ${{ secrets.BACKBLAZE_S3_REGION }}
+          BACKBLAZE_S3_BUCKET: ${{ secrets.BACKBLAZE_S3_BUCKET }}
+          BACKBLAZE_S3_ACCESS_KEY_ID: ${{ secrets.BACKBLAZE_S3_ACCESS_KEY_ID }}
+          BACKBLAZE_S3_SECRET_KEY: ${{ secrets.BACKBLAZE_S3_SECRET_KEY }}
+
       - uses: nikeee/tap-summary@dist
         continue-on-error: true
         if: always()
@@ -87,7 +93,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm

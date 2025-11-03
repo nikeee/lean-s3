@@ -851,9 +851,7 @@ export default class S3Client {
 			options.signal,
 		);
 
-		// garage returns 200 even though the spec states 204 should be returned
-		// fix @ garage proposed in https://git.deuxfleurs.fr/Deuxfleurs/garage/pulls/1095
-		if (response.statusCode !== 204 && response.statusCode !== 200) {
+		if (response.statusCode !== 204) {
 			throw await getResponseError(response, path);
 		}
 	}
@@ -1755,6 +1753,7 @@ export default class S3Client {
 									return controller.error(
 										new S3Error("Unknown", path, {
 											message: "Could not parse XML error response.",
+											status: response.statusCode,
 											cause,
 										}),
 									);
@@ -1762,6 +1761,7 @@ export default class S3Client {
 								return controller.error(
 									new S3Error(error.Error.Code || "Unknown", path, {
 										message: error.Error.Message || undefined, // Message might be "",
+										status: response.statusCode,
 									}),
 								);
 							}, onNetworkError);
@@ -1769,6 +1769,7 @@ export default class S3Client {
 
 						return controller.error(
 							new S3Error("Unknown", path, {
+								status: response.statusCode,
 								message: undefined,
 								cause: responseText,
 							}),

@@ -11,6 +11,7 @@ import {
 	ListObjectsV2Command,
 	DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
+import AwsLite from "@aws-lite/client";
 import { type BucketStream, Client as MinioClient } from "minio";
 import { S3mini as S3miniClient } from "s3mini";
 import { S3Client as LeanS3Client } from "../dist/index.js";
@@ -76,6 +77,7 @@ const s3 = await createContainer([
 	"test-lean-s3",
 	"test-minio",
 	"test-s3mini",
+	"test-aws-lite",
 	"test-bun",
 ]);
 console.log("Instance started, beginning tests.");
@@ -113,6 +115,14 @@ const minio = new MinioClient({
 	useSSL: new URL(s3.getConnectionUrl()).protocol === "https:",
 	accessKey: accessKeyId,
 	secretKey: secretAccessKey,
+});
+
+const awsLite = await AwsLite({
+	accessKeyId,
+	secretAccessKey,
+	endpoint: s3.getConnectionUrl(),
+	region,
+	plugins: [import("@aws-lite/s3")],
 });
 
 type ClientWrapper = {
@@ -214,6 +224,34 @@ const clients: ClientWrapper[] = [
 		},
 		delete: async (_bucket, key) => {
 			await s3mini.deleteObject(key);
+		},
+	},
+	{
+		baseline: false,
+		name: "aws-lite",
+		bucket: "test-aws-lite",
+		put: async (bucket, key, value) => {
+			await awsLite.S3.PutObject({
+				Bucket: bucket,
+				Key: key,
+				Body: value,
+			});
+		},
+		getBuffer: async (bucket, key) =>
+			(await awsLite.S3.GetObject({
+				Bucket: bucket,
+				Key: key,
+			})),
+		list: async (bucket, prefix) => {
+			const o = await awsLite.S3.ListObjectsV2({ Bucket: bucket, MaxKeys: 1000, Prefix: prefix });
+			// biome-ignore lint/style/noNonNullAssertion: :shrug:
+			return o.KeyCount!;
+		},
+		delete: async (bucket, key) => {
+			await awsLite.S3.DeleteObject({
+				Bucket: bucket,
+				Key: key,
+			});
 		},
 	},
 ];

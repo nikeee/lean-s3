@@ -43,15 +43,15 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "fast-xml-parser": "^5.3.0",
+    "fast-xml-parser": "^5.3.1",
     "undici": "^7.16.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.2",
+    "@biomejs/biome": "2.3.3",
     "@testcontainers/localstack": "^11.7.2",
     "@testcontainers/minio": "^11.7.2",
-    "@types/node": "^24.9.2",
-    "@typescript/native-preview": "^7.0.0-dev.20251102.1",
+    "@types/node": "^24.10.0",
+    "@typescript/native-preview": "^7.0.0-dev.20251103.1",
     "expect": "^30.2.0",
     "lefthook": "^2.0.2",
     "testcontainers": "^11.7.2",

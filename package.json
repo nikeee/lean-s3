@@ -50,6 +50,7 @@
     "@biomejs/biome": "2.3.3",
     "@testcontainers/localstack": "^11.7.2",
     "@testcontainers/minio": "^11.7.2",
+    "@testcontainers/s3mock": "^11.8.0",
     "@types/node": "^24.10.0",
     "@typescript/native-preview": "^7.0.0-dev.20251103.1",
     "expect": "^30.2.0",

@@ -1,9 +1,9 @@
 import { after, before, describe } from "node:test";
 import { expect } from "expect";
+import { S3MockContainer } from "@testcontainers/s3mock";
 
 import { runTests } from "./common.ts";
 import { S3Client } from "../index.ts";
-import { S3MockContainer } from "./S3MockContainer.ts";
 
 describe("s3mock", async () => {
 	const s3 = await new S3MockContainer("adobe/s3mock:latest").start();

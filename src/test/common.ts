@@ -628,7 +628,7 @@ export function runTests(
 		});
 
 		test("list with single result", async t => {
-			if (implementation === "rustfs" || implementation === "s3mock") {
+			if (implementation === "s3mock") {
 				// Refs:
 				// https://github.com/rustfs/rustfs/issues/764
 				// https://github.com/adobe/S3Mock/issues/2736

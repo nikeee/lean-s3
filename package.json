@@ -52,7 +52,7 @@
     "@testcontainers/minio": "^11.8.0",
     "@testcontainers/s3mock": "^11.8.0",
     "@types/node": "^24.10.0",
-    "@typescript/native-preview": "^7.0.0-dev.20251107.1",
+    "@typescript/native-preview": "^7.0.0-dev.20251109.1",
     "expect": "^30.2.0",
     "lefthook": "^2.0.2",
     "testcontainers": "^11.8.0",

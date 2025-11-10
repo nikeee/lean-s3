@@ -8,8 +8,10 @@ export class Parser {
 		this.token = this.scanner.scan();
 	};
 
-	constructor(text: string) {
-		this.scanner = new Scanner(text);
+	constructor(text: Uint8Array | string) {
+		this.scanner = new Scanner(
+			typeof text === "string" ? new TextEncoder().encode(text) : text,
+		);
 		this.nextToken();
 	}
 
@@ -197,11 +199,13 @@ const enum CharCode {
 	minus = 0x2d,
 }
 
+const textDecoder = new TextDecoder();
+
 class Scanner {
 	startPos: number;
 	pos: number;
 	end: number;
-	text: string;
+	text: Uint8Array;
 
 	inTag = false;
 
@@ -211,7 +215,9 @@ class Scanner {
 	tokenValueEnd = -1;
 
 	getTokenValueEncoded() {
-		return this.text.substring(this.tokenValueStart, this.tokenValueEnd);
+		return textDecoder.decode(
+			this.text.slice(this.tokenValueStart, this.tokenValueEnd),
+		);
 	}
 	getTokenValueDecoded() {
 		return this.getTokenValueEncoded().replace(
@@ -220,7 +226,7 @@ class Scanner {
 		);
 	}
 
-	constructor(text: string) {
+	constructor(text: Uint8Array) {
 		// Number(text); // collapse rope structure of V8
 		this.startPos = 0;
 		this.pos = 0;
@@ -236,7 +242,7 @@ class Scanner {
 				return (this.token = TokenKind.eof);
 			}
 
-			const ch = this.text.charCodeAt(this.pos);
+			const ch = this.text[this.pos];
 			switch (ch) {
 				case CharCode.lineFeed:
 				case CharCode.carriageReturn:
@@ -270,7 +276,7 @@ class Scanner {
 					this.inTag = true;
 
 					if (this.pos < this.end) {
-						switch (this.text.charCodeAt(this.pos)) {
+						switch (this.text[this.pos]) {
 							case CharCode.slash:
 								++this.pos;
 								return (this.token = TokenKind.startClosingTag);
@@ -298,7 +304,7 @@ class Scanner {
 
 					++this.pos;
 					if (this.pos < this.end) {
-						const nextChar = this.text.charCodeAt(this.pos);
+						const nextChar = this.text[this.pos];
 						if (nextChar === CharCode.greaterThan) {
 							++this.pos;
 							return (this.token = TokenKind.endSelfClosing);
@@ -328,9 +334,9 @@ class Scanner {
 						// We actually don't care about attributes, just skip them entirely in this case
 						const token = this.#scanIdentifier();
 
-						if (this.text.charCodeAt(this.pos) === CharCode.equals) {
+						if (this.text[this.pos] === CharCode.equals) {
 							++this.pos; // consume =
-							if (this.text.charCodeAt(this.pos) !== CharCode.doubleQuote) {
+							if (this.text[this.pos] !== CharCode.doubleQuote) {
 								throw new Error("Equals must be followed by a quoted string.");
 							}
 							this.skipQuotedString();
@@ -346,11 +352,11 @@ class Scanner {
 	#scanTextNode(): TokenKind.textNode {
 		// Read text node
 		let tokenValueStart = this.pos;
-		while (isWhitespace(this.text.charCodeAt(this.pos))) {
+		while (isWhitespace(this.text[this.pos])) {
 			++tokenValueStart;
 		}
 
-		this.pos = this.text.indexOf("<", tokenValueStart + 1);
+		this.pos = this.text.indexOf("<".charCodeAt(0), tokenValueStart + 1);
 		if (this.pos === -1) {
 			throw new Error("Unterminated text node.");
 		}
@@ -358,7 +364,7 @@ class Scanner {
 		let tokenValueEnd = this.pos;
 		do {
 			--tokenValueEnd;
-		} while (isWhitespace(this.text.charCodeAt(tokenValueEnd)));
+		} while (isWhitespace(this.text[tokenValueEnd]));
 		++tokenValueEnd;
 
 		this.tokenValueStart = tokenValueStart;
@@ -369,7 +375,7 @@ class Scanner {
 	skipQuotedString() {
 		++this.pos; // consume opening "
 
-		this.pos = this.text.indexOf('"', this.pos);
+		this.pos = this.text.indexOf('"'.charCodeAt(0), this.pos);
 		if (this.pos === -1) {
 			throw new Error("Unterminated quote.");
 		}
@@ -379,10 +385,7 @@ class Scanner {
 
 	#skipIdentifier(): void {
 		++this.pos; // consume first char
-		while (
-			this.pos < this.end &&
-			isIdentifierPart(this.text.charCodeAt(this.pos))
-		) {
+		while (this.pos < this.end && isIdentifierPart(this.text[this.pos])) {
 			++this.pos;
 		}
 	}
@@ -398,12 +401,12 @@ class Scanner {
 	#skipPreamble(): void {
 		++this.pos; // consume ?
 
-		const closingIndex = this.text.indexOf(">", this.pos);
+		const closingIndex = this.text.indexOf(">".charCodeAt(0), this.pos);
 		if (closingIndex === -1) {
 			throw new Error("Unterminated XML preamble.");
 		}
 		const questionMarkIndex = closingIndex - 1;
-		if (this.text.charCodeAt(questionMarkIndex) !== CharCode.questionMark) {
+		if (this.text[questionMarkIndex] !== CharCode.questionMark) {
 			throw new Error("Unterminated XML preamble.");
 		}
 

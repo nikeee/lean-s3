@@ -4,15 +4,16 @@ import { buildParser } from "./generator.ts";
 
 describe("xml parsing", () => {
 	test("optional preamble", () => {
-		const parse = buildParser({
-			type: "root",
-			children: {
-				note: {
-					type: "object",
-					children: {},
+		const parse = (t: string) =>
+			buildParser({
+				type: "root",
+				children: {
+					note: {
+						type: "object",
+						children: {},
+					},
 				},
-			},
-		});
+			})(new TextEncoder().encode(t));
 
 		expect(
 			parse(`<?xml version="1.0" encoding="UTF-8"?><note></note>`),

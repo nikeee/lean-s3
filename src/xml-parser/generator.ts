@@ -331,7 +331,7 @@ function buildParser<T extends Record<string, ParseSpec<string>>, V extends T>(
 }
 */
 
-type Parser<T> = (text: string) => T;
+type Parser<T> = (text: Uint8Array | string) => T;
 
 export function buildStaticParserSource<T extends string>(
 	rootSpec: RootSpec<T>,

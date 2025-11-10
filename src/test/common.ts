@@ -331,7 +331,7 @@ export function runTests(
 				await f.delete();
 			}
 		});
-		test("n too large", async t => {
+		test("n too large", async () => {
 			const testId = crypto.randomUUID();
 			const path = `${runId}/${testId}/slicing.txt`;
 			const f = client.file(path);
@@ -1059,11 +1059,13 @@ export function runTests(
 	});
 
 	describe("bucket cors", () => {
-		test("put", async () => {
-			if (bucket.endsWith("-minio")) {
+		test("put", async t => {
+			if (implementation === "minio") {
 				// Minio doesn't support PutBucketCors
 				// https://github.com/minio/minio/issues/15874#issuecomment-1279771751
-				return;
+				t.todo(
+					`S3 implementation "${implementation}" does not implement this correctly; upstream fix underway`,
+				);
 			}
 
 			await client.putBucketCors([

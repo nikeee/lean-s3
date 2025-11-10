@@ -189,6 +189,19 @@ const client = new S3Client({
 });
 ```
 
+### Backblaze B2
+```js
+// Docs: https://www.backblaze.com/apidocs/introduction-to-the-s3-compatible-api
+const client = new S3Client({
+    // keep {region} placeholders (it is used internally).
+    endpoint: "https://s3.{region}.backblazeb2.com",
+    region: "<your-region>", // something like "eu-central-003"
+    bucket: "<your-bucket-name>",
+    accessKeyId: process.env.S3_ACCESS_KEY_ID, // <your-application-key-id>,
+    secretAccessKey: process.env.S3_SECRET_KEY, // <your-application-key>,
+});
+```
+
 Popular S3 provider missing? Open an issue or file a PR!
 
 ## Tested On
@@ -197,6 +210,9 @@ To ensure compability across various providers and self-hosted services, all tes
 - Hetzner Object Storage
 - Cloudflare R2
 - Garage
+- Backblaze B2
 - Minio
 - LocalStack
+- RustFS
 - Ceph
+- S3Mock

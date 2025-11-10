@@ -34,6 +34,7 @@ export class GarageContainer extends GenericContainer {
 			startedContainer,
 			credentials.accessKeyId,
 			credentials.secretAccessKey,
+			S3_PORT,
 		);
 	}
 
@@ -81,27 +82,30 @@ export class GarageContainer extends GenericContainer {
 }
 
 export class StartedGarageContainer extends AbstractStartedContainer {
-	accessKeyId: string;
-	secretAccessKey: string;
+	readonly #accessKeyId: string;
+	readonly #secretAccessKey: string;
+	readonly #s3Port: number;
 
 	constructor(
 		startedContainer: StartedTestContainer,
 		accessKeyId: string,
 		secretAccessKey: string,
+		s3Port: number,
 	) {
 		super(startedContainer);
-		this.accessKeyId = accessKeyId;
-		this.secretAccessKey = secretAccessKey;
+		this.#accessKeyId = accessKeyId;
+		this.#secretAccessKey = secretAccessKey;
+		this.#s3Port = s3Port;
 	}
 
 	getPort() {
-		return this.startedTestContainer.getMappedPort(S3_PORT);
+		return this.startedTestContainer.getMappedPort(this.#s3Port);
 	}
 	getAccessKeyId(): string {
-		return this.accessKeyId;
+		return this.#accessKeyId;
 	}
 	getSecretAccessKey(): string {
-		return this.secretAccessKey;
+		return this.#secretAccessKey;
 	}
 
 	getConnectionUrl() {

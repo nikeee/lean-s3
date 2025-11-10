@@ -1,3 +1,4 @@
+import * as nodeUtil from "node:util";
 import { Readable } from "node:stream";
 
 import type S3Client from "./S3Client.ts";
@@ -339,6 +340,25 @@ export default class S3File {
 		options: CopyObjectOptions = {},
 	): Promise<void> {
 		await this.#client.copyObject(this.#path, destination, options);
+	}
+
+	[nodeUtil.inspect.custom](
+		_depth?: number,
+		options: nodeUtil.InspectOptions = {},
+	) {
+		if (options.depth === null) {
+			options.depth = 2;
+		}
+
+		options.colors ??= true;
+		const properties = {
+			path: this.#path,
+			start: this.#start,
+			end: this.#end,
+			contentType: this.#contentType,
+		};
+
+		return `S3File ${nodeUtil.formatWithOptions(options, properties)}`;
 	}
 }
 

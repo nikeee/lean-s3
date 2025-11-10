@@ -4,9 +4,11 @@
   "version": "1.0.0",
   "main": "presign.ts",
   "scripts": {
-    "bench:crud": "node ./crud.ts",
-    "bench:presign": "node ./presign.ts",
-    "bench:presign:bun": "bun run ./presign.ts"
+    "bench:crud": "tsx ./crud.ts",
+    "bench:presign": "tsx ./presign.ts",
+    "bench:presign:bun": "bun run ./presign.ts",
+    "bench:ops": "node ./benchmark-operations.js",
+    "bench:xml": "tsx ./xml.ts"
   },
   "license": "MIT",
   "type": "module",
@@ -22,6 +24,7 @@
     "fast-xml-parser": "^5.3.1",
     "minio": "^8.0.6",
     "mitata": "^1.0.34",
+    "tsx": "^4.20.3",
     "s3mini": "^0.6.0",
     "tinybench": "^5.1.0"
   },

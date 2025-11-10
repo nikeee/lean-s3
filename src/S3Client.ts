@@ -1,3 +1,4 @@
+import * as nodeUtil from "node:util";
 import { request, Agent, type Dispatcher } from "undici";
 import { XMLParser, XMLBuilder } from "fast-xml-parser";
 
@@ -1868,6 +1869,25 @@ export default class S3Client {
 				ac.abort(reason);
 			},
 		});
+	}
+
+	[nodeUtil.inspect.custom](
+		_depth?: number,
+		options: nodeUtil.InspectOptions = {},
+	) {
+		if (options.depth === null) {
+			options.depth = 2;
+		}
+
+		options.colors ??= true;
+		const properties = {
+			endpoint: this.#options.endpoint,
+			bucket: this.#options.bucket,
+			region: this.#options.region,
+			accessKeyId: this.#options.accessKeyId,
+		};
+
+		return `S3Client ${nodeUtil.formatWithOptions(options, properties)}`;
 	}
 }
 

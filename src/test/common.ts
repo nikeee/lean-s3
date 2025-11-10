@@ -332,15 +332,6 @@ export function runTests(
 			}
 		});
 		test("n too large", async t => {
-			if (implementation === "rustfs" || implementation === "s3mock") {
-				// Refs:
-				// https://github.com/rustfs/rustfs/issues/762
-				//  https://github.com/adobe/S3Mock/pull/2731
-				t.todo(
-					`S3 implementation "${implementation}" does not implement this correctly; upstream fix underway`,
-				);
-			}
-
 			const testId = crypto.randomUUID();
 			const path = `${runId}/${testId}/slicing.txt`;
 			const f = client.file(path);
@@ -628,7 +619,7 @@ export function runTests(
 		});
 
 		test("list with single result", async t => {
-			if (implementation === "rustfs" || implementation === "s3mock") {
+			if (implementation === "s3mock") {
 				// Refs:
 				// https://github.com/rustfs/rustfs/issues/764
 				// https://github.com/adobe/S3Mock/issues/2736

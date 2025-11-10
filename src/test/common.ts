@@ -662,7 +662,14 @@ export function runTests(
 	});
 
 	describe("deleteObjects", () => {
-		test("with .list entries", async () => {
+		test("with .list entries", async t => {
+			if (implementation === "s3mock") {
+				// Ref: See https://github.com/adobe/S3Mock/issues/2755
+				t.todo(
+					`S3 implementation "${implementation}" does not implement this feature`,
+				);
+			}
+
 			const testId = crypto.randomUUID();
 			await client
 				.file(`${runId}/${testId}/test-a-0.txt`)
@@ -685,7 +692,14 @@ export function runTests(
 			const res1 = await client.list({ prefix: `${runId}/${testId}` });
 			expect(res1.contents.length).toBe(0);
 		});
-		test("with strings", async () => {
+		test("with strings", async t => {
+			if (implementation === "s3mock") {
+				// Ref: See https://github.com/adobe/S3Mock/issues/2755
+				t.todo(
+					`S3 implementation "${implementation}" does not implement this feature`,
+				);
+			}
+
 			const testId = crypto.randomUUID();
 			await client
 				.file(`${runId}/${testId}/test-a-0.txt`)

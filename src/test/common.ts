@@ -1060,12 +1060,20 @@ export function runTests(
 
 	describe("bucket cors", () => {
 		test("put", async t => {
-			if (implementation === "minio") {
+			if (
+				implementation === "minio" ||
+				implementation === "garage" ||
+				implementation === "ceph" ||
+				implementation === "localstack" ||
+				implementation === "rustfs" ||
+				implementation === "s3mock"
+			) {
 				// Minio doesn't support PutBucketCors
 				// https://github.com/minio/minio/issues/15874#issuecomment-1279771751
-				t.todo(
-					`S3 implementation "${implementation}" does not implement this correctly; upstream fix underway`,
+				t.skip(
+					`S3 implementation "${implementation}" does not implement this feature`,
 				);
+				return;
 			}
 
 			await client.putBucketCors([

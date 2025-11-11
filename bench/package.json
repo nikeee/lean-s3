@@ -15,8 +15,8 @@
   "dependencies": {
     "@aws-lite/client": "^0.23.2",
     "@aws-lite/s3": "^0.2.6",
-    "@aws-sdk/client-s3": "^3.927.0",
-    "@aws-sdk/s3-request-presigner": "^3.927.0",
+    "@aws-sdk/client-s3": "^3.928.0",
+    "@aws-sdk/s3-request-presigner": "^3.928.0",
     "@monstermann/tinybench-pretty-printer": "^0.2.0",
     "@testcontainers/minio": "^11.8.0",
     "aws4fetch": "^1.0.20",

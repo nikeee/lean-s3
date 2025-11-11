@@ -26,12 +26,12 @@
     "type": "git",
     "url": "https://github.com/nikeee/lean-s3"
   },
-  "exports": {
-    "types": "./dist/index.d.ts",
-    "default": "./dist/index.js"
-  },
-  "types": "./dist/index.d.ts",
+  "types": "./dist/index.d.mts",
+  "main": "./dist/index.mjs",
   "type": "module",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsdown",
     "test": "tsgo && tsx --test src/*.test.ts src/test/*.test.ts",

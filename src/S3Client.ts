@@ -1,6 +1,7 @@
 import * as nodeUtil from "node:util";
 import { request, Agent, type Dispatcher } from "undici";
 import { XMLParser, XMLBuilder } from "fast-xml-parser";
+import type { Readable } from "node:stream";
 
 import S3File from "./S3File.ts";
 import S3Error from "./S3Error.ts";
@@ -45,7 +46,6 @@ import {
 	encodeURIComponentExtended,
 	getContentDispositionHeader,
 } from "./encode.ts";
-import type { Readable } from "node:stream";
 
 import {
 	parseListPartsResult,
@@ -57,6 +57,7 @@ import {
 	parseGetBucketCorsResult,
 	parseCopyObjectResult,
 } from "./parsers.ts";
+import { readResponseIntoWasmMemory } from "./responseReading.ts";
 
 export const kWrite = Symbol("kWrite");
 export const kStream = Symbol("kStream");
@@ -810,7 +811,10 @@ export default class S3Client {
 			throw await getResponseError(response, "");
 		}
 
-		const text = await response.body.text();
+		const [memory, written] = await readResponseIntoWasmMemory(response.body);
+
+		// TODO: use wasm-based parser that processes WebAssembly.Memory
+		const text = new TextDecoder().decode(memory.buffer.slice(0, written));
 		// biome-ignore lint/suspicious/noExplicitAny: PoC
 		return (parseListMultipartUploadsResult(text) as any)
 			.result as ListMultipartUploadsResult;

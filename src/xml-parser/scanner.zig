@@ -10,9 +10,8 @@ var token: u8 = 255;
 var in_tag: bool = false;
 
 var text: [*]allowzero u8 = @ptrFromInt(0);
-var text_len: usize = 0;
 
-export fn init_scanner(text_length: usize) u32 {
+export fn init_scanner() u32 {
     start_pos = 0;
     token_value_start = 0;
     token_value_end = 0;
@@ -21,7 +20,6 @@ export fn init_scanner(text_length: usize) u32 {
     token = 0;
     in_tag = false;
     text = @ptrFromInt(0);
-    text_len = text_length;
     return 3;
 }
 
@@ -55,7 +53,7 @@ const CharCode = struct {
     // weitere falls benötigt …
 };
 
-export fn scan_token() u8 {
+export fn scan_token(text_len: usize) u8 {
     token_value_start = pos;
 
     while (true) {
@@ -75,7 +73,7 @@ export fn scan_token() u8 {
                 if (in_tag) {
                     return 1; // TODO
                 }
-                return scan_text_node();
+                return scan_text_node(text_len);
             },
 
             CharCode.lessThan => {
@@ -91,7 +89,7 @@ export fn scan_token() u8 {
                         },
                         CharCode.questionMark => {
                             in_tag = false;
-                            const e = skip_preamble();
+                            const e = skip_preamble(text_len);
                             if (e != 0) {
                                 return e;
                             }
@@ -114,7 +112,7 @@ export fn scan_token() u8 {
 
             CharCode.slash => {
                 if (!in_tag) {
-                    return scan_text_node();
+                    return scan_text_node(text_len);
                 }
 
                 pos += 1;
@@ -133,13 +131,13 @@ export fn scan_token() u8 {
                 if (in_tag) {
                     return TokenKind.DoubleQuoteWithoutEquals;
                 }
-                return scan_text_node();
+                return scan_text_node(text_len);
             },
 
             // default
             else => {
                 if (!in_tag) {
-                    return scan_text_node();
+                    return scan_text_node(text_len);
                 }
 
                 if (is_identifier_start(ch)) {
@@ -151,7 +149,7 @@ export fn scan_token() u8 {
                         if (pos >= end or text[pos] != CharCode.doubleQuote)
                             return TokenKind.DoubleQuoteWithoutEquals;
 
-                        const err = skip_quoted_string();
+                        const err = skip_quoted_string(text_len);
                         if (err != 0) {
                             return err;
                         }
@@ -178,14 +176,14 @@ fn scan_identifier() u8 {
     token = TokenKind.identifier;
     return token;
 }
-fn scan_text_node() u8 {
+fn scan_text_node(text_len: usize) u8 {
     var start = pos;
 
     while (start < end and is_whitespace(text[start])) {
         start += 1;
     }
 
-    const idx = index_of(text, "<"[0], start + 1);
+    const idx = index_of(text, "<"[0], start + 1, text_len);
     if (idx == null) {
         return TokenKind.UnterminatedTextNode;
     }
@@ -211,10 +209,10 @@ fn skip_identifier() void {
     }
 }
 
-fn skip_preamble() u8 {
+fn skip_preamble(text_len: usize) u8 {
     pos += 1; // consume '?'
 
-    const closeIdx = index_of(text, CharCode.greaterThan, pos);
+    const closeIdx = index_of(text, CharCode.greaterThan, pos, text_len);
     if (closeIdx == null) return TokenKind.UnterminatedPreamble;
 
     const qmPos = closeIdx.? - 1;
@@ -225,10 +223,10 @@ fn skip_preamble() u8 {
     return 0;
 }
 
-fn skip_quoted_string() u8 {
+fn skip_quoted_string(text_len: usize) u8 {
     pos += 1; // opening "
 
-    const idx = index_of(text, CharCode.doubleQuote, pos);
+    const idx = index_of(text, CharCode.doubleQuote, pos, text_len);
     if (idx == null) return TokenKind.UnterminatedQuote;
 
     pos = idx.? + 1; // consume closing "
@@ -241,7 +239,7 @@ fn is_identifier_start(c: u8) bool {
 fn is_identifier_part(c: u8) bool {
     return std.ascii.isAlphanumeric(c) or c == '_' or c == '-' or c == ':';
 }
-fn index_of(haystack: [*]allowzero const u8, needle: u8, start: usize) ?usize {
+fn index_of(haystack: [*]allowzero const u8, needle: u8, start: usize, text_len:usize) ?usize {
     var i = start;
     while (i < text_len) : (i += 1) {
         if (haystack[i] == needle) return i;

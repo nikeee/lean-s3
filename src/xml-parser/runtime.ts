@@ -17,10 +17,6 @@ export class Parser {
 		this.nextToken();
 	}
 
-	static async create(memory: WasmMemoryReference): Promise<Parser> {
-		return new Parser(await Scanner.create(memory));
-	}
-
 	//#region primitives
 
 	/** Assumes {@link TokenKind.startTag} was already consumed. */
@@ -177,6 +173,7 @@ const entityMap = {
  * biome-ignore lint/suspicious/noConstEnum: Normally, we'd avoid using TS enums due to its incompability with JS.
  * But we want to inline its values into the switch-cases and still have readable code.
  */
+/*
 const enum CharCode {
 	lessThan = 0x3c,
 	greaterThan = 0x3e,
@@ -204,6 +201,7 @@ const enum CharCode {
 	questionMark = 0x3f,
 	minus = 0x2d,
 }
+*/
 
 const textDecoder = new TextDecoder();
 
@@ -212,24 +210,19 @@ export type WasmMemoryReference = {
 	byteLength: number;
 };
 
-class Scanner {
-	startPos: number;
-	pos: number;
-	end: number;
+export class Scanner {
 	text: Uint8Array;
 	#memory: WebAssembly.Memory;
 	#instance: WebAssembly.Instance;
 
-	inTag = false;
-
 	token = -1;
-
-	tokenValueStart = -1;
-	tokenValueEnd = -1;
 
 	getTokenValueEncoded() {
 		return textDecoder.decode(
-			this.text.slice(this.tokenValueStart, this.tokenValueEnd),
+			this.text.slice(
+				this.#instance.exports.get_token_value_start(),
+				this.#instance.exports.get_token_value_end(),
+			),
 		);
 	}
 	getTokenValueDecoded() {
@@ -249,10 +242,6 @@ class Scanner {
 	}
 
 	constructor(instance: WebAssembly.Instance, memory: WasmMemoryReference) {
-		// Number(text); // collapse rope structure of V8
-		this.startPos = 0;
-		this.pos = 0;
-		this.end = memory.byteLength;
 		this.#memory = memory.memory;
 		this.#instance = instance;
 		this.text = new Uint8Array(this.#memory.buffer, 0, memory.byteLength);
@@ -260,214 +249,9 @@ class Scanner {
 	}
 
 	scan(): TokenKind {
-		const res = this.#instance.exports.scan_token();
-		console.log("res", res);
-
-		this.startPos = this.pos;
-		while (true) {
-			if (this.pos >= this.end) {
-				return (this.token = TokenKind.eof);
-			}
-
-			const ch = this.text[this.pos];
-			switch (ch) {
-				case CharCode.lineFeed:
-				case CharCode.carriageReturn:
-				case CharCode.lineSeparator:
-				case CharCode.paragraphSeparator:
-				case CharCode.nextLine:
-				case CharCode.tab:
-				case CharCode.verticalTab:
-				case CharCode.formFeed:
-				case CharCode.space:
-				case CharCode.nonBreakingSpace:
-					++this.pos;
-					continue;
-				case CharCode.equals: {
-					if (this.inTag) {
-						// equals are skipped in the handler for the identifier
-						throw new Error(
-							"Equals cannot appear in a tag without a leading identifier.",
-						);
-					}
-
-					const textNode = this.#scanTextNode();
-					if (textNode === undefined) {
-						continue;
-					}
-					return textNode;
-				}
-				case CharCode.lessThan:
-					++this.pos;
-
-					this.inTag = true;
-
-					if (this.pos < this.end) {
-						switch (this.text[this.pos]) {
-							case CharCode.slash:
-								++this.pos;
-								return (this.token = TokenKind.startClosingTag);
-							case CharCode.questionMark:
-								this.inTag = false;
-								this.#skipPreamble();
-								continue;
-							default:
-								break;
-						}
-					}
-					return (this.token = TokenKind.startTag);
-				case CharCode.greaterThan:
-					++this.pos;
-					this.inTag = false;
-					return (this.token = TokenKind.endTag);
-				case CharCode.slash:
-					if (!this.inTag) {
-						const textNode = this.#scanTextNode();
-						if (textNode === undefined) {
-							continue;
-						}
-						return textNode;
-					}
-
-					++this.pos;
-					if (this.pos < this.end) {
-						const nextChar = this.text[this.pos];
-						if (nextChar === CharCode.greaterThan) {
-							++this.pos;
-							return (this.token = TokenKind.endSelfClosing);
-						}
-					}
-					return (this.token = TokenKind.endTag);
-
-				case CharCode.doubleQuote: {
-					if (this.inTag) {
-						// quotes are skipped in the handler for the identifier
-						throw new Error(
-							"Double quotes cannot appear in a tag without a leading equals.",
-						);
-					}
-					const textNode = this.#scanTextNode();
-					if (textNode === undefined) {
-						continue;
-					}
-					return textNode;
-				}
-				default:
-					if (!this.inTag) {
-						return this.#scanTextNode();
-					}
-
-					if (isIdentifierStart(ch)) {
-						// We actually don't care about attributes, just skip them entirely in this case
-						const token = this.#scanIdentifier();
-
-						if (this.text[this.pos] === CharCode.equals) {
-							++this.pos; // consume =
-							if (this.text[this.pos] !== CharCode.doubleQuote) {
-								throw new Error("Equals must be followed by a quoted string.");
-							}
-							this.skipQuotedString();
-							continue;
-						}
-						return token;
-					}
-					continue;
-			}
-		}
+		return this.#instance.exports.scan_token();
+		// const res = this.#instance.exports.scan_token();
+		// console.log("res", res);
+		// return res;
 	}
-
-	#scanTextNode(): TokenKind.textNode {
-		// Read text node
-		let tokenValueStart = this.pos;
-		while (isWhitespace(this.text[this.pos])) {
-			++tokenValueStart;
-		}
-
-		this.pos = this.text.indexOf("<".charCodeAt(0), tokenValueStart + 1);
-		if (this.pos === -1) {
-			throw new Error("Unterminated text node.");
-		}
-
-		let tokenValueEnd = this.pos;
-		do {
-			--tokenValueEnd;
-		} while (isWhitespace(this.text[tokenValueEnd]));
-		++tokenValueEnd;
-
-		this.tokenValueStart = tokenValueStart;
-		this.tokenValueEnd = tokenValueEnd;
-		return (this.token = TokenKind.textNode);
-	}
-
-	skipQuotedString() {
-		++this.pos; // consume opening "
-
-		this.pos = this.text.indexOf('"'.charCodeAt(0), this.pos);
-		if (this.pos === -1) {
-			throw new Error("Unterminated quote.");
-		}
-
-		++this.pos; // consume closing "
-	}
-
-	#skipIdentifier(): void {
-		++this.pos; // consume first char
-		while (this.pos < this.end && isIdentifierPart(this.text[this.pos])) {
-			++this.pos;
-		}
-	}
-
-	#scanIdentifier(): TokenKind.identifier {
-		const identifierStart = this.pos;
-		this.#skipIdentifier();
-		this.tokenValueStart = identifierStart;
-		this.tokenValueEnd = this.pos;
-		return (this.token = TokenKind.identifier);
-	}
-
-	#skipPreamble(): void {
-		++this.pos; // consume ?
-
-		const closingIndex = this.text.indexOf(">".charCodeAt(0), this.pos);
-		if (closingIndex === -1) {
-			throw new Error("Unterminated XML preamble.");
-		}
-		const questionMarkIndex = closingIndex - 1;
-		if (this.text[questionMarkIndex] !== CharCode.questionMark) {
-			throw new Error("Unterminated XML preamble.");
-		}
-
-		this.pos = closingIndex + 1; // consume >
-	}
-}
-
-function isIdentifierStart(ch: number): boolean {
-	return (
-		(ch >= CharCode.A && ch <= CharCode.Z) ||
-		(ch >= CharCode.a && ch <= CharCode.z) ||
-		ch === CharCode._
-	);
-}
-
-function isIdentifierPart(ch: number): boolean {
-	return (
-		(ch >= CharCode.A && ch <= CharCode.Z) ||
-		(ch >= CharCode.a && ch <= CharCode.z) ||
-		ch === CharCode._ ||
-		(ch >= CharCode._0 && ch <= CharCode._9)
-	);
-}
-function isWhitespace(ch: number): boolean {
-	return (
-		ch === CharCode.space ||
-		ch === CharCode.tab ||
-		ch === CharCode.lineFeed ||
-		ch === CharCode.carriageReturn ||
-		ch === CharCode.verticalTab ||
-		ch === CharCode.formFeed ||
-		ch === CharCode.nonBreakingSpace ||
-		ch === CharCode.lineSeparator ||
-		ch === CharCode.paragraphSeparator ||
-		ch === CharCode.nextLine
-	);
 }

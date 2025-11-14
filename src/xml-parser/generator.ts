@@ -346,7 +346,8 @@ import * as rt from "./runtime.ts";
 class GeneratedParser extends rt.Parser {
 	${parsingCode}
 }
-export default (text) => new GeneratedParser(text).${rootParseFunctionName}();
+const scanner = await rt.Scanner.create(memory);
+export default (scanner) => new GeneratedParser(scanner).${rootParseFunctionName}();
 `.trimStart();
 }
 
@@ -370,12 +371,12 @@ const sb = new TextEncoder().encode(\`${text}\`);
 const memory = new WebAssembly.Memory({ initial: 16, maximum: 256 });
 new Uint8Array(memory.buffer, 0, sb.length).set(sb);
 
-const memRef = {
+const scanner = await rt.Scanner.create({
 	memory,
 	byteLength: sb.length,
-};
+});
 
-const p = await GeneratedParser.create(memory);
+const p = new GeneratedParser(scanner);
 p.${rootParseFunctionName}();
 `.trimStart();
 }
@@ -396,7 +397,11 @@ return (() => {
 class GeneratedParser extends rt.Parser {
 	${parsingCode}
 }
-return (memRef) => GeneratedParser.create(memRef).then(p => p.${rootParseFunctionName}());
+
+return (memRef) =>
+		rt.Scanner.create(memRef)
+		.then(scanner => new GeneratedParser(scanner))
+		.then(p => p.${rootParseFunctionName}());
 })()
 `.trim(),
 	)(rt) as Parser<unknown>;

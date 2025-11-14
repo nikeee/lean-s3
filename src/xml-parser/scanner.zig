@@ -9,14 +9,14 @@ var token: u8 = 255;
 
 var in_tag: bool = false;
 
-var text: [*]allowzero u8 = @ptrFromInt(0);
+var text: [*]allowzero volatile u8 = @ptrFromInt(0);
 
-export fn init_scanner() u32 {
+export fn init_scanner(text_len: usize) u32 {
     start_pos = 0;
     token_value_start = 0;
     token_value_end = 0;
     pos = 0;
-    end = 0;
+    end = text_len;
     token = 0;
     in_tag = false;
     text = @ptrFromInt(0);
@@ -53,8 +53,16 @@ const CharCode = struct {
     // weitere falls benötigt …
 };
 
-export fn scan_token(text_len: usize) u8 {
+export fn get_token_value_start() usize {
+    return token_value_start;
+}
+export fn get_token_value_end() usize {
+    return token_value_end;
+}
+
+export fn scan_token() u8 {
     token_value_start = pos;
+    const text_len = end;
 
     while (true) {
         if (pos >= end) {
@@ -71,7 +79,7 @@ export fn scan_token(text_len: usize) u8 {
 
             CharCode.equals => {
                 if (in_tag) {
-                    return 1; // TODO
+                    return TokenKind.EqualsWithoutIdentifier;
                 }
                 return scan_text_node(text_len);
             },
@@ -239,7 +247,7 @@ fn is_identifier_start(c: u8) bool {
 fn is_identifier_part(c: u8) bool {
     return std.ascii.isAlphanumeric(c) or c == '_' or c == '-' or c == ':';
 }
-fn index_of(haystack: [*]allowzero const u8, needle: u8, start: usize, text_len:usize) ?usize {
+fn index_of(haystack: [*]allowzero const volatile u8, needle: u8, start: usize, text_len: usize) ?usize {
     var i = start;
     while (i < text_len) : (i += 1) {
         if (haystack[i] == needle) return i;

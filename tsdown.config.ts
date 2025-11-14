@@ -5,6 +5,10 @@ export default defineConfig({
 	entry: ["src/index.ts"],
 	target: "esnext",
 	plugins: [
-		zig(),
+		zig({
+			zig: {
+				releaseMode: "Debug"
+			}
+		}),
 	],
 });

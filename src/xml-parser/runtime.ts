@@ -260,6 +260,9 @@ class Scanner {
 	}
 
 	scan(): TokenKind {
+		const res = this.#instance.exports.scan_token();
+		console.log("res", res);
+
 		this.startPos = this.pos;
 		while (true) {
 			if (this.pos >= this.end) {

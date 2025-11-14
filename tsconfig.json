@@ -8,6 +8,10 @@
       "dom" // needed for WASM
     ],
 
+    "types": [
+      "vite-plugin-zig-wasm/client"
+    ],
+
     "moduleDetection": "force",
     "isolatedModules": true,
     "verbatimModuleSyntax": true,

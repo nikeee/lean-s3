@@ -352,7 +352,8 @@ export default (text) => new GeneratedParser(text).${rootParseFunctionName}();
 
 export function buildStaticParserSourceWithText<T extends string>(
 	rootSpec: RootSpec<T>,
-	text: string,
+	text: WebAssembly.Memory,
+	byteLength: number,
 ): string {
 	const globals = new Map();
 	const parsingCode = emitSpecParser(rootSpec, "", globals);
@@ -364,7 +365,7 @@ import * as rt from "./runtime.ts";
 class GeneratedParser extends rt.Parser {
 	${parsingCode}
 }
-new GeneratedParser(text).${rootParseFunctionName}(\`${text}\`);
+new GeneratedParser(text, byteLength).${rootParseFunctionName}(\`${text}\`, ${byteLength});
 `.trimStart();
 }
 
@@ -384,7 +385,7 @@ return (() => {
 class GeneratedParser extends rt.Parser {
 	${parsingCode}
 }
-return (text) => new GeneratedParser(text).${rootParseFunctionName}();
+return (text, byteLength) => new GeneratedParser(text, byteLength).${rootParseFunctionName}();
 })()
 `.trim(),
 	)(rt) as Parser<unknown>;

@@ -8,10 +8,8 @@ export class Parser {
 		this.token = this.scanner.scan();
 	};
 
-	constructor(text: Uint8Array | string) {
-		this.scanner = new Scanner(
-			typeof text === "string" ? new TextEncoder().encode(text) : text,
-		);
+	constructor(text: WebAssembly.Memory, byteCount: number) {
+		this.scanner = new Scanner(text, byteCount);
 		this.nextToken();
 	}
 
@@ -206,6 +204,7 @@ class Scanner {
 	pos: number;
 	end: number;
 	text: Uint8Array;
+	#memory: WebAssembly.Memory;
 
 	inTag = false;
 
@@ -226,17 +225,17 @@ class Scanner {
 		);
 	}
 
-	constructor(text: Uint8Array) {
+	constructor(text: WebAssembly.Memory, byteCount: number) {
 		// Number(text); // collapse rope structure of V8
 		this.startPos = 0;
 		this.pos = 0;
-		this.end = text.length;
-		this.text = text;
+		this.end = byteCount;
+		this.#memory = text;
+		this.text = new Uint8Array(this.#memory.buffer, 0, byteCount);
 	}
 
 	scan(): TokenKind {
 		this.startPos = this.pos;
-
 		while (true) {
 			if (this.pos >= this.end) {
 				return (this.token = TokenKind.eof);

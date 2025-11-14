@@ -331,7 +331,7 @@ function buildParser<T extends Record<string, ParseSpec<string>>, V extends T>(
 }
 */
 
-type Parser<T> = (text: Uint8Array | string) => T;
+type Parser<T> = (memRef: rt.WasmMemoryReference) => T;
 
 export function buildStaticParserSource<T extends string>(
 	rootSpec: RootSpec<T>,
@@ -352,8 +352,7 @@ export default (text) => new GeneratedParser(text).${rootParseFunctionName}();
 
 export function buildStaticParserSourceWithText<T extends string>(
 	rootSpec: RootSpec<T>,
-	text: WebAssembly.Memory,
-	byteLength: number,
+	text: string,
 ): string {
 	const globals = new Map();
 	const parsingCode = emitSpecParser(rootSpec, "", globals);
@@ -365,7 +364,18 @@ import * as rt from "./runtime.ts";
 class GeneratedParser extends rt.Parser {
 	${parsingCode}
 }
-new GeneratedParser(text, byteLength).${rootParseFunctionName}(\`${text}\`, ${byteLength});
+
+const sb = new TextEncoder().encode(\`${text}\`);
+
+const memory = new WebAssembly.Memory({ initial: 16, maximum: 256 });
+new Uint8Array(memory.buffer, 0, sb.length).set(sb);
+
+const memRef = {
+	memory,
+	byteLength: sb.length,
+};
+
+new GeneratedParser(memory).${rootParseFunctionName}(memRef);
 `.trimStart();
 }
 
@@ -385,7 +395,7 @@ return (() => {
 class GeneratedParser extends rt.Parser {
 	${parsingCode}
 }
-return (text, byteLength) => new GeneratedParser(text, byteLength).${rootParseFunctionName}();
+return (memRef) => new GeneratedParser(memRef).${rootParseFunctionName}();
 })()
 `.trim(),
 	)(rt) as Parser<unknown>;

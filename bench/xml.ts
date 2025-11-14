@@ -19,6 +19,11 @@ summary(() => {
 			const memory = new WebAssembly.Memory({ initial: 16, maximum: 256 });
 			new Uint8Array(memory.buffer, 0, sb.length).set(sb);
 
+			const memRef = {
+				memory,
+				byteLength: sb.length,
+			};
+
 			// -> buffer and string perform basically the same
 			// maybe we should use a buffer via undici, because undici could skip the string decoding
 
@@ -49,7 +54,7 @@ summary(() => {
 
 			bench("custom parser (runtime-generated)", () => {
 				for (let i = 0; i < 10000; ++i) {
-					runtimeGeneratedParser(sb, sb.length);
+					runtimeGeneratedParser(memRef);
 				}
 			}).baseline(true);
 

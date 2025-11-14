@@ -8,8 +8,8 @@ export class Parser {
 		this.token = this.scanner.scan();
 	};
 
-	constructor(text: WebAssembly.Memory, byteCount: number) {
-		this.scanner = new Scanner(text, byteCount);
+	constructor(memory: WasmMemoryReference) {
+		this.scanner = new Scanner(memory);
 		this.nextToken();
 	}
 
@@ -199,6 +199,11 @@ const enum CharCode {
 
 const textDecoder = new TextDecoder();
 
+export type WasmMemoryReference = {
+	memory: WebAssembly.Memory;
+	byteLength: number;
+};
+
 class Scanner {
 	startPos: number;
 	pos: number;
@@ -225,13 +230,13 @@ class Scanner {
 		);
 	}
 
-	constructor(text: WebAssembly.Memory, byteCount: number) {
+	constructor(memory: WasmMemoryReference) {
 		// Number(text); // collapse rope structure of V8
 		this.startPos = 0;
 		this.pos = 0;
-		this.end = byteCount;
-		this.#memory = text;
-		this.text = new Uint8Array(this.#memory.buffer, 0, byteCount);
+		this.end = memory.byteLength;
+		this.#memory = memory.memory;
+		this.text = new Uint8Array(this.#memory.buffer, 0, memory.byteLength);
 	}
 
 	scan(): TokenKind {

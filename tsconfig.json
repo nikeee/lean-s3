@@ -5,7 +5,7 @@
     "target": "es2024",
     "lib": [
       "es2024",
-      "dom" // needed for WASM
+      "DOM" // needed for WASM
     ],
 
     "types": [

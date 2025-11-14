@@ -8,9 +8,13 @@ export class Parser {
 		this.token = this.scanner.scan();
 	};
 
-	constructor(memory: WasmMemoryReference) {
-		this.scanner = new Scanner(memory);
+	constructor(scanner: Scanner) {
+		this.scanner = scanner;
 		this.nextToken();
+	}
+
+	static async create(memory: WasmMemoryReference): Promise<Parser> {
+		return new Parser(await Scanner.create(memory));
 	}
 
 	//#region primitives
@@ -210,6 +214,7 @@ class Scanner {
 	end: number;
 	text: Uint8Array;
 	#memory: WebAssembly.Memory;
+	#instance: WebAssembly.Instance;
 
 	inTag = false;
 
@@ -230,13 +235,24 @@ class Scanner {
 		);
 	}
 
-	constructor(memory: WasmMemoryReference) {
+	static async create(memory: WasmMemoryReference): Promise<Scanner> {
+		const instance = await WebAssembly.instantiate(wasmScanner, {
+			env: {
+				memory: memory.memory,
+			},
+		});
+		return new Scanner(instance, memory);
+	}
+
+	constructor(instance: WebAssembly.Instance, memory: WasmMemoryReference) {
 		// Number(text); // collapse rope structure of V8
 		this.startPos = 0;
 		this.pos = 0;
 		this.end = memory.byteLength;
 		this.#memory = memory.memory;
+		this.#instance = instance;
 		this.text = new Uint8Array(this.#memory.buffer, 0, memory.byteLength);
+		instance.exports.init_scanner(memory.byteLength);
 	}
 
 	scan(): TokenKind {

@@ -375,7 +375,8 @@ const memRef = {
 	byteLength: sb.length,
 };
 
-new GeneratedParser(memory).${rootParseFunctionName}(memRef);
+const p = await GeneratedParser.create(memory);
+p.${rootParseFunctionName}();
 `.trimStart();
 }
 

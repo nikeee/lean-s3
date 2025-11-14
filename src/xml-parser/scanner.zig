@@ -9,7 +9,7 @@ var token: u8 = 255;
 
 var in_tag: bool = false;
 
-var text: [*]allowzero volatile u8 = @ptrFromInt(0);
+var text: [*]allowzero u8 = @ptrFromInt(0);
 
 export fn init_scanner(text_len: usize) u32 {
     start_pos = 0;
@@ -247,7 +247,7 @@ fn is_identifier_start(c: u8) bool {
 fn is_identifier_part(c: u8) bool {
     return std.ascii.isAlphanumeric(c) or c == '_' or c == '-' or c == ':';
 }
-fn index_of(haystack: [*]allowzero const volatile u8, needle: u8, start: usize, text_len: usize) ?usize {
+fn index_of(haystack: [*]allowzero const u8, needle: u8, start: usize, text_len: usize) ?usize {
     var i = start;
     while (i < text_len) : (i += 1) {
         if (haystack[i] == needle) return i;

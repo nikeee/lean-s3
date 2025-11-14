@@ -46,6 +46,8 @@ export { default as S3Error, type S3ErrorOptions } from "./S3Error.ts";
 export { default as S3Stat } from "./S3Stat.ts";
 export { default as S3BucketEntry } from "./S3BucketEntry.ts";
 
+export { parseListPartsResult } from "./parsers.ts";
+
 export type Acl =
 	| "private"
 	| "public-read"

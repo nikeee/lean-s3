@@ -396,7 +396,7 @@ return (() => {
 class GeneratedParser extends rt.Parser {
 	${parsingCode}
 }
-return (memRef) => new GeneratedParser(memRef).${rootParseFunctionName}();
+return (memRef) => GeneratedParser.create(memRef).then(p => p.${rootParseFunctionName}());
 })()
 `.trim(),
 	)(rt) as Parser<unknown>;

@@ -1,5 +1,9 @@
 /** biome-ignore-all lint/suspicious/noAssignInExpressions: ok here */
 
+import compileWasmScanner from "./scanner.zig?compile";
+
+const wasmScanner = (await compileWasmScanner()) as WebAssembly.Module;
+
 export class Parser {
 	scanner: Scanner;
 	token!: TokenKind;

@@ -1,3 +1,5 @@
+/** biome-ignore-all lint/nursery/noFloatingPromises: shrug */
+
 import { summary, group, bench, run, barplot } from "mitata";
 
 import { XMLParser } from "fast-xml-parser";

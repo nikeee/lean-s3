@@ -108,7 +108,22 @@ export fn expect_identifier(identifier_id: usize) u32 {
     const expected = KnownTagIdentifiers[identifier_id];
     const res = std.mem.eql(u8, @ptrCast(text[token_value_start..token_value_end]), expected);
     if (!res) {
-        return TokenKind.DoubleQuoteWithoutEquals;
+        return TokenKind.UnterminatedTextNode;
+    }
+    return scan_token();
+}
+
+export fn expect_closing_tag(identifier_id: usize) u32 {
+    if (token != TokenKind.startClosingTag) {
+        return TokenKind.EqualsWithoutIdentifier;
+    }
+    _ = scan_token();
+    const e = expect_identifier(identifier_id);
+    if (e >= 64) {
+        return e;
+    }
+    if (token != TokenKind.endTag) {
+        return TokenKind.UnterminatedPreamble;
     }
     return scan_token();
 }

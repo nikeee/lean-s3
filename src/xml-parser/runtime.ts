@@ -42,7 +42,7 @@ export class Parser {
 		}
 
 		this.nextToken();
-		this.parseClosingTag(identifierId);
+		this.expectClosingTag(identifierId);
 	}
 
 	/** Assumes {@link TokenKind.startTag} was already consumed. */
@@ -68,7 +68,7 @@ export class Parser {
 		const value = this.scanner.getTokenValueDecoded();
 		this.nextToken();
 
-		this.parseClosingTag(identifierId);
+		this.expectClosingTag(identifierId);
 		return value;
 	}
 
@@ -114,12 +114,6 @@ export class Parser {
 
 	//#endregion
 
-	parseClosingTag(identifierId: number): void {
-		this.parseExpected(TokenKind.startClosingTag);
-		this.expectIdentifier(identifierId);
-		this.parseExpected(TokenKind.endTag);
-	}
-
 	parseExpected(expected: TokenKind): void {
 		if (this.token !== expected) {
 			throw new Error(`Wrong token, expected: ${expected}, got: ${this.token}`);
@@ -129,6 +123,9 @@ export class Parser {
 
 	expectIdentifier(identifierId: number): void {
 		this.token = this.scanner.expectIdentifier(identifierId);
+	}
+	expectClosingTag(identifierId: number): void {
+		this.token = this.scanner.expectClosingTag(identifierId);
 	}
 }
 
@@ -172,6 +169,7 @@ export class Scanner {
 		get_token_value_end: () => number;
 		get_token_value_start: () => number;
 		expect_identifier: (identifierId: number) => number;
+		expect_closing_tag: (identifierId: number) => number;
 		get_identifier_id: () => number;
 	};
 
@@ -227,6 +225,15 @@ export class Scanner {
 			);
 		}
 		// console.log("expectIdentifier", identifierId, nextTokenOrError);
+		return nextTokenOrError;
+	}
+	expectClosingTag(identifierId: number): number {
+		const nextTokenOrError = this.#native.expect_closing_tag(identifierId);
+		if (nextTokenOrError >= 64) {
+			throw new Error(
+				`Expected identifier id: ${identifierId} ${nextTokenOrError}`,
+			);
+		}
 		return nextTokenOrError;
 	}
 }

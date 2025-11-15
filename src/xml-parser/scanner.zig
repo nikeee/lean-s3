@@ -9,7 +9,7 @@ var token: u8 = 255;
 
 var in_tag: bool = false;
 
-var text: [*]allowzero u8 = @ptrFromInt(0);
+var text: [*]allowzero const u8 = @ptrFromInt(0);
 
 export fn init_scanner(text_len: usize) u32 {
     start_pos = 0;
@@ -22,6 +22,34 @@ export fn init_scanner(text_len: usize) u32 {
     text = @ptrFromInt(0);
     return 3;
 }
+
+const KnownTagIdentifiers = [_][]const u8{
+    "ListPartsResult",
+    "Key",
+    "UploadId",
+    "PartNumberMarker",
+    "NextPartNumberMarker",
+    "MaxParts",
+    "IsTruncated",
+    "Part",
+    "ETag",
+    "LastModified",
+    "PartNumber",
+    "DisplayName",
+    "ID",
+    "Owner",
+    "StorageClass",
+    "Size",
+    "Initiator",
+    "Initiated",
+    "ChecksumCRC32",
+    "ChecksumCRC32C",
+    "ChecksumSHA1",
+    "ChecksumSHA256",
+    "Bucket",
+    "ChecksumAlgorithm",
+    "ChecksumType",
+};
 
 const TokenKind = struct {
     pub const eof: u8 = 0;
@@ -58,6 +86,31 @@ export fn get_token_value_start() usize {
 }
 export fn get_token_value_end() usize {
     return token_value_end;
+}
+
+export fn get_identifier_id() usize {
+    var i: usize = 0;
+    while (i < KnownTagIdentifiers.len) : (i += 1) {
+        const expected = KnownTagIdentifiers[i];
+        const res = std.mem.eql(u8, @ptrCast(text[token_value_start..token_value_end]), expected);
+        if (res) {
+            return i;
+        }
+    }
+    return @as(usize, 256);
+}
+
+export fn expect_identifier(identifier_id: usize) u32 {
+    if (token != TokenKind.identifier) {
+        return TokenKind.DoubleQuoteWithoutEquals;
+    }
+
+    const expected = KnownTagIdentifiers[identifier_id];
+    const res = std.mem.eql(u8, @ptrCast(text[token_value_start..token_value_end]), expected);
+    if (!res) {
+        return TokenKind.DoubleQuoteWithoutEquals;
+    }
+    return scan_token();
 }
 
 export fn scan_token() u8 {

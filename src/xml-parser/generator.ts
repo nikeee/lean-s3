@@ -414,13 +414,14 @@ export function buildParserClassAsync<T extends string>(
 	const parsingCode = emitSpecParser(rootSpec, "", globals);
 	globals.clear(); // make sure we clear all references (even though this map won't survive past this function)
 
-	return new Function(
-		"rt",
-		` return class GeneratedParser extends rt.Parser {
+	const code = `return class GeneratedParser extends rt.Parser {
 	${parsingCode}
 };
-`.trim(),
-	)(rt) as {
+`.trim();
+
+	console.log(code);
+
+	return new Function("rt", code)(rt) as {
 		new (scanner: rt.Scanner): Parser<unknown>;
 	};
 }

@@ -20,8 +20,8 @@ export class Parser {
 	//#region primitives
 
 	/** Assumes {@link TokenKind.startTag} was already consumed. */
-	parseIgnoredTag(tagName: string): void {
-		this.parseIdentifier(tagName);
+	parseIgnoredTag(identifierId: number): void {
+		this.expectIdentifier(identifierId);
 
 		if (this.token === TokenKind.endSelfClosing) {
 			this.nextToken();
@@ -32,22 +32,22 @@ export class Parser {
 
 		if (this.token === TokenKind.startClosingTag) {
 			this.nextToken();
-			this.parseIdentifier(tagName);
+			this.expectIdentifier(identifierId);
 			this.parseExpected(TokenKind.endTag);
 			return;
 		}
 
 		if (this.token !== TokenKind.textNode) {
-			throw new Error(`Expected text content for tag "${tagName}".`);
+			throw new Error(`Expected text content for tag "${identifierId}".`);
 		}
 
 		this.nextToken();
-		this.parseClosingTag(tagName);
+		this.parseClosingTag(identifierId);
 	}
 
 	/** Assumes {@link TokenKind.startTag} was already consumed. */
-	parseStringTag(tagName: string): string | undefined {
-		this.parseIdentifier(tagName);
+	parseStringTag(identifierId: number): string | undefined {
+		this.expectIdentifier(identifierId);
 
 		if (this.token === TokenKind.endSelfClosing) {
 			this.nextToken();
@@ -58,25 +58,25 @@ export class Parser {
 
 		if (this.token === TokenKind.startClosingTag) {
 			this.nextToken();
-			this.parseIdentifier(tagName);
+			this.expectIdentifier(identifierId);
 			this.parseExpected(TokenKind.endTag);
 			return "";
 		}
 
 		if (this.token !== TokenKind.textNode) {
-			throw new Error(`Expected text content for tag "${tagName}".`);
+			throw new Error(`Expected text content for tag "${identifierId}".`);
 		}
 
 		const value = this.scanner.getTokenValueDecoded();
 		this.nextToken();
 
-		this.parseClosingTag(tagName);
+		this.parseClosingTag(identifierId);
 		return value;
 	}
 
 	/** Assumes {@link TokenKind.startTag} was already consumed. */
-	parseDateTag(tagName: string): Date | undefined {
-		const value = this.parseStringTag(tagName);
+	parseDateTag(identifierId: number): Date | undefined {
+		const value = this.parseStringTag(identifierId);
 		if (value === undefined) {
 			return undefined;
 		}
@@ -89,8 +89,8 @@ export class Parser {
 	}
 
 	/** Assumes {@link TokenKind.startTag} was already consumed. */
-	parseIntegerTag(tagName: string): number | undefined {
-		const value = this.parseStringTag(tagName);
+	parseIntegerTag(identifierId: number): number | undefined {
+		const value = this.parseStringTag(identifierId);
 		if (value === undefined) {
 			return undefined;
 		}
@@ -103,8 +103,8 @@ export class Parser {
 	}
 
 	/** Assumes {@link TokenKind.startTag} was already consumed. */
-	parseBooleanTag(tagName: string): boolean | undefined {
-		const value = this.parseStringTag(tagName);
+	parseBooleanTag(identifierId: number): boolean | undefined {
+		const value = this.parseStringTag(identifierId);
 		return value === undefined
 			? undefined
 			: value === "true"
@@ -116,9 +116,9 @@ export class Parser {
 
 	//#endregion
 
-	parseClosingTag(tagName: string): void {
+	parseClosingTag(identifierId: number): void {
 		this.parseExpected(TokenKind.startClosingTag);
-		this.parseIdentifier(tagName);
+		this.expectIdentifier(identifierId);
 		this.parseExpected(TokenKind.endTag);
 	}
 
@@ -129,18 +129,8 @@ export class Parser {
 		this.nextToken();
 	}
 
-	parseIdentifier(identifier: string): void {
-		if (this.token !== TokenKind.identifier) {
-			throw new Error(
-				`Wrong token, expected: ${TokenKind.identifier}, got: ${this.token}`,
-			);
-		}
-		if (this.scanner.getTokenValueEncoded() !== identifier) {
-			throw new Error(
-				`Expected identifier: ${identifier}, got: ${this.scanner.getTokenValueEncoded()}`,
-			);
-		}
-		this.nextToken();
+	expectIdentifier(identifierId: number): void {
+		this.token = this.scanner.expectIdentifier(identifierId);
 	}
 }
 
@@ -183,6 +173,8 @@ export class Scanner {
 		scan_token: () => TokenKind;
 		get_token_value_end: () => number;
 		get_token_value_start: () => number;
+		expect_identifier: (identifierId: number) => number;
+		get_identifier_id: () => number;
 	};
 
 	getTokenValueEncoded() {
@@ -223,5 +215,20 @@ export class Scanner {
 
 	scan(): TokenKind {
 		return this.#native.scan_token();
+	}
+
+	getIdentifierId(): number {
+		return this.#native.get_identifier_id();
+	}
+
+	expectIdentifier(identifierId: number): number {
+		const nextTokenOrError = this.#native.expect_identifier(identifierId);
+		if (nextTokenOrError >= 64) {
+			throw new Error(
+				`Expected identifier id: ${identifierId} ${nextTokenOrError}`,
+			);
+		}
+		// console.log("expectIdentifier", identifierId, nextTokenOrError);
+		return nextTokenOrError;
 	}
 }

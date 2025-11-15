@@ -46,7 +46,7 @@ export { default as S3Error, type S3ErrorOptions } from "./S3Error.ts";
 export { default as S3Stat } from "./S3Stat.ts";
 export { default as S3BucketEntry } from "./S3BucketEntry.ts";
 
-export { Scanner } from "./xml-parser/runtime.ts";
+export { Scanner, Parser } from "./xml-parser/runtime.ts";
 export { listPartsResultSpec } from "./parsers.ts";
 export { buildParserClassAsync } from "./xml-parser/generator.ts";
 

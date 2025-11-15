@@ -454,7 +454,7 @@ const memRef = {
 const scanner = await rt.Scanner.create(memRef);
 
 let parsed = undefined;
-for (let i = 0; i < 100; ++i) {
+for (let i = 0; i < 10000; ++i) {
 	scanner.reset();
 	parsed = new GeneratedParser(scanner).parse_0();
 }

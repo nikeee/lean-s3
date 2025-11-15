@@ -177,20 +177,23 @@ export type WasmMemoryReference = {
 };
 
 export class Scanner {
-	text: Uint8Array;
-	#memory: WebAssembly.Memory;
-	#instance: WebAssembly.Instance;
-
-	token = -1;
+	text: Buffer;
+	#native: {
+		init_scanner: (textLength: number) => void;
+		scan_token: () => TokenKind;
+		get_token_value_end: () => number;
+		get_token_value_start: () => number;
+	};
 
 	getTokenValueEncoded() {
 		return textDecoder.decode(
-			this.text.slice(
-				this.#instance.exports.get_token_value_start(),
-				this.#instance.exports.get_token_value_end(),
+			this.text.subarray(
+				this.#native.get_token_value_start(),
+				this.#native.get_token_value_end(),
 			),
 		);
 	}
+
 	getTokenValueDecoded() {
 		return this.getTokenValueEncoded().replace(
 			entityPattern,
@@ -208,20 +211,16 @@ export class Scanner {
 	}
 
 	constructor(instance: WebAssembly.Instance, memory: WasmMemoryReference) {
-		this.#memory = memory.memory;
-		this.#instance = instance;
-		this.text = new Uint8Array(this.#memory.buffer, 0, memory.byteLength);
-		instance.exports.init_scanner(memory.byteLength);
+		this.#native = instance.exports as any;
+		// this.memoryBuffer = new DataView(memory.memory.buffer);
+		this.text = Buffer.from(memory.memory.buffer.slice(0, memory.byteLength));
 	}
 
 	reset() {
-		this.#instance.exports.init_scanner(this.text.length);
+		this.#native.init_scanner(this.text.byteLength);
 	}
 
 	scan(): TokenKind {
-		return this.#instance.exports.scan_token();
-		// const res = this.#instance.exports.scan_token();
-		// console.log("res", res);
-		// return res;
+		return this.#native.scan_token();
 	}
 }

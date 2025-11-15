@@ -59,8 +59,8 @@ summary(() => {
 
 			bench("custom parser (runtime-generated)", () => {
 				for (let i = 0; i < 10000; ++i) {
-					new parserClass(scanner).parse_0();
 					scanner.reset();
+					new parserClass(scanner).parse_0();
 				}
 			}).baseline(true);
 

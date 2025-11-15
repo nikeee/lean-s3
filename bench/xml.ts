@@ -7,6 +7,7 @@ import { XMLParser } from "fast-xml-parser";
 import * as s3mini from "./s3mini-xml.ts";
 
 import { Scanner, buildParserClassAsync, listPartsResultSpec } from "../dist/index.mjs";
+import {GeneratedParser} from "./b.js";
 
 const parserClass = buildParserClassAsync(listPartsResultSpec);
 
@@ -81,7 +82,7 @@ summary(() => {
 			bench("custom parser (runtime-generated)", () => {
 				for (let i = 0; i < 10000; ++i) {
 					scanner.reset();
-					new parserClass(scanner).parse_0();
+					new GeneratedParser(scanner).parse_0();
 				}
 			}).baseline(true);
 

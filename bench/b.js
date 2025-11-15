@@ -1,5 +1,5 @@
 import * as rt from "../dist/index.mjs";
-class GeneratedParser extends rt.Parser {
+export class GeneratedParser extends rt.Parser {
 	fn_2_Initiator() {
 		// Init structure entirely, so v8 can create a single hidden class
 		const res = {

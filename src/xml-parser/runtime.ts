@@ -205,6 +205,7 @@ export class Scanner {
 		const instance = await WebAssembly.instantiate(wasmScanner, {
 			env: {
 				memory: memory.memory,
+				// TODO: use WASM globals for text data
 			},
 		});
 		return new Scanner(instance, memory);

@@ -47,8 +47,6 @@ export class Parser {
 
 	/** Assumes {@link TokenKind.startTag} was already consumed. */
 	parseStringTag(identifierId: number): string | undefined {
-		this.expectIdentifier(identifierId);
-
 		if (this.token === TokenKind.endSelfClosing) {
 			this.nextToken();
 			return undefined;

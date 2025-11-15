@@ -7,7 +7,7 @@ export class GeneratedParser extends rt.Parser {
 			id: undefined,
 		};
 
-		this.expectIdentifier(16 /* KnownTagIdentifier.Initiator */);
+		// this.expectIdentifier(16 /* KnownTagIdentifier.Initiator */);
 
 		if (this.token === 4 /* TokenKind.endSelfClosing */) {
 			this.nextToken();
@@ -45,8 +45,9 @@ export class GeneratedParser extends rt.Parser {
 
 				case 1: {
 					this.nextToken(); // consume TokenKind.startTag
-
-					switch (this.scanner.getIdentifierId()) {
+					const id = this.scanner.getIdentifierId();
+					this.nextToken(); // consume identifier
+					switch (id) {
 						case 11: // "DisplayName":
 							res.displayName = this.parseStringTag(11);
 							break;
@@ -73,7 +74,7 @@ export class GeneratedParser extends rt.Parser {
 			id: undefined,
 		};
 
-		this.expectIdentifier(13 /* KnownTagIdentifier.Owner */);
+		// this.expectIdentifier(13 /* KnownTagIdentifier.Owner */);
 
 		if (this.token === 4 /* TokenKind.endSelfClosing */) {
 			this.nextToken();
@@ -111,8 +112,9 @@ export class GeneratedParser extends rt.Parser {
 
 				case 1: {
 					this.nextToken(); // consume TokenKind.startTag
-
-					switch (this.scanner.getIdentifierId()) {
+					const id = this.scanner.getIdentifierId();
+					this.nextToken(); // consume identifier
+					switch (id) {
 						case 11: // "DisplayName":
 							res.displayName = this.parseStringTag(11);
 							break;
@@ -141,7 +143,7 @@ export class GeneratedParser extends rt.Parser {
 			size: undefined,
 		};
 
-		this.expectIdentifier(7 /* KnownTagIdentifier.Part */);
+		// this.expectIdentifier(7 /* KnownTagIdentifier.Part */);
 
 		if (this.token === 4 /* TokenKind.endSelfClosing */) {
 			this.nextToken();
@@ -195,8 +197,9 @@ export class GeneratedParser extends rt.Parser {
 
 				case 1: {
 					this.nextToken(); // consume TokenKind.startTag
-
-					switch (this.scanner.getIdentifierId()) {
+					const id = this.scanner.getIdentifierId();
+					this.nextToken(); // consume identifier
+					switch (id) {
 						case 8: //"ETag":
 							res.etag = this.parseStringTag(8);
 							break;
@@ -241,7 +244,7 @@ export class GeneratedParser extends rt.Parser {
 			parts: [],
 		};
 
-		this.expectIdentifier(0 /* KnownTagIdentifier.ListPartsResult */);
+		// this.expectIdentifier(0 /* KnownTagIdentifier.ListPartsResult */);
 
 		if (this.token === 4 /* TokenKind.endSelfClosing */) {
 			this.nextToken();
@@ -279,9 +282,7 @@ export class GeneratedParser extends rt.Parser {
 				case 3 /* TokenKind.startClosingTag */:
 					this.nextToken(); // consume TokenKind.startClosingTag
 
-					this.expectIdentifier(
-						0 /* KnownTagIdentifier.ListPartsResult */,
-					);
+					this.expectIdentifier(0 /* KnownTagIdentifier.ListPartsResult */);
 					this.parseExpected(2 /* TokenKind.endTag */);
 					if (res.bucket === undefined)
 						throw new TypeError(
@@ -314,9 +315,9 @@ export class GeneratedParser extends rt.Parser {
 				case 1: {
 					this.nextToken(); // consume TokenKind.startTag
 
-			// 	console.log("this.scanner.getIdentifierId()", this.scanner.getIdentifierId());
-
-					switch (this.scanner.getIdentifierId()) {
+					const id = this.scanner.getIdentifierId();
+					this.nextToken(); // consume identifier
+					switch (id) {
 						case 22: // "Bucket":
 							res.bucket = this.parseStringTag(22);
 							break;
@@ -387,9 +388,11 @@ export class GeneratedParser extends rt.Parser {
 
 				case 1 /* TokenKind.startTag */: {
 					this.nextToken(); // consume TokenKind.startTag
+					const id = this.scanner.getIdentifierId();
+					this.nextToken(); // consume identifier
 
-					switch (this.scanner.getTokenValueEncoded()) {
-						case "ListPartsResult":
+					switch (id) {
+						case 0: // "ListPartsResult":
 							res.result = this.fn_1_ListPartsResult();
 							break;
 						default:
@@ -456,4 +459,4 @@ for (let i = 0; i < 100; ++i) {
 	parsed = new GeneratedParser(scanner).parse_0();
 }
 
-console.log(parsed)
+console.log(parsed);

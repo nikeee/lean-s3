@@ -169,40 +169,6 @@ const entityMap = {
 	"&amp;": "&",
 } as const;
 
-/**
- * biome-ignore lint/suspicious/noConstEnum: Normally, we'd avoid using TS enums due to its incompability with JS.
- * But we want to inline its values into the switch-cases and still have readable code.
- */
-/*
-const enum CharCode {
-	lessThan = 0x3c,
-	greaterThan = 0x3e,
-	slash = 0x2f,
-	equals = 0x3d,
-	doubleQuote = 0x22,
-	A = 0x41,
-	Z = 0x5a,
-	a = 0x61,
-	z = 0x7a,
-	_ = 0x5f,
-	_0 = 0x30,
-	_9 = 0x39,
-	tab = 0x09,
-	space = 0x20,
-	lineFeed = 0x0a,
-	carriageReturn = 0x0d,
-	verticalTab = 0x0b, // \v
-	formFeed = 0x0c, // \f
-	nonBreakingSpace = 0xa0, //
-	lineSeparator = 0x2028,
-	paragraphSeparator = 0x2029,
-	nextLine = 0x85,
-	exclamationMark = 0x21,
-	questionMark = 0x3f,
-	minus = 0x2d,
-}
-*/
-
 const textDecoder = new TextDecoder();
 
 export type WasmMemoryReference = {

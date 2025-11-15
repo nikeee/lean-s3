@@ -406,3 +406,21 @@ return (memRef) =>
 `.trim(),
 	)(rt) as Parser<unknown>;
 }
+
+export function buildParserClassAsync<T extends string>(
+	rootSpec: RootSpec<T>,
+): { new (scanner: rt.Scanner): Parser<unknown> } {
+	const globals = new Map();
+	const parsingCode = emitSpecParser(rootSpec, "", globals);
+	globals.clear(); // make sure we clear all references (even though this map won't survive past this function)
+
+	return new Function(
+		"rt",
+		` return class GeneratedParser extends rt.Parser {
+	${parsingCode}
+};
+`.trim(),
+	)(rt) as {
+		new (scanner: rt.Scanner): Parser<unknown>;
+	};
+}

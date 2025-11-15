@@ -214,6 +214,10 @@ export class Scanner {
 		instance.exports.init_scanner(memory.byteLength);
 	}
 
+	reset() {
+		this.#instance.exports.init_scanner(this.text.length);
+	}
+
 	scan(): TokenKind {
 		return this.#instance.exports.scan_token();
 		// const res = this.#instance.exports.scan_token();

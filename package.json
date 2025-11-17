@@ -47,7 +47,7 @@
     "undici": "^7.16.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.5",
+    "@biomejs/biome": "2.3.6",
     "@testcontainers/localstack": "^11.8.1",
     "@testcontainers/minio": "^11.8.1",
     "@testcontainers/s3mock": "^11.8.1",

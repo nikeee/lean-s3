@@ -4,7 +4,7 @@ import { XMLParser, XMLBuilder } from "fast-xml-parser";
 
 import S3File from "./S3File.ts";
 import S3Error from "./S3Error.ts";
-import S3BucketEntry from "./S3BucketEntry.ts";
+import type S3BucketEntry from "./S3BucketEntry.ts";
 import KeyCache from "./KeyCache.ts";
 import * as amzDate from "./AmzDate.ts";
 import * as sign from "./sign.ts";
@@ -47,6 +47,17 @@ import {
 } from "./encode.ts";
 import type { Readable } from "node:stream";
 
+import {
+	parseListPartsResult,
+	parseListBucketResult,
+	parseInitiateMultipartUploadResult,
+	parseListMultipartUploadsResult,
+	parseCompleteMultipartUploadResult,
+	parseDeleteResult,
+	parseGetBucketCorsResult,
+	parseCopyObjectResult,
+} from "./parsers.ts";
+
 export const kWrite = Symbol("kWrite");
 export const kStream = Symbol("kStream");
 export const kSignedRequest = Symbol("kSignedRequest");
@@ -54,12 +65,6 @@ export const kGetEffectiveParams = Symbol("kGetEffectiveParams");
 
 const xmlParser = new XMLParser({
 	ignoreAttributes: true,
-	isArray: (_, jPath) =>
-		jPath === "ListMultipartUploadsResult.Upload" ||
-		jPath === "ListBucketResult.Contents" ||
-		jPath === "ListPartsResult.Part" ||
-		jPath === "DeleteResult.Deleted" ||
-		jPath === "DeleteResult.Error",
 });
 const xmlBuilder = new XMLBuilder({
 	attributeNamePrefix: "$",
@@ -362,20 +367,6 @@ export type ListPartsResult = {
 	storageClass?: StorageClass;
 	checksumAlgorithm?: ChecksumAlgorithm;
 	checksumType?: ChecksumType;
-
-	// TODO
-	// initiator: unknown;
-	// <Initiator>
-	// 	<DisplayName>string</DisplayName>
-	// 	<ID>string</ID>
-	// </Initiator>
-
-	// TODO
-	// owner: unknown;
-	// <Owner>
-	// 	<DisplayName>string</DisplayName>
-	// 	<ID>string</ID>
-	// </Owner>
 };
 
 export type ListObjectsResult = {
@@ -713,16 +704,9 @@ export default class S3Client {
 		}
 
 		const text = await response.body.text();
-		const res = ensureParsedXml(text).CopyObjectResult ?? {};
 
-		return {
-			etag: res.ETag,
-			lastModified: res.LastModified ? new Date(res.LastModified) : undefined,
-			checksumCRC32: res.ChecksumCRC32,
-			checksumCRC32C: res.ChecksumCRC32C,
-			checksumSHA1: res.ChecksumSHA1,
-			checksumSHA256: res.ChecksumSHA256,
-		};
+		// biome-ignore lint/suspicious/noExplicitAny: PoC
+		return parseCopyObjectResult(text) as any as CopyObjectResult;
 	}
 
 	//#region multipart uploads
@@ -752,13 +736,10 @@ export default class S3Client {
 		}
 
 		const text = await response.body.text();
-		const res = ensureParsedXml(text).InitiateMultipartUploadResult ?? {};
 
-		return {
-			bucket: res.Bucket,
-			key: res.Key,
-			uploadId: res.UploadId,
-		};
+		// biome-ignore lint/suspicious/noExplicitAny: PoC
+		return (parseInitiateMultipartUploadResult(text) as any)
+			.result as CreateMultipartUploadResult;
 	}
 
 	/**
@@ -830,34 +811,9 @@ export default class S3Client {
 		}
 
 		const text = await response.body.text();
-		const root = ensureParsedXml(text).ListMultipartUploadsResult ?? {};
-
-		return {
-			bucket: root.Bucket || undefined,
-			delimiter: root.Delimiter || undefined,
-			prefix: root.Prefix || undefined,
-			keyMarker: root.KeyMarker || undefined,
-			uploadIdMarker: root.UploadIdMarker || undefined,
-			nextKeyMarker: root.NextKeyMarker || undefined,
-			nextUploadIdMarker: root.NextUploadIdMarker || undefined,
-			maxUploads: root.MaxUploads ?? 1000, // not using || to not override 0; caution: minio supports 10000(!)
-			isTruncated: root.IsTruncated === "true",
-			uploads:
-				root.Upload?.map(
-					// biome-ignore lint/suspicious/noExplicitAny: we're parsing here
-					(u: any) =>
-						({
-							key: u.Key || undefined,
-							uploadId: u.UploadId || undefined,
-							// TODO: Initiator
-							// TODO: Owner
-							storageClass: u.StorageClass || undefined,
-							checksumAlgorithm: u.ChecksumAlgorithm || undefined,
-							checksumType: u.ChecksumType || undefined,
-							initiated: u.Initiated ? new Date(u.Initiated) : undefined,
-						}) satisfies MultipartUpload,
-				) ?? [],
-		};
+		// biome-ignore lint/suspicious/noExplicitAny: PoC
+		return (parseListMultipartUploadsResult(text) as any)
+			.result as ListMultipartUploadsResult;
 	}
 
 	/**
@@ -939,20 +895,9 @@ export default class S3Client {
 			throw await getResponseError(response, path);
 		}
 		const text = await response.body.text();
-		const res = ensureParsedXml(text).CompleteMultipartUploadResult ?? {};
 
-		return {
-			location: res.Location || undefined,
-			bucket: res.Bucket || undefined,
-			key: res.Key || undefined,
-			etag: res.ETag || undefined,
-			checksumCRC32: res.ChecksumCRC32 || undefined,
-			checksumCRC32C: res.ChecksumCRC32C || undefined,
-			checksumCRC64NVME: res.ChecksumCRC64NVME || undefined,
-			checksumSHA1: res.ChecksumSHA1 || undefined,
-			checksumSHA256: res.ChecksumSHA256 || undefined,
-			checksumType: res.ChecksumType || undefined,
-		};
+		// biome-ignore lint/suspicious/noExplicitAny: PoC
+		return (parseCompleteMultipartUploadResult(text) as any).result;
 	}
 
 	/**
@@ -1065,26 +1010,8 @@ export default class S3Client {
 
 		if (response.statusCode === 200) {
 			const text = await response.body.text();
-			const root = ensureParsedXml(text).ListPartsResult ?? {};
-			return {
-				bucket: root.Bucket,
-				key: root.Key,
-				uploadId: root.UploadId,
-				partNumberMarker: root.PartNumberMarker ?? undefined,
-				nextPartNumberMarker: root.NextPartNumberMarker ?? undefined,
-				maxParts: root.MaxParts ?? 1000,
-				isTruncated: root.IsTruncated ?? false,
-				parts:
-					// biome-ignore lint/suspicious/noExplicitAny: parsing code
-					root.Part?.map((part: any) => ({
-						etag: part.ETag,
-						lastModified: part.LastModified
-							? new Date(part.LastModified)
-							: undefined,
-						partNumber: part.PartNumber ?? undefined,
-						size: part.Size ?? undefined,
-					})) ?? [],
-			};
+			// biome-ignore lint/suspicious/noExplicitAny: POC
+			return (parseListPartsResult(text) as any).result;
 		}
 
 		throw await getResponseError(response, path);
@@ -1328,15 +1255,20 @@ export default class S3Client {
 		);
 
 		if (response.statusCode !== 200) {
-			// undici docs state that we should dump the body if not used
-			response.body.dump(); // dump's floating promise should not throw
-			throw fromStatusCode(response.statusCode, "");
+			// garage returns 204 instead of 404
+			// fix submitted here: https://git.deuxfleurs.fr/Deuxfleurs/garage/pulls/1096
+			// This workaround should be removed as soon as garage fixed the compat issue
+			throw fromStatusCode(
+				response.statusCode === 204 ? 404 : response.statusCode,
+				"",
+			);
 		}
 
-		// const text = await response.body.text();
-		// console.log(text)
+		const text = await response.body.text();
 
-		throw new Error("Not implemented");
+		// biome-ignore lint/suspicious/noExplicitAny: PoC
+		return (parseGetBucketCorsResult(text) as any)
+			.result as GetBucketCorsResult;
 	}
 
 	/**
@@ -1481,25 +1413,15 @@ export default class S3Client {
 		}
 
 		const text = await response.body.text();
-
-		const res = ensureParsedXml(text).ListBucketResult ?? {};
-		if (!res) {
+		try {
+			// biome-ignore lint/suspicious/noExplicitAny: PoC
+			return (parseListBucketResult(text) as any).result;
+		} catch (cause) {
 			throw new S3Error("Unknown", "", {
 				message: "Could not read bucket contents.",
+				cause,
 			});
 		}
-
-		return {
-			name: res.Name,
-			prefix: res.Prefix,
-			startAfter: res.StartAfter,
-			isTruncated: res.IsTruncated,
-			continuationToken: res.ContinuationToken,
-			maxKeys: res.MaxKeys,
-			keyCount: res.KeyCount,
-			nextContinuationToken: res.NextContinuationToken,
-			contents: res.Contents?.map(S3BucketEntry.parse) ?? [],
-		};
 	}
 
 	//#endregion
@@ -1541,11 +1463,12 @@ export default class S3Client {
 		if (response.statusCode === 200) {
 			const text = await response.body.text();
 
-			// biome-ignore lint/suspicious/noExplicitAny: parsing
+			// biome-ignore lint/suspicious/noExplicitAny: PoC
 			let deleteResult: any;
 			try {
 				// Quite mode omits all deleted elements, so it will be parsed as "", wich we need to coalasce to null/undefined
-				deleteResult = ensureParsedXml(text).DeleteResult ?? {};
+				// biome-ignore lint/suspicious/noExplicitAny: PoC
+				deleteResult = (parseDeleteResult(text) as any).result;
 			} catch (cause) {
 				// Possible according to AWS docs
 				throw new S3Error("Unknown", "", {
@@ -1554,16 +1477,7 @@ export default class S3Client {
 				});
 			}
 
-			const errors =
-				// biome-ignore lint/suspicious/noExplicitAny: parsing
-				deleteResult.Error?.map((e: any) => ({
-					code: e.Code,
-					key: e.Key,
-					message: e.Message,
-					versionId: e.VersionId,
-				})) ?? [];
-
-			return { errors };
+			return { errors: deleteResult.errors };
 		}
 
 		if (400 <= response.statusCode && response.statusCode < 500) {
@@ -1942,23 +1856,4 @@ export function buildSearchParams(
 	}
 
 	return res;
-}
-
-// biome-ignore lint/suspicious/noExplicitAny: parsing result is just unknown
-function ensureParsedXml(text: string): any {
-	try {
-		const r = xmlParser.parse(text);
-		if (!r) {
-			throw new S3Error("Unknown", "", {
-				message: "S3 service responded with empty XML.",
-			});
-		}
-		return r;
-	} catch (cause) {
-		// Possible according to AWS docs
-		throw new S3Error("Unknown", "", {
-			message: "S3 service responded with invalid XML.",
-			cause,
-		});
-	}
 }

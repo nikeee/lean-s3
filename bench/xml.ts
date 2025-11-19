@@ -3,7 +3,7 @@ import { summary, group, bench, run, barplot } from "mitata";
 import { XMLParser } from "fast-xml-parser";
 
 import * as s3mini from "./s3mini-xml.ts";
-// import { parseListPartsResult as runtimeGeneratedParser } from "../src/parsers.ts";
+import { parseListPartsResult as runtimeGeneratedParser } from "../src/parsers.ts";
 
 summary(() => {
 	barplot(() => {
@@ -41,13 +41,11 @@ summary(() => {
 			});
 			*/
 
-			/*
 			bench("custom parser (runtime-generated)", () => {
 				for (let i = 0; i < 10000; ++i) {
 					runtimeGeneratedParser(s);
 				}
 			}).baseline(true);
-			*/
 
 			bench("xml parser of s3mini", () => {
 				for (let i = 0; i < 10000; ++i) {

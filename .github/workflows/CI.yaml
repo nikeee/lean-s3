@@ -26,7 +26,7 @@ jobs:
           cache: npm
 
       - run: npm ci
-      - run: npm run ci
+      - run: node --run ci
       - run: npm test --silent | tee results.tap
         shell: bash -euo pipefail {0}
 
@@ -98,7 +98,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: npm
       - run: npm ci
-      - run: npm run docs
+      - run: node --run docs
       - uses: actions/upload-pages-artifact@v4
         with:
           path: ./docs

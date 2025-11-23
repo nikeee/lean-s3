@@ -6,6 +6,7 @@ import { describe, test } from "node:test";
 import { expect } from "expect";
 
 import { S3Client, S3Error, S3Stat } from "../index.ts";
+import type { PostPolicy, PostPolicyCondition } from "../S3Client.ts";
 
 export type S3Implementation =
 	| "aws"
@@ -229,6 +230,175 @@ export function runTests(
 				expect(decodeURIComponent(cd)).toBe(
 					`attachment;filename="download-💾.json";filename*=UTF-8''download-💾.json`,
 				);
+			} finally {
+				await f.delete();
+			}
+		});
+	});
+
+	describe("presignPost", () => {
+		test("basic post", async () => {
+			const testId = crypto.randomUUID();
+			const expected = {
+				hello: testId,
+			};
+			const key = `${runId}/presign-post-test.json`;
+
+			const policy: PostPolicy = {
+				formData: {
+					key,
+				},
+				expiresIn: 3600,
+				conditions: [],
+			};
+
+			const { url, formData: presignedFormData } = client.presignPost(policy);
+			const formData = new FormData();
+			for (const [k, v] of Object.entries(presignedFormData)) {
+				formData.append(k, String(v));
+			}
+			formData.append(
+				"file",
+				new Blob([JSON.stringify(expected)], { type: "application/json" }),
+			);
+
+			const res = await fetch(url, {
+				method: "POST",
+				body: formData,
+			});
+
+			expect(res.ok).toBe(true);
+
+			const f = client.file(key);
+			try {
+				const actual = await f.json();
+				expect(actual).toStrictEqual(expected);
+			} finally {
+				await f.delete();
+			}
+		});
+
+		test("post with content-length-range", async t => {
+			if (implementation === "garage") {
+				t.skip(
+					`S3 implementation "${implementation}" does not implement this feature`,
+				);
+				return;
+			}
+			const body = crypto.randomUUID();
+			const key = `${runId}/presign-post-length-range.txt`;
+			const minLength = 10;
+			const maxLength = 1000;
+
+			const policy: PostPolicy = {
+				formData: {
+					key,
+				},
+				expiresIn: 3600,
+				conditions: [
+					["content-length-range", minLength, maxLength] as PostPolicyCondition,
+				],
+			};
+
+			const { url, formData: presignedFormData } = client.presignPost(policy);
+			const formData = new FormData();
+			for (const [k, v] of Object.entries(presignedFormData)) {
+				formData.append(k, String(v));
+			}
+			formData.append("file", new Blob([body], { type: "text/plain" }));
+
+			const res = await fetch(url, {
+				method: "POST",
+				body: formData,
+			});
+
+			expect(res.ok).toBe(true);
+			expect(body.length).toBeGreaterThanOrEqual(minLength);
+			expect(body.length).toBeLessThanOrEqual(maxLength);
+
+			const f = client.file(key);
+			try {
+				const actual = await f.text();
+				expect(actual).toStrictEqual(body);
+			} finally {
+				await f.delete();
+			}
+		});
+
+		test("post with starts-with $Content-Type", async () => {
+			// const testId = crypto.randomUUID();
+			const value = crypto.randomUUID();
+			const key = `${runId}/presign-post-content-type.json`;
+
+			const policy: PostPolicy = {
+				formData: {
+					key,
+				},
+				expiresIn: 3600,
+				conditions: [["starts-with", "$Content-Type", "application/"]],
+			};
+
+			const { url, formData: presignedFormData } = client.presignPost(policy);
+			const formData = new FormData();
+			for (const [k, v] of Object.entries(presignedFormData)) {
+				formData.append(k, String(v));
+			}
+			formData.append("Content-Type", "application/json");
+			formData.append(
+				"file",
+				new Blob([JSON.stringify({ value })], { type: "application/json" }),
+			);
+
+			const res = await fetch(url, {
+				method: "POST",
+				body: formData,
+			});
+			expect(res.ok).toBe(true);
+
+			const f = client.file(key);
+			try {
+				const actual = await f.json();
+				expect(actual).toStrictEqual({ value });
+			} finally {
+				await f.delete();
+			}
+		});
+
+		test("post with content-length-range and starts-with $Content-Type", async () => {
+			const body = crypto.randomUUID();
+			const key = `${runId}/presign-post-combined.txt`;
+			const minLength = 10;
+			const maxLength = 1000;
+
+			const policy: PostPolicy = {
+				formData: {
+					key,
+				},
+				expiresIn: 3600,
+				conditions: [
+					["content-length-range", minLength, maxLength],
+					["starts-with", "$Content-Type", "text/"],
+				],
+			};
+
+			const { url, formData: presignedFormData } = client.presignPost(policy);
+			const formData = new FormData();
+			for (const [k, v] of Object.entries(presignedFormData)) {
+				formData.append(k, String(v));
+			}
+			formData.append("Content-Type", "text/plain");
+			formData.append("file", new Blob([body], { type: "text/plain" }));
+
+			const res = await fetch(url, {
+				method: "POST",
+				body: formData,
+			});
+			expect(res.ok).toBe(true);
+
+			const f = client.file(key);
+			try {
+				const actual = await f.text();
+				expect(actual).toStrictEqual(body);
 			} finally {
 				await f.delete();
 			}

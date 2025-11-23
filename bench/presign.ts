@@ -89,6 +89,14 @@ mitata.summary(async () => {
 			accessKey: "sample-key-id",
 			secretKey: "sample-secret-key",
 		});
+
+		const policy =client.newPostPolicy();
+		policy.setExpires(new Date(Date.now() + 3600 * 1000));
+		policy.setKey("path.json");
+		policy.setBucket("test-bucket");
+		policy.setContentLengthRange(10, 1000);
+
+		await client.presignedPostPolicy(policy)
 		mitata
 			.bench("minio client", async () => {
 				await client.presignedGetObject("test-bucket", "path.json");

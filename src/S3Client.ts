@@ -1,4 +1,5 @@
 import * as nodeUtil from "node:util";
+import { createHmac } from "node:crypto";
 import { request, Agent, type Dispatcher } from "undici";
 import { XMLParser, XMLBuilder } from "fast-xml-parser";
 
@@ -449,8 +450,8 @@ export type GetBucketCorsResult = {
 
 export type PostPolicyCondition =
 	| [string, string]
-	| [string, string, string | number]
-	| { key: string };
+	| [string, string | number, string | number];
+
 export interface PostPolicy {
 	formData: Record<string, string>;
 	/** In seconds */
@@ -681,8 +682,77 @@ export default class S3Client {
 		return res.toString();
 	}
 
-	presignPost(policy: PostPolicy): string {
-		throw new Error("Not implemented");
+	presignPost(policy: PostPolicy): {
+		url: string;
+		formData: Record<string, string | number>;
+	} {
+		const now = new Date();
+		const expirationDate = new Date(now.getTime() + policy.expiresIn * 1000);
+
+		const date = amzDate.getAmzDate(now);
+		const region = this.#options.region;
+		const credential = `${this.#options.accessKeyId}/${date.date}/${region}/s3/aws4_request`;
+
+		const policyDoc = {
+			expiration: expirationDate.toISOString(),
+			conditions: [
+				["eq", "$key", policy.formData.key],
+				["eq", "$bucket", this.#options.bucket],
+				...policy.conditions,
+				["eq", "$x-amz-date", date.dateTime],
+				["eq", "$x-amz-algorithm", "AWS4-HMAC-SHA256"],
+				["eq", "$x-amz-credential", credential],
+			],
+		};
+
+		if (this.#options.sessionToken) {
+			policyDoc.conditions.push([
+				"eq",
+				"$x-amz-security-token",
+				this.#options.sessionToken,
+			]);
+		}
+
+		const policyJson = JSON.stringify(policyDoc);
+		const policyBase64 = Buffer.from(policyJson).toString("base64");
+
+		const signingKey = this.#keyCache.computeIfAbsent(
+			date,
+			region,
+			this.#options.accessKeyId,
+			this.#options.secretAccessKey,
+		);
+
+		const signature = createHmac("sha256", signingKey)
+			.update(policyBase64)
+			.digest("hex");
+
+		const url = buildRequestUrl(
+			this.#options.endpoint,
+			this.#options.bucket,
+			region,
+			"" as ObjectKey,
+		);
+
+		const formData: Record<string, string | number> = {
+			key: policy.formData.key,
+			bucket: this.#options.bucket,
+			...policy.formData,
+			"X-Amz-Date": date.dateTime,
+			"X-Amz-Algorithm": "AWS4-HMAC-SHA256",
+			"X-Amz-Credential": credential,
+			Policy: policyBase64,
+			"X-Amz-Signature": signature,
+		};
+
+		if (this.#options.sessionToken) {
+			formData["X-Amz-Security-Token"] = this.#options.sessionToken;
+		}
+
+		return {
+			url: url.toString(),
+			formData,
+		};
 	}
 
 	/**

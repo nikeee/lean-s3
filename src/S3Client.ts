@@ -447,6 +447,17 @@ export type GetBucketCorsResult = {
 	rules: BucketCorsRule[];
 };
 
+export type PostPolicyCondition =
+	| [string, string]
+	| [string, string, string | number]
+	| { key: string };
+export interface PostPolicy {
+	formData: Record<string, string>;
+	/** In seconds */
+	expiresIn: number;
+	conditions: PostPolicyCondition[];
+}
+
 /**
  * A configured S3 bucket instance for managing files.
  *
@@ -668,6 +679,10 @@ export default class S3Client {
 		// See `buildSearchParams` for casing on this parameter
 		res.search = `${query}&X-Amz-Signature=${signature}`;
 		return res.toString();
+	}
+
+	presignPost(policy: PostPolicy): string {
+		throw new Error("Not implemented");
 	}
 
 	/**

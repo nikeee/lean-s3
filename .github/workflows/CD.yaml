@@ -23,7 +23,7 @@ jobs:
           cache: npm
 
       - run: npm ci
-      - run: node --run ci
+      - run: npm run ci
       - run: npm test --silent
 
   docs-build:
@@ -39,7 +39,7 @@ jobs:
           cache: npm
 
       - run: npm ci
-      - run: node --run docs
+      - run: npm run docs
 
       - uses: actions/upload-pages-artifact@v4
         with:

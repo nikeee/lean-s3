@@ -2,14 +2,14 @@
 pre-push:
   commands:
     lint:
-      run: node --run ci
+      run: npm run ci
 
 pre-commit:
   parallel: true
   commands:
     format:
       glob: "*.{js,ts}"
-      run: node --run format
+      run: npm run format
       stage_fixed: true
 
 output:

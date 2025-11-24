@@ -1,5 +1,4 @@
 import * as nodeUtil from "node:util";
-import { createHmac } from "node:crypto";
 import { request, Agent, type Dispatcher } from "undici";
 import { XMLParser, XMLBuilder } from "fast-xml-parser";
 
@@ -774,10 +773,6 @@ export default class S3Client {
 			this.#options.secretAccessKey,
 		);
 
-		const signature = createHmac("sha256", signingKey)
-			.update(encodedPolicy)
-			.digest("hex");
-
 		const url = buildRequestUrl(endpoint, bucket, region, "" as ObjectKey);
 
 		return {
@@ -786,7 +781,7 @@ export default class S3Client {
 				...fields,
 				key,
 				Policy: encodedPolicy,
-				"X-Amz-Signature": signature,
+				"X-Amz-Signature": sign.signEncodedPolicy(signingKey, encodedPolicy),
 			},
 		};
 	}

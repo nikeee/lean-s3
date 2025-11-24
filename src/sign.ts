@@ -28,15 +28,22 @@ export function deriveSigningKey(
 		.digest();
 }
 
+export function signEncodedPolicy(
+	signingKey: Buffer,
+	encodedPolicy: string,
+): string {
+	return createHmac("sha256", signingKey).update(encodedPolicy).digest("hex");
+}
+
 export function signCanonicalDataHash(
-	signinKey: Buffer,
+	signingKey: Buffer,
 	canonicalDataHash: string,
 	date: AmzDate,
 	region: string,
 ): string {
 	// it is actually faster to pass a single large string instead of doing multiple .update() chains with the parameters
 	// see `benchmark-operations.js`
-	return createHmac("sha256", signinKey)
+	return createHmac("sha256", signingKey)
 		.update(
 			`AWS4-HMAC-SHA256\n${date.dateTime}\n${date.date}/${region}/s3/aws4_request\n${canonicalDataHash}`,
 		)

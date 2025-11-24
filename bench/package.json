@@ -25,7 +25,7 @@
     "minio": "^8.0.6",
     "mitata": "^1.0.34",
     "tsx": "^4.20.6",
-    "s3mini": "^0.6.0",
+    "s3mini": "^0.7.0",
     "tinybench": "^5.1.0"
   },
   "devDependencies": {

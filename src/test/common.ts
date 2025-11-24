@@ -245,7 +245,7 @@ export function runTests(
 
 	describe("presignPost", () => {
 		test("basic post", async t => {
-			if (implementation === "s3mock") {
+			if (implementation === "s3mock" || implementation === "backblaze") {
 				// Ref: https://github.com/adobe/S3Mock/issues/2794
 				t.skip(
 					`S3 implementation "${implementation}" does not implement this feature`,
@@ -283,7 +283,7 @@ export function runTests(
 		});
 
 		test("post with content-length-range", async t => {
-			if (implementation === "s3mock") {
+			if (implementation === "s3mock" || implementation === "backblaze") {
 				// Ref: https://github.com/adobe/S3Mock/issues/2794
 				t.skip(
 					`S3 implementation "${implementation}" does not implement this feature`,
@@ -319,7 +319,7 @@ export function runTests(
 		});
 
 		test("post with content-length-range (file too large)", async t => {
-			if (implementation === "s3mock") {
+			if (implementation === "s3mock" || implementation === "backblaze") {
 				// Ref: https://github.com/adobe/S3Mock/issues/2794
 				t.skip(
 					`S3 implementation "${implementation}" does not implement this feature`,
@@ -347,7 +347,7 @@ export function runTests(
 		});
 
 		test("post with starts-with $Content-Type", async t => {
-			if (implementation === "s3mock") {
+			if (implementation === "s3mock" || implementation === "backblaze") {
 				// Ref: https://github.com/adobe/S3Mock/issues/2794
 				t.skip(
 					`S3 implementation "${implementation}" does not implement this feature`,
@@ -386,7 +386,7 @@ export function runTests(
 		});
 
 		test("post with content-length-range and starts-with $Content-Type", async t => {
-			if (implementation === "s3mock") {
+			if (implementation === "s3mock" || implementation === "backblaze") {
 				// Ref: https://github.com/adobe/S3Mock/issues/2794
 				t.skip(
 					`S3 implementation "${implementation}" does not implement this feature`,

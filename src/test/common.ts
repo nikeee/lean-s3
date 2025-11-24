@@ -1270,7 +1270,8 @@ export function runTests(
 				implementation === "ceph" ||
 				implementation === "localstack" ||
 				implementation === "rustfs" ||
-				implementation === "s3mock"
+				implementation === "s3mock" ||
+				implementation === "backblaze"
 			) {
 				// Minio doesn't support PutBucketCors
 				// https://github.com/minio/minio/issues/15874#issuecomment-1279771751

@@ -443,6 +443,8 @@ export type BucketExistsOptions = {
 	signal?: AbortSignal;
 };
 
+//#region bucket cors
+
 export type BucketCorsRules = readonly BucketCorsRule[];
 export type BucketCorsRule = {
 	allowedMethods: readonly HttpMethod[];
@@ -479,6 +481,8 @@ export type GetBucketCorsOptions = {
 export type GetBucketCorsResult = {
 	rules: BucketCorsRule[];
 };
+
+//#endregion
 
 /**
  * A configured S3 bucket instance for managing files.

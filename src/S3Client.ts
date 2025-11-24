@@ -217,6 +217,8 @@ export type ListObjectsIteratingOptions = {
 	internalPageSize?: number;
 };
 
+//#region multipart uploads
+
 //#region ListMultipartUploads
 export type ListMultipartUploadsOptions = {
 	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
@@ -378,6 +380,8 @@ export type ListPartsResult = {
 	// 	<ID>string</ID>
 	// </Owner>
 };
+
+//#endregion
 
 export type ListObjectsResult = {
 	name: string;

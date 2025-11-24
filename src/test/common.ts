@@ -244,7 +244,15 @@ export function runTests(
 	}
 
 	describe("presignPost", () => {
-		test("basic post", async () => {
+		test("basic post", async t => {
+			if (implementation === "s3mock") {
+				// Ref: https://github.com/adobe/S3Mock/issues/2794
+				t.skip(
+					`S3 implementation "${implementation}" does not implement this feature`,
+				);
+				return;
+			}
+
 			const testId = crypto.randomUUID();
 			const key = `${runId}/presign-post-test.json`;
 
@@ -274,7 +282,15 @@ export function runTests(
 			}
 		});
 
-		test("post with content-length-range", async () => {
+		test("post with content-length-range", async t => {
+			if (implementation === "s3mock") {
+				// Ref: https://github.com/adobe/S3Mock/issues/2794
+				t.skip(
+					`S3 implementation "${implementation}" does not implement this feature`,
+				);
+				return;
+			}
+
 			const testId = crypto.randomUUID();
 			const key = `${runId}/presign-post-length-range.txt`;
 
@@ -302,7 +318,15 @@ export function runTests(
 			}
 		});
 
-		test("post with content-length-range (file too large)", async () => {
+		test("post with content-length-range (file too large)", async t => {
+			if (implementation === "s3mock") {
+				// Ref: https://github.com/adobe/S3Mock/issues/2794
+				t.skip(
+					`S3 implementation "${implementation}" does not implement this feature`,
+				);
+				return;
+			}
+
 			const testId = crypto.randomUUID();
 			const key = `${runId}/presign-post-length-range.txt`;
 
@@ -322,7 +346,15 @@ export function runTests(
 			expect(res.ok).toBe(false);
 		});
 
-		test("post with starts-with $Content-Type", async () => {
+		test("post with starts-with $Content-Type", async t => {
+			if (implementation === "s3mock") {
+				// Ref: https://github.com/adobe/S3Mock/issues/2794
+				t.skip(
+					`S3 implementation "${implementation}" does not implement this feature`,
+				);
+				return;
+			}
+
 			const testId = crypto.randomUUID();
 			const key = `${runId}/presign-post-content-type.json`;
 
@@ -353,7 +385,15 @@ export function runTests(
 			}
 		});
 
-		test("post with content-length-range and starts-with $Content-Type", async () => {
+		test("post with content-length-range and starts-with $Content-Type", async t => {
+			if (implementation === "s3mock") {
+				// Ref: https://github.com/adobe/S3Mock/issues/2794
+				t.skip(
+					`S3 implementation "${implementation}" does not implement this feature`,
+				);
+				return;
+			}
+
 			const testId = crypto.randomUUID();
 			const key = `${runId}/presign-post-combined.txt`;
 

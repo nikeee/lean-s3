@@ -245,8 +245,14 @@ export function runTests(
 
 	describe("presignPost", () => {
 		test("basic post", async t => {
-			if (implementation === "s3mock" || implementation === "backblaze") {
-				// Ref: https://github.com/adobe/S3Mock/issues/2794
+			if (
+				implementation === "s3mock" ||
+				implementation === "backblaze" ||
+				implementation === "cloudflare"
+			) {
+				// Refs:
+				// https://github.com/adobe/S3Mock/issues/2794
+				// https://developers.cloudflare.com/r2/api/s3/presigned-urls/#supported-http-methods
 				t.skip(
 					`S3 implementation "${implementation}" does not implement this feature`,
 				);
@@ -283,8 +289,14 @@ export function runTests(
 		});
 
 		test("post with content-length-range", async t => {
-			if (implementation === "s3mock" || implementation === "backblaze") {
-				// Ref: https://github.com/adobe/S3Mock/issues/2794
+			if (
+				implementation === "s3mock" ||
+				implementation === "backblaze" ||
+				implementation === "cloudflare"
+			) {
+				// Refs:
+				// https://github.com/adobe/S3Mock/issues/2794
+				// https://developers.cloudflare.com/r2/api/s3/presigned-urls/#supported-http-methods
 				t.skip(
 					`S3 implementation "${implementation}" does not implement this feature`,
 				);
@@ -319,8 +331,14 @@ export function runTests(
 		});
 
 		test("post with content-length-range (file too large)", async t => {
-			if (implementation === "s3mock" || implementation === "backblaze") {
-				// Ref: https://github.com/adobe/S3Mock/issues/2794
+			if (
+				implementation === "s3mock" ||
+				implementation === "backblaze" ||
+				implementation === "cloudflare"
+			) {
+				// Refs:
+				// https://github.com/adobe/S3Mock/issues/2794
+				// https://developers.cloudflare.com/r2/api/s3/presigned-urls/#supported-http-methods
 				t.skip(
 					`S3 implementation "${implementation}" does not implement this feature`,
 				);
@@ -343,12 +361,19 @@ export function runTests(
 				body,
 			});
 
+			console.log(res.status, await res.text());
 			expect(res.ok).toBe(false);
 		});
 
 		test("post with starts-with $Content-Type", async t => {
-			if (implementation === "s3mock" || implementation === "backblaze") {
-				// Ref: https://github.com/adobe/S3Mock/issues/2794
+			if (
+				implementation === "s3mock" ||
+				implementation === "backblaze" ||
+				implementation === "cloudflare"
+			) {
+				// Refs:
+				// https://github.com/adobe/S3Mock/issues/2794
+				// https://developers.cloudflare.com/r2/api/s3/presigned-urls/#supported-http-methods
 				t.skip(
 					`S3 implementation "${implementation}" does not implement this feature`,
 				);
@@ -386,8 +411,14 @@ export function runTests(
 		});
 
 		test("post with content-length-range and starts-with $Content-Type", async t => {
-			if (implementation === "s3mock" || implementation === "backblaze") {
-				// Ref: https://github.com/adobe/S3Mock/issues/2794
+			if (
+				implementation === "s3mock" ||
+				implementation === "backblaze" ||
+				implementation === "cloudflare"
+			) {
+				// Refs:
+				// https://github.com/adobe/S3Mock/issues/2794
+				// https://developers.cloudflare.com/r2/api/s3/presigned-urls/#supported-http-methods
 				t.skip(
 					`S3 implementation "${implementation}" does not implement this feature`,
 				);

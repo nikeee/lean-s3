@@ -143,7 +143,10 @@ export type DeleteObjectsError = {
 
 export interface S3FilePresignOptions extends OverridableS3ClientOptions {
 	contentHash?: Buffer;
-	/** Seconds. */
+	/**
+	 * In seconds.
+	 * @default 3600 (1 hour)
+	 */
 	// TODO: Maybe rename this to expiresInSeconds
 	expiresIn?: number; // TODO: Maybe support Temporal.Duration once major support arrives
 	method?: PresignableHttpMethod;
@@ -187,7 +190,11 @@ export type PostPolicyCondition =
 
 export interface PresignPostOptions extends OverridableS3ClientOptions {
 	key: string;
-	/** In seconds */
+	/**
+	 * In seconds.
+	 * @default 3600 (1 hour)
+	 */
+	// TODO: Maybe rename this to expiresInSeconds
 	expiresIn: number;
 	fields: Record<string, string>;
 	conditions: PostPolicyCondition[];

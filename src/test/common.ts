@@ -235,6 +235,196 @@ export function runTests(
 		});
 	});
 
+	function objectToFormData(object: Record<string, string | number>): FormData {
+		const res = new FormData();
+		for (const [k, v] of Object.entries(object)) {
+			res.append(k, String(v));
+		}
+		return res;
+	}
+
+	describe("presignPost", () => {
+		test("basic post", async t => {
+			if (implementation === "s3mock") {
+				// Ref: https://github.com/adobe/S3Mock/issues/2794
+				t.skip(
+					`S3 implementation "${implementation}" does not implement this feature`,
+				);
+				return;
+			}
+
+			const testId = crypto.randomUUID();
+			const key = `${runId}/presign-post-test.json`;
+
+			const { url, fields } = client.presignPost({
+				key,
+			});
+
+			const body = objectToFormData(fields);
+			body.append(
+				"file",
+				new Blob([JSON.stringify(testId)], { type: "application/json" }),
+			);
+
+			const res = await fetch(url, {
+				method: "POST",
+				body,
+			});
+
+			expect(res.ok).toBe(true);
+
+			const f = client.file(key);
+			try {
+				const actual = await f.json();
+				expect(actual).toStrictEqual(testId);
+			} finally {
+				await f.delete();
+			}
+		});
+
+		test("post with content-length-range", async t => {
+			if (implementation === "s3mock") {
+				// Ref: https://github.com/adobe/S3Mock/issues/2794
+				t.skip(
+					`S3 implementation "${implementation}" does not implement this feature`,
+				);
+				return;
+			}
+
+			const testId = crypto.randomUUID();
+			const key = `${runId}/presign-post-length-range.txt`;
+
+			const { url, fields } = client.presignPost({
+				key,
+				conditions: [["content-length-range", 10, 1000]],
+			});
+
+			const body = objectToFormData(fields);
+			body.append("file", new Blob([testId], { type: "text/plain" }));
+
+			const res = await fetch(url, {
+				method: "POST",
+				body,
+			});
+
+			expect(res.ok).toBe(true);
+
+			const f = client.file(key);
+			try {
+				const actual = await f.text();
+				expect(actual).toStrictEqual(testId);
+			} finally {
+				await f.delete();
+			}
+		});
+
+		test("post with content-length-range (file too large)", async t => {
+			if (implementation === "s3mock") {
+				// Ref: https://github.com/adobe/S3Mock/issues/2794
+				t.skip(
+					`S3 implementation "${implementation}" does not implement this feature`,
+				);
+				return;
+			}
+
+			const testId = crypto.randomUUID();
+			const key = `${runId}/presign-post-length-range.txt`;
+
+			const { url, fields } = client.presignPost({
+				key,
+				conditions: [["content-length-range", 0, 10]],
+			});
+
+			const body = objectToFormData(fields);
+			body.append("file", new Blob([testId], { type: "text/plain" }));
+
+			const res = await fetch(url, {
+				method: "POST",
+				body,
+			});
+
+			expect(res.ok).toBe(false);
+		});
+
+		test("post with starts-with $Content-Type", async t => {
+			if (implementation === "s3mock") {
+				// Ref: https://github.com/adobe/S3Mock/issues/2794
+				t.skip(
+					`S3 implementation "${implementation}" does not implement this feature`,
+				);
+				return;
+			}
+
+			const testId = crypto.randomUUID();
+			const key = `${runId}/presign-post-content-type.json`;
+
+			const { url, fields } = client.presignPost({
+				key,
+				conditions: [["starts-with", "$Content-Type", "application/"]],
+			});
+
+			const body = objectToFormData(fields);
+			body.append("Content-Type", "application/json");
+			body.append(
+				"file",
+				new Blob([JSON.stringify(testId)], { type: "application/json" }),
+			);
+
+			const res = await fetch(url, {
+				method: "POST",
+				body,
+			});
+			expect(res.ok).toBe(true);
+
+			const f = client.file(key);
+			try {
+				const actual = await f.json();
+				expect(actual).toStrictEqual(testId);
+			} finally {
+				await f.delete();
+			}
+		});
+
+		test("post with content-length-range and starts-with $Content-Type", async t => {
+			if (implementation === "s3mock") {
+				// Ref: https://github.com/adobe/S3Mock/issues/2794
+				t.skip(
+					`S3 implementation "${implementation}" does not implement this feature`,
+				);
+				return;
+			}
+
+			const testId = crypto.randomUUID();
+			const key = `${runId}/presign-post-combined.txt`;
+
+			const { url, fields } = client.presignPost({
+				key,
+				conditions: [
+					["content-length-range", 10, 1000],
+					["starts-with", "$Content-Type", "text/"],
+				],
+			});
+
+			const body = objectToFormData(fields);
+			body.append("Content-Type", "text/plain");
+			body.append("file", new Blob([testId], { type: "text/plain" }));
+
+			const res = await fetch(url, {
+				method: "POST",
+				body,
+			});
+			expect(res.ok).toBe(true);
+
+			const f = client.file(key);
+			try {
+				const actual = await f.text();
+				expect(actual).toStrictEqual(testId);
+			} finally {
+				await f.delete();
+			}
+		});
+	});
+
 	test("roundtrip", async () => {
 		const testId = crypto.randomUUID();
 		const f = client.file(`${runId}/roundtrip.txt`);

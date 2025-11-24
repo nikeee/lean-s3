@@ -89,6 +89,7 @@ mitata.summary(async () => {
 			accessKey: "sample-key-id",
 			secretKey: "sample-secret-key",
 		});
+
 		mitata
 			.bench("minio client", async () => {
 				await client.presignedGetObject("test-bucket", "path.json");

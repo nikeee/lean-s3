@@ -1,4 +1,5 @@
 import * as nodeUtil from "node:util";
+import { createHmac } from "node:crypto";
 import { request, Agent, type Dispatcher } from "undici";
 import { XMLParser, XMLBuilder } from "fast-xml-parser";
 
@@ -142,7 +143,10 @@ export type DeleteObjectsError = {
 
 export interface S3FilePresignOptions extends OverridableS3ClientOptions {
 	contentHash?: Buffer;
-	/** Seconds. */
+	/**
+	 * In seconds.
+	 * @default 3600 (1 hour)
+	 */
 	// TODO: Maybe rename this to expiresInSeconds
 	expiresIn?: number; // TODO: Maybe support Temporal.Duration once major support arrives
 	method?: PresignableHttpMethod;
@@ -174,6 +178,31 @@ export interface S3FilePresignOptions extends OverridableS3ClientOptions {
 		contentDisposition?: ContentDisposition;
 	};
 }
+
+/**
+ * Ref: https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-HTTPPOSTConstructPolicy.html#sigv4-ConditionMatching
+ */
+export type ConditionMatchType = "starts-with" | "eq" | "content-length-range";
+
+export type PostPolicyCondition =
+	| [string, string]
+	| [ConditionMatchType, string | number, string | number];
+
+export interface PresignPostOptions extends OverridableS3ClientOptions {
+	key: string;
+	/**
+	 * In seconds.
+	 * @default 3600 (1 hour)
+	 */
+	// TODO: Maybe rename this to expiresInSeconds
+	expiresIn?: number;
+	fields?: Record<string, string>;
+	conditions?: PostPolicyCondition[];
+}
+export type PresignPostResult = {
+	url: string;
+	fields: Record<string, string>;
+};
 
 export type CopyObjectOptions = {
 	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
@@ -215,6 +244,8 @@ export type ListObjectsIteratingOptions = {
 	signal?: AbortSignal;
 	internalPageSize?: number;
 };
+
+//#region multipart uploads
 
 //#region ListMultipartUploads
 export type ListMultipartUploadsOptions = {
@@ -378,6 +409,8 @@ export type ListPartsResult = {
 	// </Owner>
 };
 
+//#endregion
+
 export type ListObjectsResult = {
 	name: string;
 	prefix: string | undefined;
@@ -409,6 +442,8 @@ export type BucketExistsOptions = {
 	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
+
+//#region bucket cors
 
 export type BucketCorsRules = readonly BucketCorsRule[];
 export type BucketCorsRule = {
@@ -447,6 +482,8 @@ export type GetBucketCorsResult = {
 	rules: BucketCorsRule[];
 };
 
+//#endregion
+
 /**
  * A configured S3 bucket instance for managing files.
  *
@@ -473,7 +510,7 @@ export default class S3Client {
 	/**
 	 * Create a new instance of an S3 bucket so that credentials can be managed from a single instance instead of being passed to every method.
 	 *
-	 * @param  options The default options to use for the S3 client.
+	 * @param options The default options to use for the S3 client.
 	 */
 	constructor(options: S3ClientOptions) {
 		if (!options) {
@@ -668,6 +705,90 @@ export default class S3Client {
 		// See `buildSearchParams` for casing on this parameter
 		res.search = `${query}&X-Amz-Signature=${signature}`;
 		return res.toString();
+	}
+
+	presignPost(options: PresignPostOptions): PresignPostResult {
+		const now = new Date();
+		const date = amzDate.getAmzDate(now);
+
+		const key = options.key as ObjectKey;
+		const region = ensureValidRegion(options.region ?? this.#options.region);
+		const bucket = ensureValidBucketName(
+			options.bucket ?? this.#options.bucket,
+		);
+		const endpoint = ensureValidEndpoint(
+			options.endpoint ?? this.#options.endpoint,
+		);
+		const expiresIn = options.expiresIn ?? 3600;
+
+		const credential = `${this.#options.accessKeyId}/${date.date}/${region}/s3/aws4_request`;
+
+		const fields = {
+			...options.fields,
+			bucket,
+			"X-Amz-Algorithm": "AWS4-HMAC-SHA256",
+			"X-Amz-Credential": credential,
+			"X-Amz-Date": date.dateTime,
+			...(this.#options.sessionToken
+				? {
+						"X-Amz-Security-Token": this.#options.sessionToken,
+					}
+				: undefined),
+		} satisfies Record<string, string>;
+
+		const expirationDate = new Date(now.getTime() + expiresIn * 1000);
+
+		const policy = {
+			expiration: expirationDate.toISOString().replace(/\.\d{3}Z$/, "Z"), // AWS SDK does the same
+			conditions: [
+				["eq", "$bucket", bucket],
+				key.endsWith("{{filename}}")
+					? [
+							"starts-with",
+							"$key",
+							key.substring(0, key.lastIndexOf("{{filename}}")),
+						]
+					: ["eq", "$key", key],
+				...(options.conditions ? options.conditions : []),
+				["eq", "$x-amz-algorithm", "AWS4-HMAC-SHA256"],
+				["eq", "$x-amz-credential", credential],
+				["eq", "$x-amz-date", date.dateTime],
+			],
+		};
+
+		if (this.#options.sessionToken) {
+			policy.conditions.push([
+				"eq",
+				"$x-amz-security-token",
+				this.#options.sessionToken,
+			]);
+		}
+
+		const policyJson = JSON.stringify(policy);
+		const encodedPolicy = Buffer.from(policyJson).toString("base64");
+
+		const signingKey = this.#keyCache.computeIfAbsent(
+			date,
+			region,
+			this.#options.accessKeyId,
+			this.#options.secretAccessKey,
+		);
+
+		const signature = createHmac("sha256", signingKey)
+			.update(encodedPolicy)
+			.digest("hex");
+
+		const url = buildRequestUrl(endpoint, bucket, region, "" as ObjectKey);
+
+		return {
+			url: url.toString(),
+			fields: {
+				...fields,
+				key,
+				Policy: encodedPolicy,
+				"X-Amz-Signature": signature,
+			},
+		};
 	}
 
 	/**

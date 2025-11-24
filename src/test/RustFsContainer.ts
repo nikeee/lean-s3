@@ -19,9 +19,7 @@ export class RustFsContainer extends GenericContainer {
 			RUSTFS_SECRET_KEY: SECRET_ACCESS_KEY,
 		});
 
-		this.withWaitStrategy(
-			Wait.forAll([Wait.forLogMessage("API:"), Wait.forHttp("/", S3_PORT)]),
-		);
+		this.withWaitStrategy(Wait.forHttp("/", S3_PORT));
 	}
 
 	override async start(): Promise<StartedRustFsContainer> {

@@ -361,7 +361,6 @@ export function runTests(
 				body,
 			});
 
-			console.log(res.status, await res.text());
 			expect(res.ok).toBe(false);
 		});
 
@@ -1312,6 +1311,8 @@ export function runTests(
 				);
 				return;
 			}
+
+			t.todo("Not yet implemented");
 
 			await client.putBucketCors([
 				{

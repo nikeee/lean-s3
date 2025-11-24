@@ -5,7 +5,8 @@ import { runTests } from "./common.ts";
 import { S3Client } from "../index.ts";
 import { RustFsContainer } from "./RustFsContainer.ts";
 
-describe("rustfs", async () => {
+// RustFS is pretty unstable and breaks tests on a weekly basis. Let's wait for it to stabilize.
+describe("rustfs", { skip: true }, async () => {
 	const s3 = await new RustFsContainer("rustfs/rustfs:latest").start();
 	const region = "auto";
 	const bucketName = "test-bucket-rustfs";

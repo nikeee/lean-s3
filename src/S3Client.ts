@@ -195,9 +195,9 @@ export interface PresignPostOptions extends OverridableS3ClientOptions {
 	 * @default 3600 (1 hour)
 	 */
 	// TODO: Maybe rename this to expiresInSeconds
-	expiresIn: number;
-	fields: Record<string, string>;
-	conditions: PostPolicyCondition[];
+	expiresIn?: number;
+	fields?: Record<string, string>;
+	conditions?: PostPolicyCondition[];
 }
 export type PresignPostResult = {
 	url: string;
@@ -510,7 +510,7 @@ export default class S3Client {
 	/**
 	 * Create a new instance of an S3 bucket so that credentials can be managed from a single instance instead of being passed to every method.
 	 *
-	 * @param  options The default options to use for the S3 client.
+	 * @param options The default options to use for the S3 client.
 	 */
 	constructor(options: S3ClientOptions) {
 		if (!options) {
@@ -707,36 +707,65 @@ export default class S3Client {
 		return res.toString();
 	}
 
-	presignPost(policy: PresignPostOptions): PresignPostResult {
+	presignPost(options: PresignPostOptions): PresignPostResult {
 		const now = new Date();
-		const expirationDate = new Date(now.getTime() + policy.expiresIn * 1000);
-
 		const date = amzDate.getAmzDate(now);
-		const region = this.#options.region;
+
+		const key = options.key as ObjectKey;
+		const region = ensureValidRegion(options.region ?? this.#options.region);
+		const bucket = ensureValidBucketName(
+			options.bucket ?? this.#options.bucket,
+		);
+		const endpoint = ensureValidEndpoint(
+			options.endpoint ?? this.#options.endpoint,
+		);
+		const expiresIn = options.expiresIn ?? 3600;
+
 		const credential = `${this.#options.accessKeyId}/${date.date}/${region}/s3/aws4_request`;
 
-		const policyDoc = {
-			expiration: expirationDate.toISOString(),
+		const fields = {
+			...options.fields,
+			bucket,
+			"X-Amz-Algorithm": "AWS4-HMAC-SHA256",
+			"X-Amz-Credential": credential,
+			"X-Amz-Date": date.dateTime,
+			...(this.#options.sessionToken
+				? {
+						"X-Amz-Security-Token": this.#options.sessionToken,
+					}
+				: undefined),
+		} satisfies Record<string, string>;
+
+		const expirationDate = new Date(now.getTime() + expiresIn * 1000);
+
+		const policy = {
+			expiration: expirationDate.toISOString().replace(/\.\d{3}Z$/, "Z"), // AWS SDK does the same
 			conditions: [
-				["eq", "$key", policy.formData.key],
-				["eq", "$bucket", this.#options.bucket],
-				...policy.conditions,
-				["eq", "$x-amz-date", date.dateTime],
+				["eq", "$bucket", bucket],
+				key.endsWith("{{filename}}")
+					? [
+							"starts-with",
+							"$key",
+							key.substring(0, key.lastIndexOf("{{filename}}")),
+						]
+					: ["eq", "$key", key],
+				...(options.conditions ? options.conditions : []),
 				["eq", "$x-amz-algorithm", "AWS4-HMAC-SHA256"],
 				["eq", "$x-amz-credential", credential],
+				["eq", "$x-amz-date", date.dateTime],
 			],
 		};
 
 		if (this.#options.sessionToken) {
-			policyDoc.conditions.push([
+			policy.conditions.push([
 				"eq",
 				"$x-amz-security-token",
 				this.#options.sessionToken,
 			]);
 		}
 
-		const policyJson = JSON.stringify(policyDoc);
-		const policyBase64 = Buffer.from(policyJson).toString("base64");
+		const policyJson = JSON.stringify(policy);
+		const encodedPolicy = Buffer.from(policyJson).toString("base64");
 
 		const signingKey = this.#keyCache.computeIfAbsent(
 			date,
@@ -746,34 +775,19 @@ export default class S3Client {
 		);
 
 		const signature = createHmac("sha256", signingKey)
-			.update(policyBase64)
+			.update(encodedPolicy)
 			.digest("hex");
 
-		const url = buildRequestUrl(
-			this.#options.endpoint,
-			this.#options.bucket,
-			region,
-			"" as ObjectKey,
-		);
-
-		const formData: Record<string, string | number> = {
-			key: policy.formData.key,
-			bucket: this.#options.bucket,
-			...policy.formData,
-			"X-Amz-Date": date.dateTime,
-			"X-Amz-Algorithm": "AWS4-HMAC-SHA256",
-			"X-Amz-Credential": credential,
-			Policy: policyBase64,
-			"X-Amz-Signature": signature,
-		};
-
-		if (this.#options.sessionToken) {
-			formData["X-Amz-Security-Token"] = this.#options.sessionToken;
-		}
+		const url = buildRequestUrl(endpoint, bucket, region, "" as ObjectKey);
 
 		return {
 			url: url.toString(),
-			formData,
+			fields: {
+				...fields,
+				key,
+				Policy: encodedPolicy,
+				"X-Amz-Signature": signature,
+			},
 		};
 	}
 

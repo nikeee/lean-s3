@@ -176,6 +176,27 @@ export interface S3FilePresignOptions extends OverridableS3ClientOptions {
 	};
 }
 
+/**
+ * Ref: https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-HTTPPOSTConstructPolicy.html#sigv4-ConditionMatching
+ */
+export type ConditionMatchType = "starts-with" | "eq" | "content-length-range";
+
+export type PostPolicyCondition =
+	| [string, string]
+	| [ConditionMatchType, string | number, string | number];
+
+export interface PresignPostOptions extends OverridableS3ClientOptions {
+	key: string;
+	/** In seconds */
+	expiresIn: number;
+	fields: Record<string, string>;
+	conditions: PostPolicyCondition[];
+}
+export type PresignPostResult = {
+	url: string;
+	fields: Record<string, string>;
+};
+
 export type CopyObjectOptions = {
 	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	sourceBucket?: string;
@@ -452,17 +473,6 @@ export type GetBucketCorsResult = {
 	rules: BucketCorsRule[];
 };
 
-export type PostPolicyCondition =
-	| [string, string]
-	| [string, string | number, string | number];
-
-export interface PostPolicy {
-	formData: Record<string, string>;
-	/** In seconds */
-	expiresIn: number;
-	conditions: PostPolicyCondition[];
-}
-
 /**
  * A configured S3 bucket instance for managing files.
  *
@@ -686,10 +696,7 @@ export default class S3Client {
 		return res.toString();
 	}
 
-	presignPost(policy: PostPolicy): {
-		url: string;
-		formData: Record<string, string | number>;
-	} {
+	presignPost(policy: PresignPostOptions): PresignPostResult {
 		const now = new Date();
 		const expirationDate = new Date(now.getTime() + policy.expiresIn * 1000);
 

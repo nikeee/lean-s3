@@ -1296,11 +1296,9 @@ export function runTests(
 		test("put", async t => {
 			if (
 				implementation === "minio" ||
-				implementation === "garage" ||
 				implementation === "ceph" ||
-				implementation === "localstack" ||
-				implementation === "rustfs" ||
 				implementation === "s3mock" ||
+				implementation === "rustfs" ||
 				implementation === "backblaze" ||
 				implementation === "cloudflare"
 			) {
@@ -1312,8 +1310,6 @@ export function runTests(
 				return;
 			}
 
-			t.todo("Not yet implemented");
-
 			await client.putBucketCors([
 				{
 					allowedMethods: ["GET"],
@@ -1322,18 +1318,60 @@ export function runTests(
 				},
 			]);
 
-			const { rules } = await client.getBucketCors();
+			let { rules } = await client.getBucketCors();
 			expect(rules).toStrictEqual([
 				{
 					allowedMethods: ["GET"],
 					allowedOrigins: ["https://example.com"],
-					allowedHeaders: undefined,
+					allowedHeaders: ["*"],
 					exposeHeaders: undefined,
 					id: undefined,
 					maxAgeSeconds: undefined,
 				},
 			]);
 
+			await client.putBucketCors([
+				{
+					allowedMethods: ["GET"],
+					allowedOrigins: ["https://example.com"],
+					allowedHeaders: ["*"],
+					exposeHeaders: ["Content-Type"],
+				},
+			]);
+
+			rules = (await client.getBucketCors()).rules;
+			expect(rules).toStrictEqual([
+				{
+					allowedMethods: ["GET"],
+					allowedOrigins: ["https://example.com"],
+					allowedHeaders: ["*"],
+					exposeHeaders: ["Content-Type"],
+					id: undefined,
+					maxAgeSeconds: undefined,
+				},
+			]);
+
+			await client.putBucketCors([
+				{
+					allowedMethods: ["GET"],
+					allowedOrigins: ["https://example.com"],
+					allowedHeaders: ["*"],
+					exposeHeaders: ["Content-Type"],
+					id: "fancy-id",
+				},
+			]);
+
+			rules = (await client.getBucketCors()).rules;
+			expect(rules).toStrictEqual([
+				{
+					allowedMethods: ["GET"],
+					allowedOrigins: ["https://example.com"],
+					allowedHeaders: ["*"],
+					exposeHeaders: ["Content-Type"],
+					id: "fancy-id",
+					maxAgeSeconds: undefined,
+				},
+			]);
 			await client.deleteBucketCors();
 
 			expect(client.getBucketCors()).rejects.toThrow();

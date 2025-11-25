@@ -59,7 +59,12 @@ const xmlParser = new XMLParser({
 		jPath === "ListBucketResult.Contents" ||
 		jPath === "ListPartsResult.Part" ||
 		jPath === "DeleteResult.Deleted" ||
-		jPath === "DeleteResult.Error",
+		jPath === "DeleteResult.Error" ||
+		jPath === "CORSConfiguration.CORSRule" ||
+		jPath === "CORSConfiguration.CORSRule.AllowedMethod" ||
+		jPath === "CORSConfiguration.CORSRule.AllowedOrigin" ||
+		jPath === "CORSConfiguration.CORSRule.AllowedHeader" ||
+		jPath === "CORSConfiguration.CORSRule.ExposeHeader",
 });
 const xmlBuilder = new XMLBuilder({
 	attributeNamePrefix: "$",
@@ -1450,10 +1455,31 @@ export default class S3Client {
 			throw fromStatusCode(response.statusCode, "");
 		}
 
-		// const text = await response.body.text();
-		// console.log(text)
+		const text = await response.body.text();
+		const root = ensureParsedXml(text).CORSConfiguration ?? {};
 
-		throw new Error("Not implemented");
+		const rulesArray = root.CORSRule ?? [];
+
+		return {
+			rules: rulesArray
+				.filter(Boolean)
+				// biome-ignore lint/suspicious/noExplicitAny: parsing code
+				.map((r: any) => ({
+					allowedMethods: (r.AllowedMethod ?? []) as HttpMethod[],
+					allowedOrigins: (r.AllowedOrigin ?? []) as string[],
+					allowedHeaders: r.AllowedHeader
+						? (r.AllowedHeader as string[])
+						: undefined,
+					exposeHeaders: r.ExposeHeader
+						? (r.ExposeHeader as string[])
+						: undefined,
+					id: r.ID ?? undefined,
+					maxAgeSeconds:
+						typeof r.MaxAgeSeconds !== "undefined" && r.MaxAgeSeconds !== null
+							? Number(r.MaxAgeSeconds)
+							: undefined,
+				})),
+		};
 	}
 
 	/**

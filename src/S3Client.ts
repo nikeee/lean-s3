@@ -1386,6 +1386,7 @@ export default class S3Client {
 				CORSRule: rules.map(r => ({
 					AllowedOrigin: r.allowedOrigins,
 					AllowedMethod: r.allowedMethods,
+					AllowedHeader: r.allowedHeaders,
 					ExposeHeader: r.exposeHeaders,
 					ID: r.id ?? undefined,
 					MaxAgeSeconds: r.maxAgeSeconds ?? undefined,

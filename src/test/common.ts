@@ -1299,7 +1299,6 @@ export function runTests(
 				implementation === "ceph" ||
 				implementation === "localstack" ||
 				implementation === "rustfs" ||
-				implementation === "s3mock" ||
 				implementation === "backblaze" ||
 				implementation === "cloudflare"
 			) {
@@ -1321,7 +1320,7 @@ export function runTests(
 				},
 			]);
 
-			const { rules } = await client.getBucketCors();
+			let { rules } = await client.getBucketCors();
 			expect(rules).toStrictEqual([
 				{
 					allowedMethods: ["GET"],
@@ -1329,6 +1328,49 @@ export function runTests(
 					allowedHeaders: ["*"],
 					exposeHeaders: undefined,
 					id: undefined,
+					maxAgeSeconds: undefined,
+				},
+			]);
+
+			await client.putBucketCors([
+				{
+					allowedMethods: ["GET"],
+					allowedOrigins: ["https://example.com"],
+					allowedHeaders: ["*"],
+					exposeHeaders: ["Content-Type"],
+				},
+			]);
+
+			rules = (await client.getBucketCors()).rules;
+			expect(rules).toStrictEqual([
+				{
+					allowedMethods: ["GET"],
+					allowedOrigins: ["https://example.com"],
+					allowedHeaders: ["*"],
+					exposeHeaders: ["Content-Type"],
+					id: undefined,
+					maxAgeSeconds: undefined,
+				},
+			]);
+
+			await client.putBucketCors([
+				{
+					allowedMethods: ["GET"],
+					allowedOrigins: ["https://example.com"],
+					allowedHeaders: ["*"],
+					exposeHeaders: ["Content-Type"],
+					id: "fancy-id",
+				},
+			]);
+
+			rules = (await client.getBucketCors()).rules;
+			expect(rules).toStrictEqual([
+				{
+					allowedMethods: ["GET"],
+					allowedOrigins: ["https://example.com"],
+					allowedHeaders: ["*"],
+					exposeHeaders: ["Content-Type"],
+					id: "fancy-id",
 					maxAgeSeconds: undefined,
 				},
 			]);

@@ -1296,7 +1296,6 @@ export function runTests(
 		test("put", async t => {
 			if (
 				implementation === "minio" ||
-				implementation === "garage" ||
 				implementation === "ceph" ||
 				implementation === "localstack" ||
 				implementation === "rustfs" ||
@@ -1327,7 +1326,7 @@ export function runTests(
 				{
 					allowedMethods: ["GET"],
 					allowedOrigins: ["https://example.com"],
-					allowedHeaders: undefined,
+					allowedHeaders: ["*"],
 					exposeHeaders: undefined,
 					id: undefined,
 					maxAgeSeconds: undefined,

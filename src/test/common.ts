@@ -1310,8 +1310,6 @@ export function runTests(
 				return;
 			}
 
-			t.todo("Not yet implemented");
-
 			await client.putBucketCors([
 				{
 					allowedMethods: ["GET"],

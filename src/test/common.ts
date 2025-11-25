@@ -1297,7 +1297,7 @@ export function runTests(
 			if (
 				implementation === "minio" ||
 				implementation === "ceph" ||
-				implementation === "localstack" ||
+				implementation === "s3mock" ||
 				implementation === "rustfs" ||
 				implementation === "backblaze" ||
 				implementation === "cloudflare"
@@ -1329,7 +1329,6 @@ export function runTests(
 					maxAgeSeconds: undefined,
 				},
 			]);
-			await client.deleteBucketCors();
 
 			await client.putBucketCors([
 				{
@@ -1351,7 +1350,6 @@ export function runTests(
 					maxAgeSeconds: undefined,
 				},
 			]);
-			await client.deleteBucketCors();
 
 			await client.putBucketCors([
 				{

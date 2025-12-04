@@ -14,7 +14,7 @@ import {
 import AwsLite from "@aws-lite/client";
 import { type BucketStream, Client as MinioClient } from "minio";
 import { S3mini as S3miniClient } from "s3mini";
-import { S3Client as LeanS3Client } from "../dist/index.js";
+import { S3Client as LeanS3Client } from "../dist/index.mjs";
 import { finished } from "node:stream/promises";
 
 const prefix = `${Date.now()}/`;

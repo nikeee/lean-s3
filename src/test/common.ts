@@ -345,6 +345,12 @@ export function runTests(
 				return;
 			}
 
+			if (implementation === "rustfs") {
+				t.todo(
+					"RustFS ignores the content-length-range; see: https://github.com/rustfs/rustfs/issues/984",
+				);
+			}
+
 			const testId = crypto.randomUUID();
 			const key = `${runId}/presign-post-length-range.txt`;
 

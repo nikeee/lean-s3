@@ -888,14 +888,7 @@ export function runTests(
 	});
 
 	describe("deleteObjects", () => {
-		test("with .list entries", async t => {
-			if (implementation === "s3mock") {
-				// Ref: See https://github.com/adobe/S3Mock/issues/2755
-				t.todo(
-					`S3 implementation "${implementation}" does not implement this feature`,
-				);
-			}
-
+		test("with .list entries", async () => {
 			const testId = crypto.randomUUID();
 			await client
 				.file(`${runId}/${testId}/test-a-0.txt`)

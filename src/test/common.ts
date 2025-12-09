@@ -17,7 +17,8 @@ export type S3Implementation =
 	| "garage"
 	| "rustfs"
 	| "s3mock"
-	| "localstack";
+	| "localstack"
+	| "seaweedfs";
 
 /**
  * @param implementation Try to avoid using this parameter in the tests. If some service diverges from the others, evaluate if it should be fixed upstream.

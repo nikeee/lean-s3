@@ -15,8 +15,8 @@
   "dependencies": {
     "@aws-lite/client": "^0.23.2",
     "@aws-lite/s3": "^0.2.6",
-    "@aws-sdk/client-s3": "^3.954.0",
-    "@aws-sdk/s3-request-presigner": "^3.954.0",
+    "@aws-sdk/client-s3": "^3.956.0",
+    "@aws-sdk/s3-request-presigner": "^3.956.0",
     "@monstermann/tinybench-pretty-printer": "^0.3.0",
     "@testcontainers/minio": "^11.10.0",
     "aws4fetch": "^1.0.20",
@@ -25,7 +25,7 @@
     "minio": "^8.0.6",
     "mitata": "^1.0.34",
     "tsx": "^4.21.0",
-    "s3mini": "^0.8.0",
+    "s3mini": "^0.8.1",
     "tinybench": "^6.0.0"
   },
   "devDependencies": {

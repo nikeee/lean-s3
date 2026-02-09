@@ -23,20 +23,15 @@ export class SeaweedFSContainer extends GenericContainer {
 		this.withCommand([
 			"server",
 			"-s3",
-			"-master.dir=/data/master",
-			"-filer.dir=/data/filer",
-			"-volume.dir=/data/volume",
-			"-master.port=9333",
-			"-filer.port=8888",
+			// "-master.dir=/data/master",
+			// "-filer.dir=/data/filer",
+			// "-volume.dir=/data/volume",
+			// "-master.port=9333",
+			// "-filer.port=8888",
 			"-s3.port=8333",
 		]);
 
-		this.withWaitStrategy(
-			Wait.forAll([
-				Wait.forLogMessage(/S3.*8333/),
-				Wait.forHttp("/", S3_PORT).forStatusCode(403),
-			]),
-		);
+		this.withWaitStrategy(Wait.forLogMessage(/S3.*8333/));
 	}
 
 	override async start(): Promise<StartedSeaweedFSContainer> {

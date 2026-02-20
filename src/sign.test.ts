@@ -6,8 +6,8 @@ import { expect } from "expect";
 import * as sign from "./sign.ts";
 import { getAmzDate } from "./AmzDate.ts";
 
-describe("deriveSigningKey", () => {
-	test("snapshot", () => {
+void describe("deriveSigningKey", () => {
+	void test("snapshot", () => {
 		const date = new Date("August 19, 1975 23:15:30 GMT+11:00");
 		const signinKey = sign.deriveSigningKey(getAmzDate(date).date, "auto", "secretKey");
 
@@ -17,12 +17,12 @@ describe("deriveSigningKey", () => {
 	});
 });
 
-describe("signCanonicalDataHash", () => {
+void describe("signCanonicalDataHash", () => {
 	/**
 	 * Taken from:
 	 * https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
 	 */
-	test("spec-sample", () => {
+	void test("spec-sample", () => {
 		const canonicalData =
 			"GET\n/test.txt\nX-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAIOSFODNN7EXAMPLE%2F20130524%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20130524T000000Z&X-Amz-Expires=86400&X-Amz-SignedHeaders=host\nhost:examplebucket.s3.amazonaws.com\n\nhost\nUNSIGNED-PAYLOAD";
 
@@ -76,7 +76,7 @@ describe("signCanonicalDataHash", () => {
 	 * console.log(await generatePresignedUrl("test-bucket", "test.json", 42690));
 	 * ```
 	 */
-	test("ref by `@aws-sdk/s3-request-presigner`", () => {
+	void test("ref by `@aws-sdk/s3-request-presigner`", () => {
 		// AWS sdk still adds the x-id field, which seems to have no use in this context:
 		// https://github.com/aws/aws-sdk-go-v2/discussions/2847#discussioncomment-11093778
 		// -> we don't add it, but to get the signature right, we need to act as if we have added it
@@ -118,7 +118,7 @@ describe("signCanonicalDataHash", () => {
 	 * console.log(s3.presign("test.json"));
 	 * ```
 	 */
-	test("ref by `bun`", () => {
+	void test("ref by `bun`", () => {
 		const ref = new URL(
 			"http://localhost:9000/test-bucket/test.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=sample-key-id%2F20250319%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20250319T143536Z&X-Amz-Expires=42069&X-Amz-SignedHeaders=host&X-Amz-Signature=50fa21a675d33d7ce7b1001f4c98f7c07b1ebba8c58debcf333a37498b87ef78",
 		);
@@ -142,7 +142,7 @@ describe("signCanonicalDataHash", () => {
 		);
 		expect(signature).toStrictEqual(ref.searchParams.get("X-Amz-Signature"));
 	});
-	test("ref by native", () => {
+	void test("ref by native", () => {
 		const ref = new URL(
 			"https://s3.us-east-1.amazonaws.com/TODO?x-amz-algorithm=AWS4-HMAC-SHA256&x-amz-credential=sample-key-id%2F20250326%2Fauto%2Fs3%2Faws4_request&x-amz-date=20250326T132719Z&x-amz-expires=3600&x-amz-signedheaders=host&x-amz-signature=cbe53da647e87bb7cb5ffa5915ba7cf3f7018eeb485bb52b00cb66020f6345eb",
 		);
@@ -168,8 +168,8 @@ describe("signCanonicalDataHash", () => {
 	});
 });
 
-describe("createCanonicalData", () => {
-	test("equivalence of specialized", () => {
+void describe("createCanonicalData", () => {
+	void test("equivalence of specialized", () => {
 		const general = sign.createCanonicalDataDigest(
 			"GET",
 			"/test.json",
@@ -186,7 +186,7 @@ describe("createCanonicalData", () => {
 		expect(general).toBe(special);
 	});
 
-	test("authorization header", () => {
+	void test("authorization header", () => {
 		const signedHeaders = {
 			"amz-sdk-invocation-id": "f5cf146b-5839-46da-b8d8-86536fb6be87",
 			"amz-sdk-request": "attempt=1; max=3",

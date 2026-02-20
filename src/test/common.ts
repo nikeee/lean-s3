@@ -39,8 +39,8 @@ export function runTests(
 		bucket,
 	});
 
-	describe("presign", () => {
-		test("put", async () => {
+	void describe("presign", () => {
+		void test("put", async () => {
 			const testId = crypto.randomUUID();
 			const expected = {
 				hello: testId,
@@ -67,7 +67,7 @@ export function runTests(
 			}
 		});
 
-		test("put with content length", async () => {
+		void test("put with content length", async () => {
 			const body = crypto.randomUUID();
 
 			{
@@ -96,7 +96,7 @@ export function runTests(
 			}
 		});
 
-		test("put with content type", async () => {
+		void test("put with content type", async () => {
 			const value = crypto.randomUUID();
 
 			{
@@ -151,7 +151,7 @@ export function runTests(
 			}
 		});
 
-		test("put with content type and conent-length", async () => {
+		void test("put with content type and conent-length", async () => {
 			const body = crypto.randomUUID();
 			const f = client.file(`${runId}/content-type-with-length.json`);
 			try {
@@ -174,7 +174,7 @@ export function runTests(
 			}
 		});
 
-		test("put with weird key", async () => {
+		void test("put with weird key", async () => {
 			const testId = crypto.randomUUID();
 			const expected = {
 				hello: testId,
@@ -201,7 +201,7 @@ export function runTests(
 			}
 		});
 
-		test("put with content disposition", async () => {
+		void test("put with content disposition", async () => {
 			const testId = crypto.randomUUID();
 			const f = client.file(`${runId}/${testId}`);
 			await f.write(crypto.randomUUID());
@@ -241,8 +241,8 @@ export function runTests(
 		return res;
 	}
 
-	describe("presignPost", () => {
-		test("basic post", async t => {
+	void describe("presignPost", () => {
+		void test("basic post", async t => {
 			if (
 				implementation === "s3mock" ||
 				implementation === "backblaze" ||
@@ -281,7 +281,7 @@ export function runTests(
 			}
 		});
 
-		test("post with content-length-range", async t => {
+		void test("post with content-length-range", async t => {
 			if (
 				implementation === "s3mock" ||
 				implementation === "backblaze" ||
@@ -321,7 +321,7 @@ export function runTests(
 			}
 		});
 
-		test("post with content-length-range (file too large)", async t => {
+		void test("post with content-length-range (file too large)", async t => {
 			if (
 				implementation === "s3mock" ||
 				implementation === "backblaze" ||
@@ -359,7 +359,7 @@ export function runTests(
 			expect(res.ok).toBe(false);
 		});
 
-		test("post with starts-with $Content-Type", async t => {
+		void test("post with starts-with $Content-Type", async t => {
 			if (
 				implementation === "s3mock" ||
 				implementation === "backblaze" ||
@@ -399,7 +399,7 @@ export function runTests(
 			}
 		});
 
-		test("post with content-length-range and starts-with $Content-Type", async t => {
+		void test("post with content-length-range and starts-with $Content-Type", async t => {
 			if (
 				implementation === "s3mock" ||
 				implementation === "backblaze" ||
@@ -443,7 +443,7 @@ export function runTests(
 		});
 	});
 
-	test("roundtrip", async () => {
+	void test("roundtrip", async () => {
 		const testId = crypto.randomUUID();
 		const f = client.file(`${runId}/roundtrip.txt`);
 		await f.write(testId);
@@ -463,8 +463,8 @@ export function runTests(
 		}
 	});
 
-	describe("slicing", async () => {
-		test("n-m", async () => {
+	void describe("slicing", async () => {
+		void test("n-m", async () => {
 			const testId = crypto.randomUUID();
 			const f = client.file(`${runId}/${testId}/slicing.txt`);
 			await f.write(testId);
@@ -476,22 +476,22 @@ export function runTests(
 				await f.delete();
 			}
 		});
-		test("n-m, n > m, Invalid slice `end`", async () => {
+		void test("n-m, n > m, Invalid slice `end`", async () => {
 			const testId = crypto.randomUUID();
 			const f = client.file(`${runId}/${testId}/slicing.txt`);
 			expect(() => f.slice(20, 10)).toThrow(new Error("Invalid slice `end`."));
 		});
-		test("n-m, m < 0, Invalid slice `end`", async () => {
+		void test("n-m, m < 0, Invalid slice `end`", async () => {
 			const testId = crypto.randomUUID();
 			const f = client.file(`${runId}/${testId}/slicing.txt`);
 			expect(() => f.slice(20, -1)).toThrow(new Error("Invalid slice `end`."));
 		});
-		test("n-m, n < 0, Invalid slice `start`", async () => {
+		void test("n-m, n < 0, Invalid slice `start`", async () => {
 			const testId = crypto.randomUUID();
 			const f = client.file(`${runId}/${testId}/slicing.txt`);
 			expect(() => f.slice(-1)).toThrow(new Error("Invalid slice `start`."));
 		});
-		test("0-m", async () => {
+		void test("0-m", async () => {
 			const testId = crypto.randomUUID();
 			const f = client.file(`${runId}/${testId}/slicing.txt`);
 			await f.write(testId);
@@ -503,7 +503,7 @@ export function runTests(
 				await f.delete();
 			}
 		});
-		test("undefined-m", async () => {
+		void test("undefined-m", async () => {
 			const testId = crypto.randomUUID();
 			const f = client.file(`${runId}/${testId}/slicing.txt`);
 			await f.write(testId);
@@ -515,7 +515,7 @@ export function runTests(
 				await f.delete();
 			}
 		});
-		test("0", async () => {
+		void test("0", async () => {
 			const testId = crypto.randomUUID();
 			const f = client.file(`${runId}/${testId}/slicing.txt`);
 			await f.write(testId);
@@ -527,7 +527,7 @@ export function runTests(
 				await f.delete();
 			}
 		});
-		test("n", async () => {
+		void test("n", async () => {
 			const testId = crypto.randomUUID();
 			const f = client.file(`${runId}/${testId}/slicing.txt`);
 			await f.write(testId);
@@ -539,7 +539,7 @@ export function runTests(
 				await f.delete();
 			}
 		});
-		test("n too large", async () => {
+		void test("n too large", async () => {
 			const testId = crypto.randomUUID();
 			const path = `${runId}/${testId}/slicing.txt`;
 			const f = client.file(path);
@@ -559,7 +559,7 @@ export function runTests(
 		});
 	});
 
-	test("listIterating", async () => {
+	void test("listIterating", async () => {
 		const testId = crypto.randomUUID();
 		try {
 			await client.file(`${runId}/${testId}/test-a-0.txt`).write(crypto.randomUUID());
@@ -586,8 +586,8 @@ export function runTests(
 		}
 	});
 
-	describe("list", () => {
-		test("list multiple", async t => {
+	void describe("list", () => {
+		void test("list multiple", async t => {
 			if (implementation === "rustfs" || implementation === "s3mock") {
 				// Refs:
 				// https://github.com/rustfs/rustfs/issues/764
@@ -792,7 +792,7 @@ export function runTests(
 			}
 		});
 
-		test("list with no results", async () => {
+		void test("list with no results", async () => {
 			const testId = crypto.randomUUID();
 			const result = await client.list({ prefix: `${runId}/${testId}` });
 			expect(result).toStrictEqual(
@@ -810,7 +810,7 @@ export function runTests(
 			);
 		});
 
-		test("list with single result", async t => {
+		void test("list with single result", async t => {
 			if (implementation === "s3mock") {
 				// Refs:
 				// https://github.com/rustfs/rustfs/issues/764
@@ -853,8 +853,8 @@ export function runTests(
 		});
 	});
 
-	describe("deleteObjects", () => {
-		test("with .list entries", async () => {
+	void describe("deleteObjects", () => {
+		void test("with .list entries", async () => {
 			const testId = crypto.randomUUID();
 			await client.file(`${runId}/${testId}/test-a-0.txt`).write(crypto.randomUUID());
 			await client.file(`${runId}/${testId}/test-a-1.txt`).write(crypto.randomUUID());
@@ -869,7 +869,7 @@ export function runTests(
 			const res1 = await client.list({ prefix: `${runId}/${testId}` });
 			expect(res1.contents.length).toBe(0);
 		});
-		test("with strings", async () => {
+		void test("with strings", async () => {
 			const testId = crypto.randomUUID();
 			await client.file(`${runId}/${testId}/test-a-0.txt`).write(crypto.randomUUID());
 			await client.file(`${runId}/${testId}/test-a-1.txt`).write(crypto.randomUUID());
@@ -891,8 +891,8 @@ export function runTests(
 		});
 	});
 
-	describe("deleteObject", () => {
-		test("deleteObject works", async () => {
+	void describe("deleteObject", () => {
+		void test("deleteObject works", async () => {
 			const testId = crypto.randomUUID();
 			await client.file(`${runId}/${testId}/test-a-0.txt`).write(crypto.randomUUID());
 
@@ -906,8 +906,8 @@ export function runTests(
 		});
 	});
 
-	describe("S3File", () => {
-		test(".write()", async () => {
+	void describe("S3File", () => {
+		void test(".write()", async () => {
 			const testId = crypto.randomUUID();
 			const f = client.file(`${runId}/${testId}/test-a-0.txt`);
 			const content = crypto.randomUUID();
@@ -922,7 +922,7 @@ export function runTests(
 			}
 		});
 
-		test(".write() with weird keys 0", async () => {
+		void test(".write() with weird keys 0", async () => {
 			const testId = crypto.randomUUID();
 
 			const key = "Sun Jun 15 2025 00:57:03 * ' GMT+0200 (test)`";
@@ -937,7 +937,7 @@ export function runTests(
 			}
 		});
 
-		test(".write() with weird keys 1", async () => {
+		void test(".write() with weird keys 1", async () => {
 			const testId = crypto.randomUUID();
 
 			const key = "weird:key+with(some)characters,that'need*escaping `.json";
@@ -952,7 +952,7 @@ export function runTests(
 			}
 		});
 
-		test(".write() with content-type", async () => {
+		void test(".write() with content-type", async () => {
 			const testId = crypto.randomUUID();
 
 			// using .json to make sure the extension does not intefere with the passed content-type
@@ -972,7 +972,7 @@ export function runTests(
 			}
 		});
 
-		test(".exists()", async () => {
+		void test(".exists()", async () => {
 			const testId = crypto.randomUUID();
 
 			const f = client.file(`${runId}/${testId}/test-a-0.txt`);
@@ -990,7 +990,7 @@ export function runTests(
 			}
 		});
 
-		test(".stat()", async () => {
+		void test(".stat()", async () => {
 			const testId = crypto.randomUUID();
 
 			const f = client.file(`${runId}/${testId}/test-a-0.txt`);
@@ -1020,7 +1020,7 @@ export function runTests(
 			}
 		});
 
-		test(".stat() throws on non-existent", async () => {
+		void test(".stat() throws on non-existent", async () => {
 			const testId = crypto.randomUUID();
 
 			const f = client.file(`${runId}/${testId}/test-a-0.txt`);
@@ -1035,8 +1035,8 @@ export function runTests(
 		});
 	});
 
-	describe("copyObject", () => {
-		test("copies an object", async () => {
+	void describe("copyObject", () => {
+		void test("copies an object", async () => {
 			const testId = crypto.randomUUID();
 			const sourceKey = `${runId}/${testId}/source.txt`;
 			const destinationKey = `${runId}/${testId}/destination.txt`;
@@ -1062,8 +1062,8 @@ export function runTests(
 		});
 	});
 
-	describe("multipart uploads", () => {
-		test("create + abort multipart upload", async t => {
+	void describe("multipart uploads", () => {
+		void test("create + abort multipart upload", async t => {
 			if (implementation === "rustfs") {
 				// Ref:
 				// https://github.com/rustfs/rustfs/issues/779
@@ -1101,7 +1101,7 @@ export function runTests(
 			}
 		});
 
-		test("create + complete multipart upload", async () => {
+		void test("create + complete multipart upload", async () => {
 			const testId = crypto.randomUUID();
 			const key = `${testId}/foo-key-9000`;
 
@@ -1146,7 +1146,7 @@ export function runTests(
 			}
 		});
 
-		test("listMultipartUploads", async () => {
+		void test("listMultipartUploads", async () => {
 			const uploads = await client.listMultipartUploads();
 			expect(uploads).toStrictEqual(
 				expect.objectContaining({
@@ -1164,7 +1164,7 @@ export function runTests(
 			);
 		});
 
-		test("list parts", async () => {
+		void test("list parts", async () => {
 			const testId = crypto.randomUUID();
 			const key = `${testId}/foo-key-9000`;
 
@@ -1226,8 +1226,8 @@ export function runTests(
 		});
 	});
 
-	describe("bucket cors", () => {
-		test("put", async t => {
+	void describe("bucket cors", () => {
+		void test("put", async t => {
 			if (
 				implementation === "minio" ||
 				implementation === "ceph" ||
@@ -1312,7 +1312,7 @@ export function runTests(
 			]);
 			await client.deleteBucketCors();
 
-			expect(client.getBucketCors()).rejects.toThrow();
+			void expect(client.getBucketCors()).rejects.toThrow();
 		});
 	});
 }

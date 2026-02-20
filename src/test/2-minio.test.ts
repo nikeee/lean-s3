@@ -5,7 +5,7 @@ import { expect } from "expect";
 import { runTests } from "./common.ts";
 import { S3Client } from "../index.ts";
 
-describe("minio", async () => {
+void describe("minio", async () => {
 	const s3 = await new MinioContainer("minio/minio:RELEASE.2025-04-08T15-41-24Z-cpuv1").start();
 	const region = "us-east-1";
 	const bucket = "test-bucket-minio";

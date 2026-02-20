@@ -5,7 +5,7 @@ import { expect } from "expect";
 import { runTests } from "./common.ts";
 import { S3Client } from "../index.ts";
 
-describe("localstack", async () => {
+void describe("localstack", async () => {
 	const s3 = await new LocalstackContainer("localstack/localstack:4").start();
 	const region = "us-east-1";
 	const bucket = "test-bucket-localstack";

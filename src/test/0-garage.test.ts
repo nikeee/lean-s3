@@ -5,7 +5,7 @@ import { runTests } from "./common.ts";
 import { S3Client } from "../index.ts";
 import { GarageContainer } from "./GarageContainer.ts";
 
-describe("garage", async () => {
+void describe("garage", async () => {
 	const s3 = await new GarageContainer().start();
 	const region = "garage";
 	const bucket = "test-bucket-garage";

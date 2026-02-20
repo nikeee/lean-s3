@@ -5,7 +5,7 @@ import { runTests } from "./common.ts";
 import { S3Client } from "../index.ts";
 import { CephContainer } from "./CephContainer.ts";
 
-describe("ceph", async () => {
+void describe("ceph", async () => {
 	const s3 = await new CephContainer().start();
 	const region = "default";
 	const bucket = "test-bucket-ceph";

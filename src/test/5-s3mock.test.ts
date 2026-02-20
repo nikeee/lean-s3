@@ -5,7 +5,7 @@ import { S3MockContainer } from "@testcontainers/s3mock";
 import { runTests } from "./common.ts";
 import { S3Client } from "../index.ts";
 
-describe("s3mock", async () => {
+void describe("s3mock", async () => {
 	const s3 = await new S3MockContainer("adobe/s3mock:latest").start();
 	const region = "auto";
 	const bucket = "test-bucket-s3mock";

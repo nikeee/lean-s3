@@ -4,8 +4,8 @@ import { expect } from "expect";
 import { buildRequestUrl } from "./url.ts";
 import type { BucketName, Endpoint, ObjectKey, Region } from "./branded.ts";
 
-describe("buildRequestUrl", () => {
-	test("aws", () => {
+void describe("buildRequestUrl", () => {
+	void test("aws", () => {
 		expect(
 			buildRequestUrl(
 				"https://{bucket}.s3.{region}.amazonaws.com" as Endpoint,
@@ -52,7 +52,7 @@ describe("buildRequestUrl", () => {
 		).toStrictEqual(new URL("https://mybucket.s3.eu-west-1.amazonaws.com/object.json"));
 	});
 
-	test("r2", () => {
+	void test("r2", () => {
 		expect(
 			buildRequestUrl(
 				"https://my-account-id.r2.cloudflarestorage.com" as Endpoint,
@@ -98,7 +98,7 @@ describe("buildRequestUrl", () => {
 		);
 	});
 
-	test("hetzner", () => {
+	void test("hetzner", () => {
 		expect(
 			buildRequestUrl(
 				"https://fsn1.your-objectstorage.com" as Endpoint,
@@ -109,7 +109,7 @@ describe("buildRequestUrl", () => {
 		).toStrictEqual(new URL("https://fsn1.your-objectstorage.com/mybucket/object.json"));
 	});
 
-	test("weird key", () => {
+	void test("weird key", () => {
 		expect(
 			buildRequestUrl(
 				"https://{bucket}.s3.{region}.amazonaws.com" as Endpoint,
@@ -124,7 +124,7 @@ describe("buildRequestUrl", () => {
 		);
 	});
 
-	test("slashes shouldn't be escaped", () => {
+	void test("slashes shouldn't be escaped", () => {
 		expect(
 			buildRequestUrl(
 				"https://{bucket}.s3.{region}.amazonaws.com" as Endpoint,

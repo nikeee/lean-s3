@@ -14,7 +14,7 @@ const runId = Date.now();
 const providers = ["hetzner", "aws", "cloudflare", "backblaze"] as const;
 
 for (const provider of providers) {
-	describe(`integration with ${provider}@runId:${runId}`, () => {
+	void describe(`integration with ${provider}@runId:${runId}`, () => {
 		const p = provider.toUpperCase();
 
 		const endpoint = env[`${p}_S3_ENDPOINT`];

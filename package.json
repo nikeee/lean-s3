@@ -36,11 +36,11 @@
     "build": "tsdown",
     "test": "tsgo && tsx --test src/*.test.ts src/test/*.test.ts",
     "test:integration": "tsgo && tsx --test src/test/test.integration.ts",
-    "ci": "oxlint --deny-warnings -f github",
+    "ci": "oxlint --type-aware --deny-warnings -f github",
     "docs": "typedoc",
     "format": "oxfmt",
-    "lint": "oxlint",
-    "lint:fix": "oxlint --fix",
+    "lint": "oxlint --type-aware",
+    "lint:fix": "oxlint --type-aware --fix",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
@@ -57,6 +57,7 @@
     "lefthook": "^2.1.1",
     "oxfmt": "^0.34.0",
     "oxlint": "^1.49.0",
+    "oxlint-tsgolint": "^0.14.2",
     "testcontainers": "^11.12.0",
     "tsdown": "^0.20.3",
     "tsx": "^4.21.0",

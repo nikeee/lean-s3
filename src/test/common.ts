@@ -548,6 +548,7 @@ export function runTests(
 				const slicedFile = f.slice(10000);
 				await expect(async () => await slicedFile.text()).rejects.toThrow(
 					expect.objectContaining({
+						// oxlint-disable-next-line typescript-eslint(no-misused-spread)
 						...new S3Error("InvalidRange", path, { status: 416 }),
 						name: expect.any(String),
 						message: expect.any(String),

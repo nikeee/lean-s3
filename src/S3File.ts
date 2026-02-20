@@ -72,11 +72,7 @@ export default class S3File {
 	 * @param end The ending index, exclusive.
 	 * @param contentType The content-type for the new {@link S3File}.
 	 */
-	slice(
-		start?: number | undefined,
-		end?: number | undefined,
-		contentType?: string | undefined,
-	): S3File {
+	slice(start?: number, end?: number, contentType?: string): S3File {
 		return new S3File(
 			this.#client,
 			this.#path,

@@ -34,7 +34,7 @@ export default class S3BucketEntry {
 	 * @internal
 	 */
 	// biome-ignore lint/suspicious/noExplicitAny: internal use only, any is ok here
-	static parse(source: any): S3BucketEntry {
+	static parse(this: void, source: any): S3BucketEntry {
 		// TODO: check values and throw exceptions
 		return new S3BucketEntry(
 			source.Key,

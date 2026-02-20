@@ -65,7 +65,7 @@ export class GarageContainer extends GenericContainer {
 	async apiFetch(
 		container: StartedTestContainer,
 		path: string,
-		options?: RequestInit,
+		options?: RequestOptions,
 		// biome-ignore lint/suspicious/noExplicitAny: shrug
 	): Promise<any> {
 		const apiBase = `http://${container.getHost()}:${container.getMappedPort(ADMIN_API_PORT)}`;
@@ -80,6 +80,8 @@ export class GarageContainer extends GenericContainer {
 		return await res.json();
 	}
 }
+
+export type RequestOptions = Omit<RequestInit, "headers"> & { headers?: Record<string, string> };
 
 export class StartedGarageContainer extends AbstractStartedContainer {
 	readonly #accessKeyId: string;

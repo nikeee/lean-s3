@@ -1302,6 +1302,12 @@ export function runTests(
 				return;
 			}
 
+			if (implementation === "hetzner") {
+				t.todo(
+					`S3 implementation "${implementation}" seems to be a bit buggy regarding bucket cors`,
+				);
+			}
+
 			await client.putBucketCors([
 				{
 					allowedMethods: ["GET"],

@@ -320,13 +320,13 @@ summary(() => {
 
     bench("string concat join", () => {
       for (let i = 0; i < headers.length; ++i) {
-        const x = concat(headers[i]);
+        const _ = concat(headers[i]);
       }
     });
 
     bench("array string join", () => {
       for (let i = 0; i < headers.length; ++i) {
-        const x = join(headers[i]);
+        const _ = join(headers[i]);
       }
     });
   });
@@ -349,7 +349,7 @@ summary(() => {
 
         a += "&uploadId=12323456432";
 
-        const q = a.substring(1);
+        const _ = a.substring(1);
       }
     });
     bench("conditional", () => {

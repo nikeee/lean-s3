@@ -869,7 +869,7 @@ export function runTests(
 			const res1 = await client.list({ prefix: `${runId}/${testId}` });
 			expect(res1.contents.length).toBe(0);
 		});
-		test("with strings", async t => {
+		test("with strings", async () => {
 			const testId = crypto.randomUUID();
 			await client.file(`${runId}/${testId}/test-a-0.txt`).write(crypto.randomUUID());
 			await client.file(`${runId}/${testId}/test-a-1.txt`).write(crypto.randomUUID());

@@ -1064,7 +1064,7 @@ export default class S3Client {
 		);
 
 		if (response.statusCode === 200) {
-			response.body.dump(); // dump's floating promise should not throw
+			void response.body.dump(); // dump's floating promise should not throw
 
 			const etag = response.headers.etag;
 			if (typeof etag !== "string" || etag.length === 0) {
@@ -1225,7 +1225,7 @@ export default class S3Client {
 		}
 
 		// undici docs state that we should dump the body if not used
-		response.body.dump(); // dump's floating promise should not throw
+		void response.body.dump(); // dump's floating promise should not throw
 
 		if (response.statusCode === 200) {
 			return;
@@ -1261,7 +1261,7 @@ export default class S3Client {
 		}
 
 		// undici docs state that we should dump the body if not used
-		response.body.dump(); // dump's floating promise should not throw
+		void response.body.dump(); // dump's floating promise should not throw
 
 		if (response.statusCode === 204) {
 			return;
@@ -1299,7 +1299,7 @@ export default class S3Client {
 		}
 
 		// undici docs state that we should dump the body if not used
-		response.body.dump(); // dump's floating promise should not throw
+		void response.body.dump(); // dump's floating promise should not throw
 
 		if (response.statusCode === 200) {
 			return true;
@@ -1347,7 +1347,7 @@ export default class S3Client {
 
 		if (response.statusCode === 200) {
 			// undici docs state that we should dump the body if not used
-			response.body.dump(); // dump's floating promise should not throw
+			void response.body.dump(); // dump's floating promise should not throw
 			return;
 		}
 
@@ -1378,7 +1378,7 @@ export default class S3Client {
 
 		if (response.statusCode !== 200) {
 			// undici docs state that we should dump the body if not used
-			response.body.dump(); // dump's floating promise should not throw
+			void response.body.dump(); // dump's floating promise should not throw
 			throw fromStatusCode(response.statusCode, "");
 		}
 
@@ -1425,7 +1425,7 @@ export default class S3Client {
 
 		if (response.statusCode !== 204) {
 			// undici docs state that we should dump the body if not used
-			response.body.dump(); // dump's floating promise should not throw
+			void response.body.dump(); // dump's floating promise should not throw
 			throw fromStatusCode(response.statusCode, "");
 		}
 	}
@@ -1534,7 +1534,7 @@ export default class S3Client {
 
 		if (response.statusCode !== 200) {
 			// undici docs state that we should dump the body if not used
-			response.body.dump(); // dump's floating promise should not throw
+			void response.body.dump(); // dump's floating promise should not throw
 			throw new Error(`Response code not implemented yet: ${response.statusCode}`);
 		}
 
@@ -1627,7 +1627,7 @@ export default class S3Client {
 		}
 
 		// undici docs state that we should dump the body if not used
-		response.body.dump(); // dump's floating promise should not throw
+		void response.body.dump(); // dump's floating promise should not throw
 		throw new Error(`Response code not implemented yet: ${response.statusCode}`);
 	}
 

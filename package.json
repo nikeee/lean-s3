@@ -43,22 +43,22 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "fast-xml-parser": "^5.3.4",
-    "undici": "^7.20.0"
+    "fast-xml-parser": "^5.3.7",
+    "undici": "^7.22.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.1",
-    "@testcontainers/localstack": "^11.11.0",
-    "@testcontainers/minio": "^11.11.0",
-    "@testcontainers/s3mock": "^11.11.0",
-    "@types/node": "^25.2.0",
-    "@typescript/native-preview": "^7.0.0-dev.20260203.1",
+    "@biomejs/biome": "2.4.3",
+    "@testcontainers/localstack": "^11.12.0",
+    "@testcontainers/minio": "^11.12.0",
+    "@testcontainers/s3mock": "^11.12.0",
+    "@types/node": "^25.3.0",
+    "@typescript/native-preview": "^7.0.0-dev.20260220.1",
     "expect": "^30.2.0",
-    "lefthook": "^2.1.0",
-    "testcontainers": "^11.11.0",
-    "tsdown": "^0.20.1",
+    "lefthook": "^2.1.1",
+    "testcontainers": "^11.12.0",
+    "tsdown": "^0.20.3",
     "tsx": "^4.21.0",
-    "typedoc": "^0.28.16"
+    "typedoc": "^0.28.17"
   },
   "engines": {
     "node": "^20.19.5 || ^22.21.1 || ^24.11.0 || ^25.1.0"

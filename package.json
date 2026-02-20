@@ -36,10 +36,11 @@
     "build": "tsdown",
     "test": "tsgo && tsx --test src/*.test.ts src/test/*.test.ts",
     "test:integration": "tsgo && tsx --test src/test/test.integration.ts",
-    "ci": "biome ci ./src",
+    "ci": "oxlint --deny-warnings -f github",
     "docs": "typedoc",
-    "lint": "biome lint ./src",
-    "format": "biome check --write ./src",
+    "format": "oxfmt",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
@@ -47,7 +48,6 @@
     "undici": "^7.22.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.3",
     "@testcontainers/localstack": "^11.12.0",
     "@testcontainers/minio": "^11.12.0",
     "@testcontainers/s3mock": "^11.12.0",
@@ -55,6 +55,8 @@
     "@typescript/native-preview": "^7.0.0-dev.20260220.1",
     "expect": "^30.2.0",
     "lefthook": "^2.1.1",
+    "oxfmt": "^0.34.0",
+    "oxlint": "^1.49.0",
     "testcontainers": "^11.12.0",
     "tsdown": "^0.20.3",
     "tsx": "^4.21.0",

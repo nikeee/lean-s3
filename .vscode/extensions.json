@@ -1,6 +1,3 @@
 {
-  "recommendations": [
-    "biomejs.biome",
-    "TypeScriptTeam.native-preview"
-  ]
+  "recommendations": ["biomejs.biome", "TypeScriptTeam.native-preview"]
 }

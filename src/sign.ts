@@ -6,32 +6,19 @@ import type { HttpMethod, PresignableHttpMethod } from "./index.ts";
 // Spec:
 // https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
 
-export function deriveSigningKey(
-	date: string,
-	region: string,
-	secretAccessKey: string,
-): Buffer {
+export function deriveSigningKey(date: string, region: string, secretAccessKey: string): Buffer {
 	const key = `AWS4${secretAccessKey}`;
 
 	const signedDate = createHmac("sha256", key).update(date).digest();
 
-	const signedDateRegion = createHmac("sha256", signedDate)
-		.update(region)
-		.digest();
+	const signedDateRegion = createHmac("sha256", signedDate).update(region).digest();
 
-	const signedDateRegionService = createHmac("sha256", signedDateRegion)
-		.update("s3")
-		.digest();
+	const signedDateRegionService = createHmac("sha256", signedDateRegion).update("s3").digest();
 
-	return createHmac("sha256", signedDateRegionService)
-		.update("aws4_request")
-		.digest();
+	return createHmac("sha256", signedDateRegionService).update("aws4_request").digest();
 }
 
-export function signEncodedPolicy(
-	signingKey: Buffer,
-	encodedPolicy: string,
-): string {
+export function signEncodedPolicy(signingKey: Buffer, encodedPolicy: string): string {
 	return createHmac("sha256", signingKey).update(encodedPolicy).digest("hex");
 }
 
@@ -68,9 +55,7 @@ export function createCanonicalDataDigestHostOnly(
 	// see `benchmark-operations.js`
 
 	return createHash("sha256")
-		.update(
-			`${method}\n${path}\n${query}\nhost:${host}\n\nhost\nUNSIGNED-PAYLOAD`,
-		)
+		.update(`${method}\n${path}\n${query}\nhost:${host}\n\nhost\nUNSIGNED-PAYLOAD`)
 		.digest("hex");
 }
 

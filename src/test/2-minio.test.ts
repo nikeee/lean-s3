@@ -6,9 +6,7 @@ import { runTests } from "./common.ts";
 import { S3Client } from "../index.ts";
 
 describe("minio", async () => {
-	const s3 = await new MinioContainer(
-		"minio/minio:RELEASE.2025-04-08T15-41-24Z-cpuv1",
-	).start();
+	const s3 = await new MinioContainer("minio/minio:RELEASE.2025-04-08T15-41-24Z-cpuv1").start();
 	const region = "us-east-1";
 	const bucket = "test-bucket-minio";
 
@@ -41,13 +39,5 @@ describe("minio", async () => {
 		});
 	}
 
-	runTests(
-		runId,
-		s3.getConnectionUrl(),
-		"minioadmin",
-		"minioadmin",
-		region,
-		bucket,
-		"minio",
-	);
+	runTests(runId, s3.getConnectionUrl(), "minioadmin", "minioadmin", region, bucket, "minio");
 });

@@ -1,8 +1,4 @@
-import {
-	AbstractStartedContainer,
-	GenericContainer,
-	Wait,
-} from "testcontainers";
+import { AbstractStartedContainer, GenericContainer, Wait } from "testcontainers";
 
 // Based on:
 // https://github.com/CleverCloud/ceph-s3-box/blob/main/Dockerfile

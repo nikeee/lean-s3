@@ -44,9 +44,8 @@ for (const provider of providers) {
 			after(async () => {
 				expect(await client.bucketExists(bucket)).toBe(true);
 
-				const objects = (
-					await client.list({ prefix: `${runId}/`, maxKeys: 1000 })
-				).contents;
+				const objects = (await client.list({ prefix: `${runId}/`, maxKeys: 1000 }))
+					.contents;
 
 				// clean up after all tests, but we want to fail because there are still objects
 				if (objects.length > 0) {
@@ -56,14 +55,6 @@ for (const provider of providers) {
 			});
 		}
 
-		runTests(
-			runId,
-			endpoint,
-			accessKeyId,
-			secretAccessKey,
-			region,
-			bucket,
-			provider,
-		);
+		runTests(runId, endpoint, accessKeyId, secretAccessKey, region, bucket, provider);
 	});
 }

@@ -8,14 +8,15 @@ export function buildRequestUrl(
 ): URL {
 	const normalizedBucket = normalizePath(bucket) as BucketName;
 
-	const [endpointWithBucketAndRegion, replacedBucket] =
-		replaceDomainPlaceholders(endpoint, normalizedBucket, region);
+	const [endpointWithBucketAndRegion, replacedBucket] = replaceDomainPlaceholders(
+		endpoint,
+		normalizedBucket,
+		region,
+	);
 
 	const result = new URL(endpointWithBucketAndRegion);
 
-	const pathPrefix = result.pathname.endsWith("/")
-		? result.pathname
-		: `${result.pathname}/`;
+	const pathPrefix = result.pathname.endsWith("/") ? result.pathname : `${result.pathname}/`;
 
 	const pathSuffix = replacedBucket
 		? normalizePath(path)
@@ -41,10 +42,7 @@ function replaceDomainPlaceholders(
 	region: Region,
 ): [endpoint: string, replacedBucket: boolean] {
 	const replacedBucket = endpoint.includes("{bucket}");
-	return [
-		endpoint.replaceAll("{bucket}", bucket).replaceAll("{region}", region),
-		replacedBucket,
-	];
+	return [endpoint.replaceAll("{bucket}", bucket).replaceAll("{region}", region), replacedBucket];
 }
 
 /**

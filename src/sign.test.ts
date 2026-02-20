@@ -9,17 +9,10 @@ import { getAmzDate } from "./AmzDate.ts";
 describe("deriveSigningKey", () => {
 	test("snapshot", () => {
 		const date = new Date("August 19, 1975 23:15:30 GMT+11:00");
-		const signinKey = sign.deriveSigningKey(
-			getAmzDate(date).date,
-			"auto",
-			"secretKey",
-		);
+		const signinKey = sign.deriveSigningKey(getAmzDate(date).date, "auto", "secretKey");
 
 		expect(signinKey).toStrictEqual(
-			Buffer.from(
-				"ee60fc9b7cd227df081ef4029ec48a21310784374dd919fa91dc9b4796b71823",
-				"hex",
-			),
+			Buffer.from("ee60fc9b7cd227df081ef4029ec48a21310784374dd919fa91dc9b4796b71823", "hex"),
 		);
 	});
 });
@@ -33,9 +26,7 @@ describe("signCanonicalDataHash", () => {
 		const canonicalData =
 			"GET\n/test.txt\nX-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAIOSFODNN7EXAMPLE%2F20130524%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20130524T000000Z&X-Amz-Expires=86400&X-Amz-SignedHeaders=host\nhost:examplebucket.s3.amazonaws.com\n\nhost\nUNSIGNED-PAYLOAD";
 
-		const canonicalDataHash = createHash("sha256")
-			.update(canonicalData)
-			.digest("hex");
+		const canonicalDataHash = createHash("sha256").update(canonicalData).digest("hex");
 
 		const amzDate = {
 			numericDayStart: -1,
@@ -95,9 +86,7 @@ describe("signCanonicalDataHash", () => {
 
 		const canonicalData =
 			"PUT\n/test.json\nX-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=sample-key-id%2F20250319%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20250319T151759Z&X-Amz-Expires=42690&X-Amz-SignedHeaders=host&x-id=PutObject\nhost:test-bucket.localhost:9000\n\nhost\nUNSIGNED-PAYLOAD";
-		const canonicalDataHash = createHash("sha256")
-			.update(canonicalData)
-			.digest("hex");
+		const canonicalDataHash = createHash("sha256").update(canonicalData).digest("hex");
 
 		const amzDate = {
 			numericDayStart: -1,
@@ -105,11 +94,7 @@ describe("signCanonicalDataHash", () => {
 			dateTime: "20250319T151759Z",
 		};
 
-		const singingKey = sign.deriveSigningKey(
-			amzDate.date,
-			"auto",
-			"sample-secret-key",
-		);
+		const singingKey = sign.deriveSigningKey(amzDate.date, "auto", "sample-secret-key");
 		const signature = sign.signCanonicalDataHash(
 			singingKey,
 			canonicalDataHash,
@@ -140,9 +125,7 @@ describe("signCanonicalDataHash", () => {
 
 		const canonicalData =
 			"PUT\n/test-bucket/test.json\nX-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=sample-key-id%2F20250319%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20250319T143536Z&X-Amz-Expires=42069&X-Amz-SignedHeaders=host\nhost:localhost:9000\n\nhost\nUNSIGNED-PAYLOAD";
-		const canonicalDataHash = createHash("sha256")
-			.update(canonicalData)
-			.digest("hex");
+		const canonicalDataHash = createHash("sha256").update(canonicalData).digest("hex");
 
 		const amzDate = {
 			numericDayStart: -1,
@@ -150,11 +133,7 @@ describe("signCanonicalDataHash", () => {
 			dateTime: "20250319T143536Z",
 		};
 
-		const singingKey = sign.deriveSigningKey(
-			amzDate.date,
-			"auto",
-			"sample-secret-key",
-		);
+		const singingKey = sign.deriveSigningKey(amzDate.date, "auto", "sample-secret-key");
 		const signature = sign.signCanonicalDataHash(
 			singingKey,
 			canonicalDataHash,
@@ -170,9 +149,7 @@ describe("signCanonicalDataHash", () => {
 
 		const canonicalData =
 			"GET\nTODO\nx-amz-algorithm=AWS4-HMAC-SHA256&x-amz-credential=sample-key-id%2F20250326%2Fauto%2Fs3%2Faws4_request&x-amz-date=20250326T132719Z&x-amz-expires=3600&x-amz-signedheaders=host\nhost:s3.us-east-1.amazonaws.com\n\nhost\nUNSIGNED-PAYLOAD";
-		const canonicalDataHash = createHash("sha256")
-			.update(canonicalData)
-			.digest("hex");
+		const canonicalDataHash = createHash("sha256").update(canonicalData).digest("hex");
 
 		const amzDate = {
 			numericDayStart: -1,
@@ -180,11 +157,7 @@ describe("signCanonicalDataHash", () => {
 			dateTime: "20250326T132719Z",
 		};
 
-		const singingKey = sign.deriveSigningKey(
-			amzDate.date,
-			"auto",
-			"sample-secret-key",
-		);
+		const singingKey = sign.deriveSigningKey(amzDate.date, "auto", "sample-secret-key");
 		const signature = sign.signCanonicalDataHash(
 			singingKey,
 			canonicalDataHash,
@@ -234,16 +207,11 @@ describe("createCanonicalData", () => {
 			"93a23971a914e5eacbf0a8d25154cda309c3c1c72fbb9914d47c60f3cb681588",
 		);
 
-		expect(dataDigest).toBe(
-			"7d48b15c07c1302bfa78b5b9364ae72cef4286424e91948d41a094d544f604c5",
-		);
+		expect(dataDigest).toBe("7d48b15c07c1302bfa78b5b9364ae72cef4286424e91948d41a094d544f604c5");
 
 		const signingKey = sign.deriveSigningKey("20250408", "auto", "secret");
 		expect(signingKey).toStrictEqual(
-			Buffer.from(
-				"59e981d9fe3accad88bd41e770978852020f9af961302e0ffd07509f086ad9a0",
-				"hex",
-			),
+			Buffer.from("59e981d9fe3accad88bd41e770978852020f9af961302e0ffd07509f086ad9a0", "hex"),
 		);
 
 		const signature = sign.signCanonicalDataHash(
@@ -252,9 +220,7 @@ describe("createCanonicalData", () => {
 			{ date: "20250408", dateTime: "20250408T200640Z", numericDayStart: -1 },
 			"auto",
 		);
-		expect(signature).toBe(
-			"83324a8f1745a6aae04f47806978294e00c715e72fd715f24f7be5a57dc46b62",
-		);
+		expect(signature).toBe("83324a8f1745a6aae04f47806978294e00c715e72fd715f24f7be5a57dc46b62");
 
 		const signedHeadersSpec = Object.keys(signedHeaders).toSorted().join(";");
 		const credentialSpec = "access-key/20250408/auto/s3/aws4_request";

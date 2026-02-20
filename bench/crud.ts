@@ -22,9 +22,7 @@ const KiB = 1024;
 const MiB = 1024 * KiB;
 
 async function createContainer(buckets) {
-	const s3 = await new MinioContainer(
-		"minio/minio:RELEASE.2025-04-08T15-41-24Z-cpuv1",
-	).start();
+	const s3 = await new MinioContainer("minio/minio:RELEASE.2025-04-08T15-41-24Z-cpuv1").start();
 	process.once("beforeExit", () => void s3.stop());
 
 	const aws = new AWSS3Client({
@@ -238,12 +236,16 @@ const clients: ClientWrapper[] = [
 			});
 		},
 		getBuffer: async (bucket, key) =>
-			(await awsLite.S3.GetObject({
+			await awsLite.S3.GetObject({
 				Bucket: bucket,
 				Key: key,
-			})),
+			}),
 		list: async (bucket, prefix) => {
-			const o = await awsLite.S3.ListObjectsV2({ Bucket: bucket, MaxKeys: 1000, Prefix: prefix });
+			const o = await awsLite.S3.ListObjectsV2({
+				Bucket: bucket,
+				MaxKeys: 1000,
+				Prefix: prefix,
+			});
 			// biome-ignore lint/style/noNonNullAssertion: :shrug:
 			return o.KeyCount!;
 		},
@@ -367,9 +369,7 @@ mitata.summary(() => {
 					.bench(c.name, async () => {
 						const count = await c.list(c.bucket, listPrefix);
 						if (count !== 800) {
-							throw new Error(
-								`Client ${c.name} returned invalid value: ${count}`,
-							);
+							throw new Error(`Client ${c.name} returned invalid value: ${count}`);
 						}
 					})
 					.baseline(c.baseline)

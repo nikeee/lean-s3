@@ -69,12 +69,7 @@ export type StorageClass =
 	| "SNOW"
 	| "STANDARD_IA";
 
-export type ChecksumAlgorithm =
-	| "CRC32"
-	| "CRC32C"
-	| "CRC64NVME"
-	| "SHA1"
-	| "SHA256";
+export type ChecksumAlgorithm = "CRC32" | "CRC32C" | "CRC64NVME" | "SHA1" | "SHA256";
 
 export type ChecksumType = "COMPOSITE" | "FULL_OBJECT";
 
@@ -110,9 +105,7 @@ export type BucketInfo = {
 /**
  * Represents valid values for the [`Content-Disposition`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Disposition) header.
  */
-export type ContentDisposition =
-	| AttachmentContentDisposition
-	| InlineContentDisposition;
+export type ContentDisposition = AttachmentContentDisposition | InlineContentDisposition;
 
 export type InlineContentDisposition = {
 	type: "inline";

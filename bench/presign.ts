@@ -68,9 +68,7 @@ mitata.summary(async () => {
 			secretAccessKey: "sample-secret-key",
 		});
 
-		const toSign = new Request(
-			new URL("https://localhost:9000/test-bucket/path.json"),
-		);
+		const toSign = new Request(new URL("https://localhost:9000/test-bucket/path.json"));
 		const options = { method: "GET" };
 
 		mitata

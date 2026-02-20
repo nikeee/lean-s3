@@ -29,13 +29,7 @@ export function now(): AmzDate {
 }
 
 function pad4(v: number): string {
-	return v < 10
-		? `000${v}`
-		: v < 100
-			? `00${v}`
-			: v < 1000
-				? `0${v}`
-				: v.toString();
+	return v < 10 ? `000${v}` : v < 100 ? `00${v}` : v < 1000 ? `0${v}` : v.toString();
 }
 
 function pad2(v: number): string {

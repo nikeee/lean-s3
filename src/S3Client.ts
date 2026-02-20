@@ -8,12 +8,7 @@ import S3BucketEntry from "./S3BucketEntry.ts";
 import KeyCache from "./KeyCache.ts";
 import * as amzDate from "./AmzDate.ts";
 import * as sign from "./sign.ts";
-import {
-	buildRequestUrl,
-	getRangeHeader,
-	normalizePath,
-	prepareHeadersForSigning,
-} from "./url.ts";
+import { buildRequestUrl, getRangeHeader, normalizePath, prepareHeadersForSigning } from "./url.ts";
 import type {
 	Acl,
 	BucketInfo,
@@ -41,10 +36,7 @@ import {
 	type Region,
 	type SecretAccessKey,
 } from "./branded.ts";
-import {
-	encodeURIComponentExtended,
-	getContentDispositionHeader,
-} from "./encode.ts";
+import { encodeURIComponentExtended, getContentDispositionHeader } from "./encode.ts";
 import type { Readable } from "node:stream";
 
 export const kWrite = Symbol("kWrite");
@@ -537,12 +529,8 @@ export default class S3Client {
 	): [region: Region, endpoint: Endpoint, bucket: BucketName] {
 		return [
 			options.region ? ensureValidRegion(options.region) : this.#options.region,
-			options.endpoint
-				? ensureValidEndpoint(options.endpoint)
-				: this.#options.endpoint,
-			options.bucket
-				? ensureValidBucketName(options.bucket)
-				: this.#options.bucket,
+			options.endpoint ? ensureValidEndpoint(options.endpoint) : this.#options.endpoint,
+			options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket,
 		];
 	}
 
@@ -634,12 +622,7 @@ export default class S3Client {
 			? getContentDispositionHeader(contentDisposition)
 			: undefined;
 
-		const res = buildRequestUrl(
-			endpoint,
-			bucket,
-			region,
-			ensureValidPath(path),
-		);
+		const res = buildRequestUrl(endpoint, bucket, region, ensureValidPath(path));
 
 		const now = new Date();
 		const date = amzDate.getAmzDate(now);
@@ -685,12 +668,7 @@ export default class S3Client {
 									: {},
 						sign.unsignedPayload,
 					)
-				: sign.createCanonicalDataDigestHostOnly(
-						method,
-						res.pathname,
-						query,
-						res.host,
-					);
+				: sign.createCanonicalDataDigestHostOnly(method, res.pathname, query, res.host);
 
 		const signingKey = this.#keyCache.computeIfAbsent(
 			date,
@@ -699,12 +677,7 @@ export default class S3Client {
 			this.#options.secretAccessKey,
 		);
 
-		const signature = sign.signCanonicalDataHash(
-			signingKey,
-			dataDigest,
-			date,
-			region,
-		);
+		const signature = sign.signCanonicalDataHash(signingKey, dataDigest, date, region);
 
 		// See `buildSearchParams` for casing on this parameter
 		res.search = `${query}&X-Amz-Signature=${signature}`;
@@ -717,12 +690,8 @@ export default class S3Client {
 
 		const key = options.key as ObjectKey;
 		const region = ensureValidRegion(options.region ?? this.#options.region);
-		const bucket = ensureValidBucketName(
-			options.bucket ?? this.#options.bucket,
-		);
-		const endpoint = ensureValidEndpoint(
-			options.endpoint ?? this.#options.endpoint,
-		);
+		const bucket = ensureValidBucketName(options.bucket ?? this.#options.bucket);
+		const endpoint = ensureValidEndpoint(options.endpoint ?? this.#options.endpoint);
 		const expiresIn = options.expiresIn ?? 3600;
 
 		const credential = `${this.#options.accessKeyId}/${date.date}/${region}/s3/aws4_request`;
@@ -747,11 +716,7 @@ export default class S3Client {
 			conditions: [
 				["eq", "$bucket", bucket],
 				key.endsWith("{{filename}}")
-					? [
-							"starts-with",
-							"$key",
-							key.substring(0, key.lastIndexOf("{{filename}}")),
-						]
+					? ["starts-with", "$key", key.substring(0, key.lastIndexOf("{{filename}}"))]
 					: ["eq", "$key", key],
 				...(options.conditions ? options.conditions : []),
 				["eq", "$x-amz-algorithm", "AWS4-HMAC-SHA256"],
@@ -761,11 +726,7 @@ export default class S3Client {
 		};
 
 		if (this.#options.sessionToken) {
-			policy.conditions.push([
-				"eq",
-				"$x-amz-security-token",
-				this.#options.sessionToken,
-			]);
+			policy.conditions.push(["eq", "$x-amz-security-token", this.#options.sessionToken]);
 		}
 
 		const policyJson = JSON.stringify(policy);
@@ -809,9 +770,7 @@ export default class S3Client {
 
 		// The value must be URL-encoded.
 		const normalizedSourceKey = normalizePath(ensureValidPath(sourceKey));
-		const copySource = encodeURIComponent(
-			`${sourceBucket}/${normalizedSourceKey}`,
-		);
+		const copySource = encodeURIComponent(`${sourceBucket}/${normalizedSourceKey}`);
 
 		const response = await this[kSignedRequest](
 			this.#options.region,
@@ -855,9 +814,7 @@ export default class S3Client {
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,
-			options.bucket
-				? ensureValidBucketName(options.bucket)
-				: this.#options.bucket,
+			options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket,
 			"POST",
 			ensureValidPath(key),
 			"uploads=",
@@ -933,9 +890,7 @@ export default class S3Client {
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,
-			options.bucket
-				? ensureValidBucketName(options.bucket)
-				: this.#options.bucket,
+			options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket,
 			"GET",
 			"" as ObjectKey,
 			query,
@@ -998,9 +953,7 @@ export default class S3Client {
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,
-			options.bucket
-				? ensureValidBucketName(options.bucket)
-				: this.#options.bucket,
+			options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket,
 			"DELETE",
 			ensureValidPath(path),
 			`uploadId=${encodeURIComponent(uploadId)}`,
@@ -1043,9 +996,7 @@ export default class S3Client {
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,
-			options.bucket
-				? ensureValidBucketName(options.bucket)
-				: this.#options.bucket,
+			options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket,
 			"POST",
 			ensureValidPath(path),
 			`uploadId=${encodeURIComponent(uploadId)}`,
@@ -1101,9 +1052,7 @@ export default class S3Client {
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,
-			options.bucket
-				? ensureValidBucketName(options.bucket)
-				: this.#options.bucket,
+			options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket,
 			"PUT",
 			ensureValidPath(path),
 			`partNumber=${partNumber}&uploadId=${encodeURIComponent(uploadId)}`,
@@ -1170,9 +1119,7 @@ export default class S3Client {
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,
-			options.bucket
-				? ensureValidBucketName(options.bucket)
-				: this.#options.bucket,
+			options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket,
 			"GET",
 			ensureValidPath(path),
 			// We always have a leading &, so we can slice the leading & away (this way, we have less conditionals on the hot path); see benchmark-operations.js
@@ -1199,9 +1146,7 @@ export default class S3Client {
 					// biome-ignore lint/suspicious/noExplicitAny: parsing code
 					root.Part?.map((part: any) => ({
 						etag: part.ETag,
-						lastModified: part.LastModified
-							? new Date(part.LastModified)
-							: undefined,
+						lastModified: part.LastModified ? new Date(part.LastModified) : undefined,
 						partNumber: part.PartNumber ?? undefined,
 						size: part.Size ?? undefined,
 					})) ?? [],
@@ -1259,15 +1204,11 @@ export default class S3Client {
 					: undefined;
 		}
 
-		const additionalSignedHeaders = body
-			? { "content-md5": sign.md5Base64(body) }
-			: undefined;
+		const additionalSignedHeaders = body ? { "content-md5": sign.md5Base64(body) } : undefined;
 
 		const response = await this[kSignedRequest](
 			options.region ? ensureValidRegion(options.region) : this.#options.region,
-			options.endpoint
-				? ensureValidEndpoint(options.endpoint)
-				: this.#options.endpoint,
+			options.endpoint ? ensureValidEndpoint(options.endpoint) : this.#options.endpoint,
 			ensureValidBucketName(name),
 			"PUT",
 			"" as ObjectKey,
@@ -1334,10 +1275,7 @@ export default class S3Client {
 	 * @throws {Error} If the bucket name is invalid.
 	 * @remarks Uses [`HeadBucket`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadBucket.html).
 	 */
-	async bucketExists(
-		name: string,
-		options?: BucketExistsOptions,
-	): Promise<boolean> {
+	async bucketExists(name: string, options?: BucketExistsOptions): Promise<boolean> {
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,
@@ -1377,10 +1315,7 @@ export default class S3Client {
 	/**
 	 * @remarks Uses [`PutBucketCors`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketCors.html).
 	 */
-	async putBucketCors(
-		rules: BucketCorsRules,
-		options: PutBucketCorsOptions = {},
-	): Promise<void> {
+	async putBucketCors(rules: BucketCorsRules, options: PutBucketCorsOptions = {}): Promise<void> {
 		const body = xmlBuilder.build({
 			CORSConfiguration: {
 				CORSRule: rules.map(r => ({
@@ -1397,9 +1332,7 @@ export default class S3Client {
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,
-			options.bucket
-				? ensureValidBucketName(options.bucket)
-				: this.#options.bucket,
+			options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket,
 			"PUT",
 			"" as ObjectKey,
 			"cors=", // "=" is needed by minio for some reason
@@ -1422,23 +1355,17 @@ export default class S3Client {
 			throw await getResponseError(response, "");
 		}
 
-		throw new Error(
-			`Response code not implemented yet: ${response.statusCode}`,
-		);
+		throw new Error(`Response code not implemented yet: ${response.statusCode}`);
 	}
 
 	/**
 	 * @remarks Uses [`GetBucketCors`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketCors.html).
 	 */
-	async getBucketCors(
-		options: GetBucketCorsOptions = {},
-	): Promise<GetBucketCorsResult> {
+	async getBucketCors(options: GetBucketCorsOptions = {}): Promise<GetBucketCorsResult> {
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,
-			options.bucket
-				? ensureValidBucketName(options.bucket)
-				: this.#options.bucket,
+			options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket,
 			"GET",
 			"" as ObjectKey,
 			"cors=", // "=" is needed by minio for some reason
@@ -1467,12 +1394,8 @@ export default class S3Client {
 				.map((r: any) => ({
 					allowedMethods: (r.AllowedMethod ?? []) as HttpMethod[],
 					allowedOrigins: (r.AllowedOrigin ?? []) as string[],
-					allowedHeaders: r.AllowedHeader
-						? (r.AllowedHeader as string[])
-						: undefined,
-					exposeHeaders: r.ExposeHeader
-						? (r.ExposeHeader as string[])
-						: undefined,
+					allowedHeaders: r.AllowedHeader ? (r.AllowedHeader as string[]) : undefined,
+					exposeHeaders: r.ExposeHeader ? (r.ExposeHeader as string[]) : undefined,
 					id: r.ID ?? undefined,
 					maxAgeSeconds:
 						typeof r.MaxAgeSeconds !== "undefined" && r.MaxAgeSeconds !== null
@@ -1489,9 +1412,7 @@ export default class S3Client {
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,
-			options.bucket
-				? ensureValidBucketName(options.bucket)
-				: this.#options.bucket,
+			options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket,
 			"DELETE",
 			"" as ObjectKey,
 			"cors=", // "=" is needed by minio for some reason
@@ -1516,9 +1437,7 @@ export default class S3Client {
 	/**
 	 * Uses [`ListObjectsV2`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html) to iterate over all keys. Pagination and continuation is handled internally.
 	 */
-	async *listIterating(
-		options: ListObjectsIteratingOptions,
-	): AsyncGenerator<S3BucketEntry> {
+	async *listIterating(options: ListObjectsIteratingOptions): AsyncGenerator<S3BucketEntry> {
 		// only used to get smaller pages, so we can test this properly
 		const maxKeys = options?.internalPageSize ?? undefined;
 
@@ -1602,9 +1521,7 @@ export default class S3Client {
 		const response = await this[kSignedRequest](
 			ensureValidRegion(this.#options.region),
 			ensureValidEndpoint(this.#options.endpoint),
-			options.bucket
-				? ensureValidBucketName(options.bucket)
-				: this.#options.bucket,
+			options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket,
 			"GET",
 			"" as ObjectKey,
 			query,
@@ -1618,9 +1535,7 @@ export default class S3Client {
 		if (response.statusCode !== 200) {
 			// undici docs state that we should dump the body if not used
 			response.body.dump(); // dump's floating promise should not throw
-			throw new Error(
-				`Response code not implemented yet: ${response.statusCode}`,
-			);
+			throw new Error(`Response code not implemented yet: ${response.statusCode}`);
 		}
 
 		const text = await response.body.text();
@@ -1666,9 +1581,7 @@ export default class S3Client {
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,
-			options.bucket
-				? ensureValidBucketName(options.bucket)
-				: this.#options.bucket,
+			options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket,
 			"POST",
 			"" as ObjectKey,
 			"delete=", // "=" is needed by minio for some reason
@@ -1715,9 +1628,7 @@ export default class S3Client {
 
 		// undici docs state that we should dump the body if not used
 		response.body.dump(); // dump's floating promise should not throw
-		throw new Error(
-			`Response code not implemented yet: ${response.statusCode}`,
-		);
+		throw new Error(`Response code not implemented yet: ${response.statusCode}`);
 	}
 
 	/**
@@ -2014,10 +1925,7 @@ export default class S3Client {
 		});
 	}
 
-	[nodeUtil.inspect.custom](
-		_depth?: number,
-		options: nodeUtil.InspectOptions = {},
-	) {
+	[nodeUtil.inspect.custom](_depth?: number, options: nodeUtil.InspectOptions = {}) {
 		if (options.depth === null) {
 			options.depth = 2;
 		}

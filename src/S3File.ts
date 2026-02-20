@@ -42,10 +42,7 @@ export default class S3File {
 		if (typeof start === "number" && start < 0) {
 			throw new Error("Invalid slice `start`.");
 		}
-		if (
-			typeof end === "number" &&
-			(end < 0 || (typeof start === "number" && end < start))
-		) {
+		if (typeof end === "number" && (end < 0 || (typeof start === "number" && end < start))) {
 			throw new Error("Invalid slice `end`.");
 		}
 
@@ -97,8 +94,7 @@ export default class S3File {
 	 * @throws {Error} If the server returns an invalid response.
 	 */
 	async stat(options: S3StatOptions = {}): Promise<S3Stat> {
-		const [region, endpoint, bucket] =
-			this.#client[kGetEffectiveParams](options);
+		const [region, endpoint, bucket] = this.#client[kGetEffectiveParams](options);
 
 		const response = await this.#client[kSignedRequest](
 			region,
@@ -121,9 +117,7 @@ export default class S3File {
 		if (200 <= response.statusCode && response.statusCode < 300) {
 			const result = S3Stat.tryParseFromHeaders(response.headers);
 			if (!result) {
-				throw new Error(
-					"S3 server returned an invalid response for `HeadObject`",
-				);
+				throw new Error("S3 server returned an invalid response for `HeadObject`");
 			}
 			return result;
 		}
@@ -142,8 +136,7 @@ export default class S3File {
 	 * @remarks Uses [`HeadObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html).
 	 */
 	async exists(options: S3FileExistsOptions = {}): Promise<boolean> {
-		const [region, endpoint, bucket] =
-			this.#client[kGetEffectiveParams](options);
+		const [region, endpoint, bucket] = this.#client[kGetEffectiveParams](options);
 
 		const response = await this.#client[kSignedRequest](
 			region,
@@ -202,8 +195,7 @@ export default class S3File {
 	 * ```
 	 */
 	async delete(options: S3FileDeleteOptions = {}): Promise<void> {
-		const [region, endpoint, bucket] =
-			this.#client[kGetEffectiveParams](options);
+		const [region, endpoint, bucket] = this.#client[kGetEffectiveParams](options);
 
 		const response = await this.#client[kSignedRequest](
 			region,
@@ -237,9 +229,7 @@ export default class S3File {
 		return new Response(this.stream()).json();
 	}
 	bytes(): Promise<Uint8Array> {
-		return new Response(this.stream())
-			.arrayBuffer()
-			.then(ab => new Uint8Array(ab));
+		return new Response(this.stream()).arrayBuffer().then(ab => new Uint8Array(ab));
 	}
 	arrayBuffer(): Promise<ArrayBuffer> {
 		return new Response(this.stream()).arrayBuffer();
@@ -311,10 +301,7 @@ export default class S3File {
 	 * @param {S3FileWriteOptions} [options.type] Defaults to the Content-Type that was used to create the {@link S3File} instance.
 	 * @returns {Promise<void>}
 	 */
-	async write(
-		data: ByteSource,
-		options: S3FileWriteOptions = {},
-	): Promise<void> {
+	async write(data: ByteSource, options: S3FileWriteOptions = {}): Promise<void> {
 		// TODO: Support S3File as input and maybe use CopyObject
 		// TODO: Support Request and Response as input?
 		const [bytes, length, hash] = await this.#transformData(data);
@@ -335,17 +322,11 @@ export default class S3File {
 	 * @param destination The destination path.
 	 * @param options Options for the copy operation.
 	 */
-	async copyTo(
-		destination: string,
-		options: CopyObjectOptions = {},
-	): Promise<void> {
+	async copyTo(destination: string, options: CopyObjectOptions = {}): Promise<void> {
 		await this.#client.copyObject(this.#path, destination, options);
 	}
 
-	[nodeUtil.inspect.custom](
-		_depth?: number,
-		options: nodeUtil.InspectOptions = {},
-	) {
+	[nodeUtil.inspect.custom](_depth?: number, options: nodeUtil.InspectOptions = {}) {
 		if (options.depth === null) {
 			options.depth = 2;
 		}

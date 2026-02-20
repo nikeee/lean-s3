@@ -17,10 +17,7 @@ const entityMap = {
 } as const;
 
 const unescapeXml = (value: string): string =>
-	value.replace(
-		/&(quot|apos|lt|gt|amp);/g,
-		m => entityMap[m as keyof typeof entityMap] ?? m,
-	);
+	value.replace(/&(quot|apos|lt|gt|amp);/g, m => entityMap[m as keyof typeof entityMap] ?? m);
 
 export const parseXml = (input: string): XmlValue => {
 	const xmlContent = input.replace(/<\?xml[^?]*\?>\s*/, "");
@@ -52,7 +49,5 @@ export const parseXml = (input: string): XmlValue => {
 	}
 
 	// No child tags? — return the text, after entity decode
-	return Object.keys(result).length > 0
-		? result
-		: unescapeXml(xmlContent.trim());
+	return Object.keys(result).length > 0 ? result : unescapeXml(xmlContent.trim());
 };

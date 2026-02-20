@@ -144,9 +144,7 @@ export function runTests(
 						method: "GET",
 					});
 					const res = await fetch(url);
-					expect(res.headers.get("content-type")).toBe(
-						"application/octet-stream",
-					);
+					expect(res.headers.get("content-type")).toBe("application/octet-stream");
 				}
 			} finally {
 				await f.delete();
@@ -253,9 +251,7 @@ export function runTests(
 				// Refs:
 				// https://github.com/adobe/S3Mock/issues/2794
 				// https://developers.cloudflare.com/r2/api/s3/presigned-urls/#supported-http-methods
-				t.skip(
-					`S3 implementation "${implementation}" does not implement this feature`,
-				);
+				t.skip(`S3 implementation "${implementation}" does not implement this feature`);
 				return;
 			}
 
@@ -267,10 +263,7 @@ export function runTests(
 			});
 
 			const body = objectToFormData(fields);
-			body.append(
-				"file",
-				new Blob([JSON.stringify(testId)], { type: "application/json" }),
-			);
+			body.append("file", new Blob([JSON.stringify(testId)], { type: "application/json" }));
 
 			const res = await fetch(url, {
 				method: "POST",
@@ -297,9 +290,7 @@ export function runTests(
 				// Refs:
 				// https://github.com/adobe/S3Mock/issues/2794
 				// https://developers.cloudflare.com/r2/api/s3/presigned-urls/#supported-http-methods
-				t.skip(
-					`S3 implementation "${implementation}" does not implement this feature`,
-				);
+				t.skip(`S3 implementation "${implementation}" does not implement this feature`);
 				return;
 			}
 
@@ -339,9 +330,7 @@ export function runTests(
 				// Refs:
 				// https://github.com/adobe/S3Mock/issues/2794
 				// https://developers.cloudflare.com/r2/api/s3/presigned-urls/#supported-http-methods
-				t.skip(
-					`S3 implementation "${implementation}" does not implement this feature`,
-				);
+				t.skip(`S3 implementation "${implementation}" does not implement this feature`);
 				return;
 			}
 
@@ -379,9 +368,7 @@ export function runTests(
 				// Refs:
 				// https://github.com/adobe/S3Mock/issues/2794
 				// https://developers.cloudflare.com/r2/api/s3/presigned-urls/#supported-http-methods
-				t.skip(
-					`S3 implementation "${implementation}" does not implement this feature`,
-				);
+				t.skip(`S3 implementation "${implementation}" does not implement this feature`);
 				return;
 			}
 
@@ -395,10 +382,7 @@ export function runTests(
 
 			const body = objectToFormData(fields);
 			body.append("Content-Type", "application/json");
-			body.append(
-				"file",
-				new Blob([JSON.stringify(testId)], { type: "application/json" }),
-			);
+			body.append("file", new Blob([JSON.stringify(testId)], { type: "application/json" }));
 
 			const res = await fetch(url, {
 				method: "POST",
@@ -424,9 +408,7 @@ export function runTests(
 				// Refs:
 				// https://github.com/adobe/S3Mock/issues/2794
 				// https://developers.cloudflare.com/r2/api/s3/presigned-urls/#supported-http-methods
-				t.skip(
-					`S3 implementation "${implementation}" does not implement this feature`,
-				);
+				t.skip(`S3 implementation "${implementation}" does not implement this feature`);
 				return;
 			}
 
@@ -580,18 +562,10 @@ export function runTests(
 	test("listIterating", async () => {
 		const testId = crypto.randomUUID();
 		try {
-			await client
-				.file(`${runId}/${testId}/test-a-0.txt`)
-				.write(crypto.randomUUID());
-			await client
-				.file(`${runId}/${testId}/test-a-1.txt`)
-				.write(crypto.randomUUID());
-			await client
-				.file(`${runId}/${testId}/test-b-2.txt`)
-				.write(crypto.randomUUID());
-			await client
-				.file(`${runId}/${testId}/test-b-3.txt`)
-				.write(crypto.randomUUID());
+			await client.file(`${runId}/${testId}/test-a-0.txt`).write(crypto.randomUUID());
+			await client.file(`${runId}/${testId}/test-a-1.txt`).write(crypto.randomUUID());
+			await client.file(`${runId}/${testId}/test-b-2.txt`).write(crypto.randomUUID());
+			await client.file(`${runId}/${testId}/test-b-3.txt`).write(crypto.randomUUID());
 
 			const entries = [];
 			for await (const e of client.listIterating({
@@ -625,18 +599,10 @@ export function runTests(
 
 			const testId = crypto.randomUUID();
 			try {
-				await client
-					.file(`${runId}/${testId}/test-a-0.txt`)
-					.write(crypto.randomUUID());
-				await client
-					.file(`${runId}/${testId}/test-a-1.txt`)
-					.write(crypto.randomUUID());
-				await client
-					.file(`${runId}/${testId}/test-b-2.txt`)
-					.write(crypto.randomUUID());
-				await client
-					.file(`${runId}/${testId}/test-b-3.txt`)
-					.write(crypto.randomUUID());
+				await client.file(`${runId}/${testId}/test-a-0.txt`).write(crypto.randomUUID());
+				await client.file(`${runId}/${testId}/test-a-1.txt`).write(crypto.randomUUID());
+				await client.file(`${runId}/${testId}/test-b-2.txt`).write(crypto.randomUUID());
+				await client.file(`${runId}/${testId}/test-b-3.txt`).write(crypto.randomUUID());
 
 				const all = await client.list({ prefix: `${runId}/${testId}` });
 				expect(all.contents.length).toEqual(4);
@@ -890,18 +856,10 @@ export function runTests(
 	describe("deleteObjects", () => {
 		test("with .list entries", async () => {
 			const testId = crypto.randomUUID();
-			await client
-				.file(`${runId}/${testId}/test-a-0.txt`)
-				.write(crypto.randomUUID());
-			await client
-				.file(`${runId}/${testId}/test-a-1.txt`)
-				.write(crypto.randomUUID());
-			await client
-				.file(`${runId}/${testId}/test-b-2.txt`)
-				.write(crypto.randomUUID());
-			await client
-				.file(`${runId}/${testId}/test-b-3.txt`)
-				.write(crypto.randomUUID());
+			await client.file(`${runId}/${testId}/test-a-0.txt`).write(crypto.randomUUID());
+			await client.file(`${runId}/${testId}/test-a-1.txt`).write(crypto.randomUUID());
+			await client.file(`${runId}/${testId}/test-b-2.txt`).write(crypto.randomUUID());
+			await client.file(`${runId}/${testId}/test-b-3.txt`).write(crypto.randomUUID());
 
 			const res0 = await client.list({ prefix: `${runId}/${testId}` });
 			expect(res0.contents.length).toBe(4);
@@ -913,18 +871,10 @@ export function runTests(
 		});
 		test("with strings", async t => {
 			const testId = crypto.randomUUID();
-			await client
-				.file(`${runId}/${testId}/test-a-0.txt`)
-				.write(crypto.randomUUID());
-			await client
-				.file(`${runId}/${testId}/test-a-1.txt`)
-				.write(crypto.randomUUID());
-			await client
-				.file(`${runId}/${testId}/test-b-2.txt`)
-				.write(crypto.randomUUID());
-			await client
-				.file(`${runId}/${testId}/test-b-3.txt`)
-				.write(crypto.randomUUID());
+			await client.file(`${runId}/${testId}/test-a-0.txt`).write(crypto.randomUUID());
+			await client.file(`${runId}/${testId}/test-a-1.txt`).write(crypto.randomUUID());
+			await client.file(`${runId}/${testId}/test-b-2.txt`).write(crypto.randomUUID());
+			await client.file(`${runId}/${testId}/test-b-3.txt`).write(crypto.randomUUID());
 
 			const res0 = await client.list({ prefix: `${runId}/${testId}` });
 			expect(res0.contents.length).toBe(4);
@@ -944,9 +894,7 @@ export function runTests(
 	describe("deleteObject", () => {
 		test("deleteObject works", async () => {
 			const testId = crypto.randomUUID();
-			await client
-				.file(`${runId}/${testId}/test-a-0.txt`)
-				.write(crypto.randomUUID());
+			await client.file(`${runId}/${testId}/test-a-0.txt`).write(crypto.randomUUID());
 
 			const res0 = await client.list({ prefix: `${runId}/${testId}` });
 			expect(res0.contents.length).toBe(1);
@@ -1033,13 +981,9 @@ export function runTests(
 				expect(await f.exists()).toBe(true);
 
 				// ensure a new instance works as well
-				expect(
-					await client.file(`${runId}/${testId}/test-a-0.txt`).exists(),
-				).toBe(true);
+				expect(await client.file(`${runId}/${testId}/test-a-0.txt`).exists()).toBe(true);
 
-				const notExistentFile = client.file(
-					`${runId}/${testId}/not-existent.txt`,
-				);
+				const notExistentFile = client.file(`${runId}/${testId}/not-existent.txt`);
 				expect(await notExistentFile.exists()).toBe(false);
 			} finally {
 				await f.delete();
@@ -1063,9 +1007,7 @@ export function runTests(
 				expect(stat.type).toBe("application/octet-stream");
 
 				// ensure a new instance works as well
-				const stat2 = await client
-					.file(`${runId}/${testId}/test-a-0.txt`)
-					.stat();
+				const stat2 = await client.file(`${runId}/${testId}/test-a-0.txt`).stat();
 				expect(stat2).not.toBeNull();
 				expect(stat2).not.toBeUndefined();
 				expect(stat2).toBeInstanceOf(S3Stat);
@@ -1296,9 +1238,7 @@ export function runTests(
 			) {
 				// Minio doesn't support PutBucketCors
 				// https://github.com/minio/minio/issues/15874#issuecomment-1279771751
-				t.skip(
-					`S3 implementation "${implementation}" does not implement this feature`,
-				);
+				t.skip(`S3 implementation "${implementation}" does not implement this feature`);
 				return;
 			}
 

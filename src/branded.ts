@@ -44,18 +44,12 @@ export function ensureValidAccessKeyId(accessKeyId: string): AccessKeyId {
 	return accessKeyId as AccessKeyId;
 }
 
-export function ensureValidSecretAccessKey(
-	secretAccessKey: string,
-): SecretAccessKey {
+export function ensureValidSecretAccessKey(secretAccessKey: string): SecretAccessKey {
 	if (typeof secretAccessKey !== "string") {
-		throw new TypeError(
-			"`SecretAccessKey` is required and must be a `string`.",
-		);
+		throw new TypeError("`SecretAccessKey` is required and must be a `string`.");
 	}
 	if (secretAccessKey.length < 1) {
-		throw new RangeError(
-			"`SecretAccessKey` must be at least 1 character long.",
-		);
+		throw new RangeError("`SecretAccessKey` must be at least 1 character long.");
 	}
 	return secretAccessKey as SecretAccessKey;
 }

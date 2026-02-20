@@ -1,24 +1,24 @@
 {
-    "typescript.experimental.useTsgo": false,
-    "explorer.fileNesting.enabled": true,
-    "explorer.fileNesting.patterns": {
-        "tsconfig.json": "tsconfig.*.json",
-        "package.json": "package-lock.json, .npmrc",
-        "*.js": "$(capture).test.js, $(capture).d.ts",
-        "*.ts": "$(capture).test.ts",
-        "*.c": "$(capture).h"
-    },
-    "editor.formatOnSaveMode": "modificationsIfAvailable",
-    "[javascript]": {
-        "editor.defaultFormatter": "biomejs.biome"
-    },
-    "[typescript]": {
-        "editor.defaultFormatter": "biomejs.biome"
-    },
-    "files.associations": {
-        "node_api.h": "c",
-        "hmac.h": "c",
-        "assert.h": "c",
-        "string.h": "c"
-    }
+  "typescript.experimental.useTsgo": false,
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "tsconfig.json": "tsconfig.*.json",
+    "package.json": "package-lock.json, .npmrc",
+    "*.js": "$(capture).test.js, $(capture).d.ts",
+    "*.ts": "$(capture).test.ts",
+    "*.c": "$(capture).h"
+  },
+  "editor.formatOnSaveMode": "modificationsIfAvailable",
+  "[javascript]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "files.associations": {
+    "node_api.h": "c",
+    "hmac.h": "c",
+    "assert.h": "c",
+    "string.h": "c"
+  }
 }

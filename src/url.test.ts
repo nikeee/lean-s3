@@ -13,9 +13,7 @@ describe("buildRequestUrl", () => {
 				"us-west-1" as Region,
 				"object.json" as ObjectKey,
 			),
-		).toStrictEqual(
-			new URL("https://mybucket.s3.us-west-1.amazonaws.com/object.json"),
-		);
+		).toStrictEqual(new URL("https://mybucket.s3.us-west-1.amazonaws.com/object.json"));
 
 		expect(
 			buildRequestUrl(
@@ -24,9 +22,7 @@ describe("buildRequestUrl", () => {
 				"us-west-1" as Region,
 				"/object.json" as ObjectKey,
 			),
-		).toStrictEqual(
-			new URL("https://mybucket.s3.us-west-1.amazonaws.com/object.json"),
-		);
+		).toStrictEqual(new URL("https://mybucket.s3.us-west-1.amazonaws.com/object.json"));
 
 		expect(
 			buildRequestUrl(
@@ -35,9 +31,7 @@ describe("buildRequestUrl", () => {
 				"us-west-1" as Region,
 				"/object.json" as ObjectKey,
 			),
-		).toStrictEqual(
-			new URL("https://mybucket.s3.us-west-1.amazonaws.com/object.json"),
-		);
+		).toStrictEqual(new URL("https://mybucket.s3.us-west-1.amazonaws.com/object.json"));
 
 		expect(
 			buildRequestUrl(
@@ -46,9 +40,7 @@ describe("buildRequestUrl", () => {
 				"us-west-1" as Region,
 				"/object.json" as ObjectKey,
 			),
-		).toStrictEqual(
-			new URL("https://mybucket.s3.us-west-1.amazonaws.com/object.json"),
-		);
+		).toStrictEqual(new URL("https://mybucket.s3.us-west-1.amazonaws.com/object.json"));
 
 		expect(
 			buildRequestUrl(
@@ -57,9 +49,7 @@ describe("buildRequestUrl", () => {
 				"eu-west-1" as Region,
 				"object.json" as ObjectKey,
 			),
-		).toStrictEqual(
-			new URL("https://mybucket.s3.eu-west-1.amazonaws.com/object.json"),
-		);
+		).toStrictEqual(new URL("https://mybucket.s3.eu-west-1.amazonaws.com/object.json"));
 	});
 
 	test("r2", () => {
@@ -71,9 +61,7 @@ describe("buildRequestUrl", () => {
 				"object.json" as ObjectKey,
 			),
 		).toStrictEqual(
-			new URL(
-				"https://my-account-id.r2.cloudflarestorage.com/mybucket/object.json",
-			),
+			new URL("https://my-account-id.r2.cloudflarestorage.com/mybucket/object.json"),
 		);
 
 		expect(
@@ -84,9 +72,7 @@ describe("buildRequestUrl", () => {
 				"object.json" as ObjectKey,
 			),
 		).toStrictEqual(
-			new URL(
-				"https://my-account-id.r2.cloudflarestorage.com/mybucket/object.json",
-			),
+			new URL("https://my-account-id.r2.cloudflarestorage.com/mybucket/object.json"),
 		);
 
 		expect(
@@ -97,9 +83,7 @@ describe("buildRequestUrl", () => {
 				"object.json" as ObjectKey,
 			),
 		).toStrictEqual(
-			new URL(
-				"https://my-account-id.eu.r2.cloudflarestorage.com/mybucket/object.json",
-			),
+			new URL("https://my-account-id.eu.r2.cloudflarestorage.com/mybucket/object.json"),
 		);
 
 		expect(
@@ -110,9 +94,7 @@ describe("buildRequestUrl", () => {
 				"object.json" as ObjectKey,
 			),
 		).toStrictEqual(
-			new URL(
-				"https://mybucket.my-account-id.r2.cloudflarestorage.com/object.json",
-			),
+			new URL("https://mybucket.my-account-id.r2.cloudflarestorage.com/object.json"),
 		);
 	});
 
@@ -124,9 +106,7 @@ describe("buildRequestUrl", () => {
 				"auto" as Region,
 				"object.json" as ObjectKey,
 			),
-		).toStrictEqual(
-			new URL("https://fsn1.your-objectstorage.com/mybucket/object.json"),
-		);
+		).toStrictEqual(new URL("https://fsn1.your-objectstorage.com/mybucket/object.json"));
 	});
 
 	test("weird key", () => {
@@ -153,9 +133,7 @@ describe("buildRequestUrl", () => {
 				"weird/key/with/slashes" as ObjectKey,
 			),
 		).toStrictEqual(
-			new URL(
-				"https://mybucket.s3.us-west-1.amazonaws.com/weird/key/with/slashes",
-			),
+			new URL("https://mybucket.s3.us-west-1.amazonaws.com/weird/key/with/slashes"),
 		);
 		expect(
 			buildRequestUrl(

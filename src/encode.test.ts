@@ -28,18 +28,14 @@ describe("encoding", () => {
 				type: "attachment",
 				filename: "füße.txt",
 			}),
-		).toBe(
-			`attachment;filename="f%C3%BC%C3%9Fe.txt";filename*=UTF-8''f%C3%BC%C3%9Fe.txt`,
-		);
+		).toBe(`attachment;filename="f%C3%BC%C3%9Fe.txt";filename*=UTF-8''f%C3%BC%C3%9Fe.txt`);
 
 		expect(
 			encode({
 				type: "attachment",
 				filename: "résumé.pdf",
 			}),
-		).toBe(
-			`attachment;filename="r%C3%A9sum%C3%A9.pdf";filename*=UTF-8''r%C3%A9sum%C3%A9.pdf`,
-		);
+		).toBe(`attachment;filename="r%C3%A9sum%C3%A9.pdf";filename*=UTF-8''r%C3%A9sum%C3%A9.pdf`);
 
 		expect(
 			encode({
@@ -55,9 +51,7 @@ describe("encoding", () => {
 				type: "attachment",
 				filename: "a b c.txt",
 			}),
-		).toBe(
-			`attachment;filename="a%20b%20c.txt";filename*=UTF-8''a%20b%20c.txt`,
-		);
+		).toBe(`attachment;filename="a%20b%20c.txt";filename*=UTF-8''a%20b%20c.txt`);
 
 		expect(
 			encode({

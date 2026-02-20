@@ -9,11 +9,7 @@ export default class S3Error extends Error {
 	constructor(
 		code: string,
 		path: string,
-		{
-			message = undefined,
-			cause = undefined,
-			status = undefined,
-		}: S3ErrorOptions = {},
+		{ message = undefined, cause = undefined, status = undefined }: S3ErrorOptions = {},
 	) {
 		super(message, { cause });
 		this.code = code;

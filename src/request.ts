@@ -1,10 +1,5 @@
 import type { AmzDate } from "./AmzDate.ts";
-import type {
-	AccessKeyId,
-	ObjectKey,
-	Region,
-	SecretAccessKey,
-} from "./branded.ts";
+import type { AccessKeyId, ObjectKey, Region, SecretAccessKey } from "./branded.ts";
 import type { HttpMethod } from "./index.ts";
 import type KeyCache from "./KeyCache.ts";
 
@@ -30,19 +25,9 @@ export function getAuthorizationHeader(
 		contentHashStr,
 	);
 
-	const signingKey = keyCache.computeIfAbsent(
-		date,
-		region,
-		accessKeyId,
-		secretAccessKey,
-	);
+	const signingKey = keyCache.computeIfAbsent(date, region, accessKeyId, secretAccessKey);
 
-	const signature = sign.signCanonicalDataHash(
-		signingKey,
-		dataDigest,
-		date,
-		region,
-	);
+	const signature = sign.signCanonicalDataHash(signingKey, dataDigest, date, region);
 
 	// no encodeURIComponent because because we assume that all headers don't need escaping
 	const signedHeadersSpec = Object.keys(sortedSignedHeaders).join(";");

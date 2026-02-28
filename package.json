@@ -44,20 +44,20 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "fast-xml-parser": "^5.3.7",
+    "fast-xml-parser": "^5.4.1",
     "undici": "^7.22.0"
   },
   "devDependencies": {
     "@testcontainers/localstack": "^11.12.0",
     "@testcontainers/minio": "^11.12.0",
     "@testcontainers/s3mock": "^11.12.0",
-    "@types/node": "^25.3.0",
-    "@typescript/native-preview": "^7.0.0-dev.20260220.1",
+    "@types/node": "^25.3.2",
+    "@typescript/native-preview": "^7.0.0-dev.20260228.1",
     "expect": "^30.2.0",
     "lefthook": "^2.1.1",
     "oxfmt": "^0.35.0",
-    "oxlint": "^1.49.0",
-    "oxlint-tsgolint": "^0.14.2",
+    "oxlint": "^1.50.0",
+    "oxlint-tsgolint": "^0.15.0",
     "testcontainers": "^11.12.0",
     "tsdown": "^0.20.3",
     "tsx": "^4.21.0",

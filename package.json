@@ -57,7 +57,7 @@
     "lefthook": "^2.1.1",
     "oxfmt": "^0.36.0",
     "oxlint": "^1.50.0",
-    "oxlint-tsgolint": "^0.16.0",
+    "oxlint-tsgolint": "^0.17.0",
     "testcontainers": "^11.12.0",
     "tsdown": "^0.21.1",
     "tsx": "^4.21.0",

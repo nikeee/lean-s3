@@ -55,7 +55,7 @@
     "@typescript/native-preview": "^7.0.0-dev.20260322.1",
     "expect": "^30.3.0",
     "lefthook": "^2.1.4",
-    "oxfmt": "^0.41.0",
+    "oxfmt": "^0.42.0",
     "oxlint": "^1.56.0",
     "oxlint-tsgolint": "^0.18.1",
     "testcontainers": "^11.13.0",

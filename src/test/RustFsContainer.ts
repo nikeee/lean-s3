@@ -24,12 +24,7 @@ export class RustFsContainer extends GenericContainer {
 
 	override async start(): Promise<StartedRustFsContainer> {
 		const startedContainer = await super.start();
-		return new StartedRustFsContainer(
-			startedContainer,
-			ACCESS_KEY_ID,
-			SECRET_ACCESS_KEY,
-			S3_PORT,
-		);
+		return new StartedRustFsContainer(startedContainer, ACCESS_KEY_ID, SECRET_ACCESS_KEY, S3_PORT);
 	}
 }
 

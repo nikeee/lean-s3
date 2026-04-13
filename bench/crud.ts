@@ -158,9 +158,7 @@ const clients: ClientWrapper[] = [
 			return await res.Body?.transformToByteArray()!;
 		},
 		list: async (bucket, prefix) => {
-			const r = await awsS3.send(
-				new ListObjectsV2Command({ Bucket: bucket, Prefix: prefix }),
-			);
+			const r = await awsS3.send(new ListObjectsV2Command({ Bucket: bucket, Prefix: prefix }));
 			// oxlint-disable-next-line typescript-eslint(no-non-null-asserted-optional-chain): :shrug:
 			return r.KeyCount!;
 		},

@@ -32,9 +32,7 @@ export class CephContainer extends GenericContainer {
 			.withWaitStrategy(
 				Wait.forAll([
 					Wait.forLogMessage("Dashboard API is working"),
-					Wait.forHttp("/", RGW_PORT)
-						.withHeaders({ host: "127.0.0.1" })
-						.forStatusCode(200),
+					Wait.forHttp("/", RGW_PORT).withHeaders({ host: "127.0.0.1" }).forStatusCode(200),
 				]),
 			);
 	}

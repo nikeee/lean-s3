@@ -42,9 +42,7 @@ void describe("encoding", () => {
 				type: "attachment",
 				filename: "你好.txt",
 			}),
-		).toBe(
-			`attachment;filename="%E4%BD%A0%E5%A5%BD.txt";filename*=UTF-8''%E4%BD%A0%E5%A5%BD.txt`,
-		);
+		).toBe(`attachment;filename="%E4%BD%A0%E5%A5%BD.txt";filename*=UTF-8''%E4%BD%A0%E5%A5%BD.txt`);
 
 		expect(
 			encode({
@@ -58,8 +56,6 @@ void describe("encoding", () => {
 				type: "attachment",
 				filename: "emoji-💾.zip",
 			}),
-		).toBe(
-			`attachment;filename="emoji-%F0%9F%92%BE.zip";filename*=UTF-8''emoji-%F0%9F%92%BE.zip`,
-		);
+		).toBe(`attachment;filename="emoji-%F0%9F%92%BE.zip";filename*=UTF-8''emoji-%F0%9F%92%BE.zip`);
 	});
 });

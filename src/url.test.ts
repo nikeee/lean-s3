@@ -60,9 +60,7 @@ void describe("buildRequestUrl", () => {
 				"auto" as Region,
 				"object.json" as ObjectKey,
 			),
-		).toStrictEqual(
-			new URL("https://my-account-id.r2.cloudflarestorage.com/mybucket/object.json"),
-		);
+		).toStrictEqual(new URL("https://my-account-id.r2.cloudflarestorage.com/mybucket/object.json"));
 
 		expect(
 			buildRequestUrl(
@@ -71,9 +69,7 @@ void describe("buildRequestUrl", () => {
 				"auto" as Region,
 				"object.json" as ObjectKey,
 			),
-		).toStrictEqual(
-			new URL("https://my-account-id.r2.cloudflarestorage.com/mybucket/object.json"),
-		);
+		).toStrictEqual(new URL("https://my-account-id.r2.cloudflarestorage.com/mybucket/object.json"));
 
 		expect(
 			buildRequestUrl(
@@ -93,9 +89,7 @@ void describe("buildRequestUrl", () => {
 				"auto" as Region,
 				"object.json" as ObjectKey,
 			),
-		).toStrictEqual(
-			new URL("https://mybucket.my-account-id.r2.cloudflarestorage.com/object.json"),
-		);
+		).toStrictEqual(new URL("https://mybucket.my-account-id.r2.cloudflarestorage.com/object.json"));
 	});
 
 	void test("hetzner", () => {
@@ -132,9 +126,7 @@ void describe("buildRequestUrl", () => {
 				"us-west-1" as Region,
 				"weird/key/with/slashes" as ObjectKey,
 			),
-		).toStrictEqual(
-			new URL("https://mybucket.s3.us-west-1.amazonaws.com/weird/key/with/slashes"),
-		);
+		).toStrictEqual(new URL("https://mybucket.s3.us-west-1.amazonaws.com/weird/key/with/slashes"));
 		expect(
 			buildRequestUrl(
 				"https://{bucket}.s3.{region}.amazonaws.com" as Endpoint,

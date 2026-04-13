@@ -95,12 +95,7 @@ void describe("signCanonicalDataHash", () => {
 		};
 
 		const singingKey = sign.deriveSigningKey(amzDate.date, "auto", "sample-secret-key");
-		const signature = sign.signCanonicalDataHash(
-			singingKey,
-			canonicalDataHash,
-			amzDate,
-			"auto",
-		);
+		const signature = sign.signCanonicalDataHash(singingKey, canonicalDataHash, amzDate, "auto");
 		expect(signature).toStrictEqual(ref.searchParams.get("X-Amz-Signature"));
 	});
 
@@ -134,12 +129,7 @@ void describe("signCanonicalDataHash", () => {
 		};
 
 		const singingKey = sign.deriveSigningKey(amzDate.date, "auto", "sample-secret-key");
-		const signature = sign.signCanonicalDataHash(
-			singingKey,
-			canonicalDataHash,
-			amzDate,
-			"auto",
-		);
+		const signature = sign.signCanonicalDataHash(singingKey, canonicalDataHash, amzDate, "auto");
 		expect(signature).toStrictEqual(ref.searchParams.get("X-Amz-Signature"));
 	});
 	void test("ref by native", () => {
@@ -158,12 +148,7 @@ void describe("signCanonicalDataHash", () => {
 		};
 
 		const singingKey = sign.deriveSigningKey(amzDate.date, "auto", "sample-secret-key");
-		const signature = sign.signCanonicalDataHash(
-			singingKey,
-			canonicalDataHash,
-			amzDate,
-			"auto",
-		);
+		const signature = sign.signCanonicalDataHash(singingKey, canonicalDataHash, amzDate, "auto");
 		expect(signature).toStrictEqual(ref.searchParams.get("x-amz-signature"));
 	});
 });
@@ -193,8 +178,7 @@ void describe("createCanonicalData", () => {
 			"content-length": "17",
 			"content-type": "application/octet-stream",
 			host: "lol.localhost:1337",
-			"x-amz-content-sha256":
-				"93a23971a914e5eacbf0a8d25154cda309c3c1c72fbb9914d47c60f3cb681588",
+			"x-amz-content-sha256": "93a23971a914e5eacbf0a8d25154cda309c3c1c72fbb9914d47c60f3cb681588",
 			"x-amz-date": "20250408T200640Z",
 			"x-amz-user-agent": "aws-sdk-js/3.782.0",
 		};

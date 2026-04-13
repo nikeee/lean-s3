@@ -13,9 +13,7 @@ export function getAmzDate(dateTime: Date): AmzDate {
 		pad2(dateTime.getUTCDate());
 
 	const time =
-		pad2(dateTime.getUTCHours()) +
-		pad2(dateTime.getUTCMinutes()) +
-		pad2(dateTime.getUTCSeconds()); // it seems that we dont support milliseconds
+		pad2(dateTime.getUTCHours()) + pad2(dateTime.getUTCMinutes()) + pad2(dateTime.getUTCSeconds()); // it seems that we dont support milliseconds
 
 	return {
 		numericDayStart: (dateTime.getTime() / ONE_DAY) | 0,

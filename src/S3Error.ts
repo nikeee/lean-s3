@@ -6,11 +6,7 @@ export default class S3Error extends Error {
 	/** The HTTP status code. */
 	readonly status: number | undefined;
 
-	constructor(
-		code: string,
-		path: string,
-		{ message = undefined, cause = undefined, status = undefined }: S3ErrorOptions = {},
-	) {
+	constructor(code: string, path: string, { message, cause, status }: S3ErrorOptions = {}) {
 		super(message, { cause });
 		this.code = code;
 		this.path = path;

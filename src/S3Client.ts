@@ -569,13 +569,7 @@ export default class S3Client {
 	 */
 	file(path: string, options: CreateFileInstanceOptions = {}): S3File {
 		// TODO: Check max path length in bytes
-		return new S3File(
-			this,
-			ensureValidPath(path),
-			undefined,
-			undefined,
-			options.type ?? undefined,
-		);
+		return new S3File(this, ensureValidPath(path), undefined, undefined, options.type ?? undefined);
 	}
 
 	/**
@@ -1290,11 +1284,7 @@ export default class S3Client {
 			options?.signal,
 		);
 
-		if (
-			response.statusCode !== 404 &&
-			400 <= response.statusCode &&
-			response.statusCode < 500
-		) {
+		if (response.statusCode !== 404 && 400 <= response.statusCode && response.statusCode < 500) {
 			throw await getResponseError(response, "");
 		}
 
@@ -1709,7 +1699,7 @@ export default class S3Client {
 		contentHash: Buffer | undefined,
 		rageStart: number | undefined,
 		rangeEndExclusive: number | undefined,
-		signal: AbortSignal | undefined = undefined,
+		signal?: AbortSignal,
 	): Promise<void> {
 		const bucket = this.#options.bucket;
 		const endpoint = this.#options.endpoint;
@@ -1862,8 +1852,7 @@ export default class S3Client {
 						if (!expectPartialResponse) {
 							return controller.error(
 								new S3Error("Unknown", path, {
-									message:
-										"Received partial response but expected a full response.",
+									message: "Received partial response but expected a full response.",
 								}),
 							);
 						}

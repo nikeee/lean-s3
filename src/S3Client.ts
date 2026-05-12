@@ -1697,7 +1697,7 @@ export default class S3Client {
 		contentType: string,
 		contentLength: number | undefined,
 		contentHash: Buffer | undefined,
-		rageStart: number | undefined,
+		rangeStart: number | undefined,
 		rangeEndExclusive: number | undefined,
 		signal?: AbortSignal,
 	): Promise<void> {
@@ -1717,7 +1717,7 @@ export default class S3Client {
 			"content-length": contentLength?.toString() ?? undefined,
 			"content-type": contentType,
 			host: url.host,
-			range: getRangeHeader(rageStart, rangeEndExclusive),
+			range: getRangeHeader(rangeStart, rangeEndExclusive),
 			"x-amz-content-sha256": contentHashStr,
 			"x-amz-date": now.dateTime,
 		});
@@ -1771,7 +1771,7 @@ export default class S3Client {
 	[kStream](
 		path: ObjectKey,
 		contentHash: Buffer | undefined,
-		rageStart: number | undefined,
+		rangeStart: number | undefined,
 		rangeEndExclusive: number | undefined,
 	): ReadableStream<Uint8Array> {
 		const bucket = this.#options.bucket;
@@ -1780,7 +1780,7 @@ export default class S3Client {
 		const now = amzDate.now();
 		const url = buildRequestUrl(endpoint, bucket, region, path);
 
-		const range = getRangeHeader(rageStart, rangeEndExclusive);
+		const range = getRangeHeader(rangeStart, rangeEndExclusive);
 
 		const contentHashStr = contentHash?.toString("hex") ?? sign.unsignedPayload;
 

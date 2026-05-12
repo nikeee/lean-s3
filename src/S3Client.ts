@@ -1764,8 +1764,6 @@ export default class S3Client {
 		throw await getResponseError(response, path);
 	}
 
-	// TODO: Support abortSignal
-
 	/**
 	 * @internal
 	 */
@@ -1774,6 +1772,7 @@ export default class S3Client {
 		contentHash: Buffer | undefined,
 		rangeStart: number | undefined,
 		rangeEndExclusive: number | undefined,
+		signal?: AbortSignal,
 	): ReadableStream<Uint8Array> {
 		const bucket = this.#options.bucket;
 		const endpoint = this.#options.endpoint;
@@ -1810,7 +1809,7 @@ export default class S3Client {
 
 				request(url, {
 					method: "GET",
-					signal: ac.signal,
+					signal: signal ? AbortSignal.any([signal, ac.signal]) : ac.signal,
 					dispatcher: this.#dispatcher,
 					headers: {
 						...headersToBeSigned,

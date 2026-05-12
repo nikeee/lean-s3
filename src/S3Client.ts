@@ -1756,7 +1756,8 @@ export default class S3Client {
 
 		const status = response.statusCode;
 		if (200 <= status && status < 300) {
-			// everything seemed to work, no need to process response body
+			// undici docs state that we should dump the body if not used
+			void response.body.dump(); // dump's floating promise should not throw
 			return;
 		}
 

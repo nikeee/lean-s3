@@ -145,4 +145,170 @@ void describe("cancellation", () => {
 			// no assertion needed, just verify no hang/unhandled rejection
 		});
 	});
+
+	void describe("client methods, pre-aborted signal", () => {
+		void test("copyObject rejects", async () => {
+			const ac = new AbortController();
+			ac.abort();
+			await expect(makeClient().copyObject("src", "dst", { signal: ac.signal })).rejects.toThrow();
+		});
+
+		void test("deleteObjects rejects", async () => {
+			const ac = new AbortController();
+			ac.abort();
+			await expect(makeClient().deleteObjects(["a", "b"], { signal: ac.signal })).rejects.toThrow();
+		});
+
+		void test("createMultipartUpload rejects", async () => {
+			const ac = new AbortController();
+			ac.abort();
+			await expect(
+				makeClient().createMultipartUpload("k", { signal: ac.signal }),
+			).rejects.toThrow();
+		});
+
+		void test("listMultipartUploads rejects", async () => {
+			const ac = new AbortController();
+			ac.abort();
+			await expect(makeClient().listMultipartUploads({ signal: ac.signal })).rejects.toThrow();
+		});
+
+		void test("abortMultipartUpload rejects", async () => {
+			const ac = new AbortController();
+			ac.abort();
+			await expect(
+				makeClient().abortMultipartUpload("k", "upload-id", { signal: ac.signal }),
+			).rejects.toThrow();
+		});
+
+		void test("completeMultipartUpload rejects", async () => {
+			const ac = new AbortController();
+			ac.abort();
+			await expect(
+				makeClient().completeMultipartUpload("k", "upload-id", [{ partNumber: 1, etag: "etag" }], {
+					signal: ac.signal,
+				}),
+			).rejects.toThrow();
+		});
+
+		void test("uploadPart rejects", async () => {
+			const ac = new AbortController();
+			ac.abort();
+			await expect(
+				makeClient().uploadPart("k", "upload-id", "data", 1, { signal: ac.signal }),
+			).rejects.toThrow();
+		});
+
+		void test("listParts rejects", async () => {
+			const ac = new AbortController();
+			ac.abort();
+			await expect(
+				makeClient().listParts("k", "upload-id", { signal: ac.signal }),
+			).rejects.toThrow();
+		});
+
+		void test("createBucket rejects", async () => {
+			const ac = new AbortController();
+			ac.abort();
+			await expect(
+				makeClient().createBucket("new-bucket", { signal: ac.signal }),
+			).rejects.toThrow();
+		});
+
+		void test("deleteBucket rejects", async () => {
+			const ac = new AbortController();
+			ac.abort();
+			await expect(
+				makeClient().deleteBucket("new-bucket", { signal: ac.signal }),
+			).rejects.toThrow();
+		});
+
+		void test("bucketExists rejects", async () => {
+			const ac = new AbortController();
+			ac.abort();
+			await expect(
+				makeClient().bucketExists("new-bucket", { signal: ac.signal }),
+			).rejects.toThrow();
+		});
+
+		void test("putBucketCors rejects", async () => {
+			const ac = new AbortController();
+			ac.abort();
+			await expect(
+				makeClient().putBucketCors([{ allowedMethods: ["GET"], allowedOrigins: ["*"] }], {
+					signal: ac.signal,
+				}),
+			).rejects.toThrow();
+		});
+
+		void test("getBucketCors rejects", async () => {
+			const ac = new AbortController();
+			ac.abort();
+			await expect(makeClient().getBucketCors({ signal: ac.signal })).rejects.toThrow();
+		});
+
+		void test("deleteBucketCors rejects", async () => {
+			const ac = new AbortController();
+			ac.abort();
+			await expect(makeClient().deleteBucketCors({ signal: ac.signal })).rejects.toThrow();
+		});
+
+		void test("listIterating rejects on first iteration", async () => {
+			const ac = new AbortController();
+			ac.abort();
+			const iter = makeClient().listIterating({ signal: ac.signal });
+			await expect(iter.next()).rejects.toThrow();
+		});
+
+		void test("S3File.copyTo rejects", async () => {
+			const ac = new AbortController();
+			ac.abort();
+			await expect(makeClient().file("src").copyTo("dst", { signal: ac.signal })).rejects.toThrow();
+		});
+	});
+
+	void describe("client methods, in-flight abort", () => {
+		void test("copyObject rejects when aborted during request", async () => {
+			const ac = new AbortController();
+			const promise = makeClient().copyObject("src", "dst", { signal: ac.signal });
+			await delay(25);
+			ac.abort();
+			await expect(promise).rejects.toThrow();
+		});
+
+		void test("listMultipartUploads rejects when aborted during request", async () => {
+			const ac = new AbortController();
+			const promise = makeClient().listMultipartUploads({ signal: ac.signal });
+			await delay(25);
+			ac.abort();
+			await expect(promise).rejects.toThrow();
+		});
+
+		void test("uploadPart rejects when aborted during request", async () => {
+			const ac = new AbortController();
+			const promise = makeClient().uploadPart("k", "upload-id", "data", 1, {
+				signal: ac.signal,
+			});
+			await delay(25);
+			ac.abort();
+			await expect(promise).rejects.toThrow();
+		});
+
+		void test("bucketExists rejects when aborted during request", async () => {
+			const ac = new AbortController();
+			const promise = makeClient().bucketExists("name", { signal: ac.signal });
+			await delay(25);
+			ac.abort();
+			await expect(promise).rejects.toThrow();
+		});
+
+		void test("listIterating rejects when aborted during first page", async () => {
+			const ac = new AbortController();
+			const iter = makeClient().listIterating({ signal: ac.signal });
+			const promise = iter.next();
+			await delay(25);
+			ac.abort();
+			await expect(promise).rejects.toThrow();
+		});
+	});
 });

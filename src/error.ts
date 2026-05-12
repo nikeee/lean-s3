@@ -34,10 +34,12 @@ export function fromStatusCode(code: number, path: string): S3Error | undefined 
 		case 404:
 			return new S3Error("NoSuchKey", path, {
 				message: "The specified key does not exist.",
+				status: code,
 			});
 		case 403:
 			return new S3Error("AccessDenied", path, {
 				message: "Access denied to the key.",
+				status: code,
 			});
 		// TODO: Add more status codes as needed
 		default:

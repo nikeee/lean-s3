@@ -7,6 +7,30 @@ import { expect } from "expect";
 
 import { S3Client, S3Error, S3Stat } from "../index.ts";
 
+async function expectS3Error(
+	promise: Promise<unknown>,
+	code: string,
+	path: string,
+	status: number,
+	name: unknown = expect.any(String),
+	message: unknown = expect.any(String),
+) {
+	let error: unknown;
+	try {
+		await promise;
+	} catch (e) {
+		error = e;
+	}
+
+	expect(error).toBeInstanceOf(S3Error);
+	const s3Error = error as S3Error;
+	expect(s3Error.code).toBe(code);
+	expect(s3Error.path).toBe(path);
+	expect(s3Error.status).toBe(status);
+	expect(s3Error.name).toEqual(name ?? expect.any(String));
+	expect(s3Error.message).toEqual(message ?? expect.any(String));
+}
+
 export type S3Implementation =
 	| "aws"
 	| "hetzner"
@@ -546,14 +570,7 @@ export function runTests(
 			await f.write(testId);
 			try {
 				const slicedFile = f.slice(10000);
-				await expect(async () => await slicedFile.text()).rejects.toThrow(
-					expect.objectContaining({
-						// oxlint-disable-next-line typescript-eslint(no-misused-spread)
-						...new S3Error("InvalidRange", path, { status: 416 }),
-						name: expect.any(String),
-						message: expect.any(String),
-					}),
-				);
+				await expectS3Error(slicedFile.text(), "InvalidRange", path, 416);
 			} finally {
 				await f.delete();
 			}
@@ -1025,14 +1042,7 @@ export function runTests(
 			const testId = crypto.randomUUID();
 
 			const f = client.file(`${runId}/${testId}/test-a-0.txt`);
-			const promise = f.stat();
-			await expect(promise).rejects.toStrictEqual(
-				expect.objectContaining({
-					code: "NoSuchKey",
-					path: `${runId}/${testId}/test-a-0.txt`,
-				}),
-			);
-			await expect(promise).rejects.toBeInstanceOf(S3Error);
+			await expectS3Error(f.stat(), "NoSuchKey", `${runId}/${testId}/test-a-0.txt`, 404);
 		});
 	});
 

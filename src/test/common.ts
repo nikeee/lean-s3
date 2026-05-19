@@ -1290,7 +1290,7 @@ export function runTests(
 					allowedMethods: ["GET"],
 					allowedOrigins: ["https://example.com"],
 					allowedHeaders: ["*"],
-					exposeHeaders: ["Content-Type"],
+					exposeHeaders: ["Content-Length"],
 				},
 			]);
 
@@ -1300,7 +1300,7 @@ export function runTests(
 					allowedMethods: ["GET"],
 					allowedOrigins: ["https://example.com"],
 					allowedHeaders: ["*"],
-					exposeHeaders: ["Content-Type"],
+					exposeHeaders: ["Content-Length"],
 					id: undefined,
 					maxAgeSeconds: undefined,
 				},
@@ -1311,7 +1311,7 @@ export function runTests(
 					allowedMethods: ["GET"],
 					allowedOrigins: ["https://example.com"],
 					allowedHeaders: ["*"],
-					exposeHeaders: ["Content-Type"],
+					exposeHeaders: ["Content-Length"],
 					id: "fancy-id",
 				},
 			]);
@@ -1322,7 +1322,7 @@ export function runTests(
 					allowedMethods: ["GET"],
 					allowedOrigins: ["https://example.com"],
 					allowedHeaders: ["*"],
-					exposeHeaders: ["Content-Type"],
+					exposeHeaders: ["Content-Length"],
 					id: "fancy-id",
 					maxAgeSeconds: undefined,
 				},

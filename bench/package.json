@@ -24,7 +24,7 @@
     "fast-xml-parser": "^5.8.0",
     "minio": "^8.0.7",
     "mitata": "^1.0.34",
-    "s3mini": "^0.9.4",
+    "s3mini": "^0.9.5",
     "tinybench": "^6.0.2"
   },
   "devDependencies": {

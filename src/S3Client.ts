@@ -1,5 +1,5 @@
 import * as nodeUtil from "node:util";
-import { request, Agent, type Dispatcher } from "undici";
+import { request, type ResponseData } from "./http.ts";
 import { XMLParser, XMLBuilder } from "fast-xml-parser";
 
 import S3File from "./S3File.ts";
@@ -499,9 +499,6 @@ export type GetBucketCorsResult = {
 export default class S3Client {
 	#options: Readonly<InternalS3ClientOptions>;
 	#keyCache = new KeyCache();
-
-	// TODO: pass options to this in client? Do we want to expose the internal use of undici?
-	#dispatcher: Dispatcher = new Agent();
 
 	/**
 	 * Create a new instance of an S3 bucket so that credentials can be managed from a single instance instead of being passed to every method.
@@ -1661,7 +1658,6 @@ export default class S3Client {
 			return await request(url, {
 				method,
 				signal,
-				dispatcher: this.#dispatcher,
 				headers: {
 					...headersToBeSigned,
 					authorization: getAuthorizationHeader(
@@ -1722,12 +1718,11 @@ export default class S3Client {
 			"x-amz-date": now.dateTime,
 		});
 
-		let response: Dispatcher.ResponseData<unknown>;
+		let response: ResponseData;
 		try {
 			response = await request(url, {
 				method: "PUT",
 				signal,
-				dispatcher: this.#dispatcher,
 				headers: {
 					...headersToBeSigned,
 					authorization: getAuthorizationHeader(
@@ -1795,11 +1790,42 @@ export default class S3Client {
 
 		const ac = new AbortController();
 
+		// The request can settle (e.g. via abort/cancel) after the stream
+		// controller has already been closed or errored. Calling
+		// `controller.error()`/`close()`/`enqueue()` in that state throws
+		// (notably on Bun: "Controller is already closed"). Track whether the
+		// stream is settled and turn subsequent controller operations into no-ops.
+		// This is shared between `start` and `cancel`: when a consumer cancels the
+		// reader, the controller closes without going through our helpers, so the
+		// in-flight request's later rejection must not touch the controller.
+		let settled = false;
+
 		return new ReadableStream({
 			type: "bytes",
 			start: controller => {
+				const safeError = (error: unknown) => {
+					if (settled) {
+						return;
+					}
+					settled = true;
+					controller.error(error);
+				};
+				const safeClose = () => {
+					if (settled) {
+						return;
+					}
+					settled = true;
+					controller.close();
+				};
+				const safeEnqueue = (chunk: Uint8Array) => {
+					if (settled) {
+						return;
+					}
+					controller.enqueue(chunk as Uint8Array<ArrayBuffer>);
+				};
+
 				const onNetworkError = (cause: unknown) => {
-					controller.error(
+					safeError(
 						new S3Error("Unknown", path, {
 							message: undefined,
 							cause,
@@ -1810,7 +1836,6 @@ export default class S3Client {
 				request(url, {
 					method: "GET",
 					signal: signal ? AbortSignal.any([signal, ac.signal]) : ac.signal,
-					dispatcher: this.#dispatcher,
 					headers: {
 						...headersToBeSigned,
 						authorization: getAuthorizationHeader(
@@ -1828,14 +1853,14 @@ export default class S3Client {
 						"user-agent": "lean-s3",
 					},
 				}).then(response => {
-					const onData = controller.enqueue.bind(controller);
-					const onClose = controller.close.bind(controller);
+					const onData = safeEnqueue;
+					const onClose = safeClose;
 
 					const expectPartialResponse = range !== undefined;
 					const status = response.statusCode;
 					if (status === 200) {
 						if (expectPartialResponse) {
-							return controller.error(
+							return safeError(
 								new S3Error("Unknown", path, {
 									message: "Expected partial response to range request.",
 								}),
@@ -1850,7 +1875,7 @@ export default class S3Client {
 
 					if (status === 206) {
 						if (!expectPartialResponse) {
-							return controller.error(
+							return safeError(
 								new S3Error("Unknown", path, {
 									message: "Received partial response but expected a full response.",
 								}),
@@ -1874,7 +1899,7 @@ export default class S3Client {
 								try {
 									error = xmlParser.parse(body);
 								} catch (cause) {
-									return controller.error(
+									return safeError(
 										new S3Error("Unknown", path, {
 											message: "Could not parse XML error response.",
 											status: response.statusCode,
@@ -1882,7 +1907,7 @@ export default class S3Client {
 										}),
 									);
 								}
-								return controller.error(
+								return safeError(
 									new S3Error(error.Error.Code || "Unknown", path, {
 										message: error.Error.Message || undefined, // Message might be "",
 										status: response.statusCode,
@@ -1891,7 +1916,7 @@ export default class S3Client {
 							}, onNetworkError);
 						}
 
-						return controller.error(
+						return safeError(
 							new S3Error("Unknown", path, {
 								status: response.statusCode,
 								message: undefined,
@@ -1901,7 +1926,7 @@ export default class S3Client {
 					}
 
 					// TODO: Support other status codes
-					return controller.error(
+					return safeError(
 						new Error(
 							`Handling for status code ${status} not implemented yet. You might want to open an issue and describe your situation.`,
 						),
@@ -1909,6 +1934,10 @@ export default class S3Client {
 				}, onNetworkError);
 			},
 			cancel(reason) {
+				// The controller is being torn down by the consumer; mark the
+				// stream as settled so the (now aborted) in-flight request's
+				// rejection doesn't try to error an already-closed controller.
+				settled = true;
 				ac.abort(reason);
 			},
 		});

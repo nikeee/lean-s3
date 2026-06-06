@@ -1,14 +1,11 @@
-import type { Dispatcher } from "undici";
 import { XMLParser } from "fast-xml-parser";
 
 import S3Error from "./S3Error.ts";
+import type { ResponseData } from "./http.ts";
 
 const xmlParser = new XMLParser();
 
-export async function getResponseError(
-	response: Dispatcher.ResponseData<unknown>,
-	path: string,
-): Promise<S3Error> {
+export async function getResponseError(response: ResponseData, path: string): Promise<S3Error> {
 	// biome-ignore lint/suspicious/noExplicitAny: :shrug:
 	let body: any;
 	try {

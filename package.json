@@ -35,6 +35,7 @@
   "scripts": {
     "build": "tsdown",
     "test": "tsgo && node --test src/*.test.ts src/test/*.test.ts",
+    "test:bun": "tsgo && bun test src/*.test.ts src/test/*.test.ts",
     "test:integration": "tsgo && node --test src/test/test.integration.ts",
     "ci": "oxlint --type-aware --deny-warnings -f github",
     "docs": "typedoc",
@@ -44,7 +45,9 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "fast-xml-parser": "^5.8.0",
+    "fast-xml-parser": "^5.8.0"
+  },
+  "optionalDependencies": {
     "undici": "^8.3.0"
   },
   "devDependencies": {

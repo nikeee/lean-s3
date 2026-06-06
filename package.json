@@ -1,5 +1,5 @@
 {
-  "name": "lean-s3",
+  "name": "@ishanarya/lean-s3",
   "version": "0.9.24",
   "description": "A server-side S3 API for the regular user.",
   "keywords": [
@@ -29,6 +29,10 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
   "type": "module",
   "main": "./dist/index.mjs",
   "types": "./dist/index.d.mts",

@@ -24,7 +24,7 @@
   "author": "Niklas Mollenhauer",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nikeee/lean-s3"
+    "url": "git+https://github.com/IshanArya/lean-s3.git"
   },
   "files": [
     "dist"

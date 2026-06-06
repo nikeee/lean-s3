@@ -1,6 +1,6 @@
 {
   "name": "@ishanarya/lean-s3",
-  "version": "0.9.26",
+  "version": "0.9.27",
   "description": "A server-side S3 API for the regular user.",
   "keywords": [
     "AWS S3",

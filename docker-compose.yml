@@ -8,8 +8,8 @@ services:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
     ports:
-      - '9100:9000'
-      - '9101:9101'
+      - "9100:9000"
+      - "9101:9101"
     volumes:
       - lean-s3-minio:/data
 

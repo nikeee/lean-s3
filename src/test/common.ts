@@ -2,8 +2,7 @@
  * @module Used by integration tests and unit tests.
  */
 
-import { describe, test } from "node:test";
-import { expect } from "expect";
+import { describe, test, expect } from "../test-harness.ts";
 
 import { S3Client, S3Error, S3Stat } from "../index.ts";
 

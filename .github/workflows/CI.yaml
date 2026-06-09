@@ -34,6 +34,27 @@ jobs:
         continue-on-error: true
         if: always()
 
+  test-bun:
+    name: Unit Tests (Bun)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # Install with Bun (honoring bun.lock) and lint, so the whole job runs
+      # in a Bun environment rather than mixing in the Node toolchain.
+      - run: bun install --frozen-lockfile
+      - run: bun run ci
+
+      # Run the (runner-agnostic) test suite under Bun. This exercises the
+      # `fetch` HTTP backend that lean-s3 uses on Bun. The MinIO integration
+      # test relies on testcontainers, which uses the Docker daemon available
+      # on the GitHub-hosted runner.
+      - run: bun test src/*.test.ts src/test/2-minio.test.ts
+
   test-integration:
     if: ${{ github.event_name != 'pull_request' }}
     name: Integration Tests

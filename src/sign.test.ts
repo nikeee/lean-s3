@@ -1,7 +1,6 @@
-import { describe, test } from "node:test";
 import { createHash } from "node:crypto";
 
-import { expect } from "expect";
+import { describe, test, expect } from "./test-harness.ts";
 
 import * as sign from "./sign.ts";
 import { getAmzDate } from "./AmzDate.ts";

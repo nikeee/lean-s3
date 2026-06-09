@@ -137,3 +137,17 @@ By using undici's lower-level primitives directly, we can make our requests more
 That said, undici comes with some trade-offs. Although it powers Node.js's built-in `fetch`, it's not exposed as a core API - so we have to install it as a separate package, which adds about ~1MB.
 
 The AWS SDK uses the `Expect: 100-continue` header to early-return from requests that would otherwise fail. Undici doesn't support this header by design. Some S3 providers don't support it either, so even the AWS SDK includes a fallback mechanism for when it's not usable.
+
+### Runtime-adaptive HTTP backend (undici on Node.js, `fetch` on Bun)
+undici is the preferred backend for the reasons above, and it remains the default on Node.js. However, undici relies on Node-specific internals (e.g. its `Agent` dispatcher and `BodyReadable.dump()`), which aren't fully implemented on every runtime. Bun, in particular, [overrides the `undici` module to delegate to its global `fetch`](https://github.com/oven-sh/bun/issues/21326#issuecomment-3128576217) and doesn't implement the parts of the `Dispatcher`/`request` API that lean-s3 depended on.
+
+To support those runtimes, the HTTP layer (`src/http.ts`) abstracts over a small `request()` primitive and selects a backend at runtime:
+
+- **Node.js:** dynamically imports `undici` and uses `undici.request` with a shared `Agent` - the original, fast path. `undici` is declared as an `optionalDependency`, so installs that skip optional deps (or run on a runtime where it can't be built) still work.
+- **Bun (and any runtime without a usable undici):** falls back to the global `fetch`, normalized to the same response shape that the rest of the codebase expects (`statusCode`, a plain lower-cased `headers` object, and a `body` exposing `text()`/`dump()` plus a `Readable`-style `on("data" | "end" | "error")` for streaming). The streaming path reads the web `ReadableStream` directly (no `Readable.fromWeb` round-trip) to keep reads cheap.
+
+The backend is resolved once and cached, so the per-request hot path stays cheap. This keeps Node.js on the high-performance undici path while making lean-s3 usable on Bun without code changes by the consumer.
+
+Benchmarks against a local MinIO show Bun (with its natively-implemented `fetch`) is at parity with - and on some operations like `HeadObject` notably faster than - Node.js with undici. (Note: Node.js's `fetch` is itself implemented on top of undici with extra browser-oriented overhead, so on Node.js the direct undici path is meaningfully faster than `fetch`; that's why undici remains the default there.)
+
+Setting the environment variable `LEAN_S3_FORCE_FETCH=1` forces the `fetch` backend even on Node.js. This is mainly an escape hatch for debugging or for environments where undici misbehaves.

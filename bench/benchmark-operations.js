@@ -1,5 +1,5 @@
 //@ts-check
-import { createHash } from "node:crypto";
+import { createHash, hash } from "node:crypto";
 
 import { summary, group, bench, run, do_not_optimize } from "mitata";
 import { XMLParser } from "fast-xml-parser";
@@ -242,6 +242,36 @@ summary(() => {
         .update(`${method}\n${path}\n${query}\nhost:${host}\n\nhost\nUNSIGNED-PAYLOAD`)
         .digest();
     }
+    function signLargeStringSingleMethod(method, path, query, host) {
+      return hash(
+        "sha256",
+        `${method}\n${path}\n${query}\nhost:${host}\n\nhost\nUNSIGNED-PAYLOAD`,
+        "buffer",
+      );
+    }
+
+    bench("large string with hash()", () => {
+      for (let i = 0; i < 1000; ++i) {
+        signLargeStringSingleMethod(
+          "GET",
+          "/test.json",
+          "a=b&c=d&x-amazon-whatever=public-read",
+          "fsn1.your-objectstorage.com",
+        );
+        signLargeStringSingleMethod(
+          "PUT",
+          "/some/long/pathtest.json",
+          "a=b&c=d&x-amazon-whatever=private&wat=wut",
+          "localhost:1337",
+        );
+        signLargeStringSingleMethod(
+          "DELETE",
+          "/some/long/pathtest.json",
+          "a=b&c=d&x-amazon-whatever=private&wat=wut",
+          "localhost:1337",
+        );
+      }
+    });
 
     bench("large string", () => {
       for (let i = 0; i < 1000; ++i) {
@@ -265,6 +295,7 @@ summary(() => {
         );
       }
     });
+
     bench("update calls", () => {
       for (let i = 0; i < 1000; ++i) {
         signUpdate(

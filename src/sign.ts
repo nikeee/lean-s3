@@ -1,4 +1,4 @@
-import { createHmac, createHash, type BinaryLike } from "node:crypto";
+import { createHmac, hash, type BinaryLike } from "node:crypto";
 
 import type { AmzDate } from "./AmzDate.ts";
 import type { HttpMethod, PresignableHttpMethod } from "./index.ts";
@@ -54,9 +54,11 @@ export function createCanonicalDataDigestHostOnly(
 	// it is actually faster to pass a single large string instead of doing multiple .update() chains with the parameters
 	// see `benchmark-operations.js`
 
-	return createHash("sha256")
-		.update(`${method}\n${path}\n${query}\nhost:${host}\n\nhost\nUNSIGNED-PAYLOAD`)
-		.digest("hex");
+	return hash(
+		"sha256",
+		`${method}\n${path}\n${query}\nhost:${host}\n\nhost\nUNSIGNED-PAYLOAD`,
+		"hex",
+	);
 }
 
 export function createCanonicalDataDigest(
@@ -66,23 +68,6 @@ export function createCanonicalDataDigest(
 	sortedHeaders: Record<string, string>,
 	contentHashStr: string,
 ): string {
-	// Use this for debugging
-	/*
-	const xHash = {
-		h: createHash("sha256"),
-		m: "",
-		update(v) {
-			this.m += v;
-			this.h.update(v);
-			return this;
-		},
-		digest(v) {
-			if (this.m.includes("continuation-token")) console.log(this.m);
-			return this.h.digest(v);
-		},
-	};
-	*/
-
 	const sortedHeaderNames = Object.keys(sortedHeaders);
 	// it is actually faster to pass a single large string instead of doing multiple .update() chains with the parameters
 	// see `benchmark-operations.js`
@@ -101,13 +86,13 @@ export function createCanonicalDataDigest(
 	}
 	canonData += `\n${contentHashStr}`;
 
-	return createHash("sha256").update(canonData).digest("hex");
+	return hash("sha256", canonData, "hex");
 }
 
 export function sha256(data: BinaryLike): Buffer {
-	return createHash("sha256").update(data).digest();
+	return hash("sha256", data, "buffer");
 }
 
 export function md5Base64(data: BinaryLike): string {
-	return createHash("md5").update(data).digest("base64");
+	return hash("md5", data, "base64");
 }

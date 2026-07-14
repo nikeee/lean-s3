@@ -44,23 +44,23 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "fast-xml-parser": "^5.9.3",
-    "undici": "^8.5.0"
+    "fast-xml-parser": "^5.10.0",
+    "undici": "^8.7.0"
   },
   "devDependencies": {
     "@testcontainers/localstack": "^12.0.4",
     "@testcontainers/minio": "^12.0.4",
     "@testcontainers/s3mock": "^12.0.4",
-    "@types/node": "^26.0.1",
-    "@typescript/native-preview": "^7.0.0-dev.20260629.1",
+    "@types/node": "^26.1.1",
+    "@typescript/native-preview": "^7.0.0-dev.20260707.2",
     "expect": "^30.4.1",
-    "lefthook": "^2.1.9",
-    "oxfmt": "^0.57.0",
-    "oxlint": "^1.71.0",
+    "lefthook": "^2.1.10",
+    "oxfmt": "^0.59.0",
+    "oxlint": "^1.74.0",
     "oxlint-tsgolint": "^0.24.0",
     "testcontainers": "^12.0.4",
-    "tsdown": "^0.22.3",
-    "typedoc": "^0.28.19"
+    "tsdown": "^0.22.7",
+    "typedoc": "^0.28.20"
   },
   "engines": {
     "node": "^22.22.3 || ^24.15.0 || ^26.1.0"

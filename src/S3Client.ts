@@ -1822,123 +1822,146 @@ export default class S3Client {
 
 		const ac = new AbortController();
 
-		return new ReadableStream({
-			type: "bytes",
-			start: controller => {
-				const onNetworkError = (cause: unknown) => {
-					controller.error(
-						new S3Error("Unknown", path, {
-							message: undefined,
-							cause,
-						}),
-					);
-				};
+		// The response body is only available once the request promise resolves (see `start`),
+		// but `pull` may be called before that. It stays `undefined` until then.
+		let body: Readable | undefined;
 
-				request(url, {
-					method: "GET",
-					signal: signal ? AbortSignal.any([signal, ac.signal]) : ac.signal,
-					dispatcher: this.#dispatcher,
-					headers: {
-						...headersToBeSigned,
-						authorization: getAuthorizationHeader(
-							this.#keyCache,
-							"GET",
-							url.pathname as ObjectKey,
-							url.search,
-							now,
-							headersToBeSigned,
-							region,
-							contentHashStr,
-							this.#options.accessKeyId,
-							this.#options.secretAccessKey,
-						),
-						"user-agent": "lean-s3",
-					},
-				}).then(response => {
-					const onData = controller.enqueue.bind(controller);
-					const onClose = controller.close.bind(controller);
-
-					const expectPartialResponse = range !== undefined;
-					const status = response.statusCode;
-					if (status === 200) {
-						if (expectPartialResponse) {
-							return controller.error(
-								new S3Error("Unknown", path, {
-									message: "Expected partial response to range request.",
-								}),
-							);
-						}
-
-						response.body.on("data", onData);
-						response.body.once("error", onNetworkError);
-						response.body.once("end", onClose);
-						return;
-					}
-
-					if (status === 206) {
-						if (!expectPartialResponse) {
-							return controller.error(
-								new S3Error("Unknown", path, {
-									message: "Received partial response but expected a full response.",
-								}),
-							);
-						}
-
-						response.body.on("data", onData);
-						response.body.once("error", onNetworkError);
-						response.body.once("end", onClose);
-						return;
-					}
-
-					if (400 <= status && status < 500) {
-						// Some providers actually support JSON via "accept: application/json", but we cant rely on it
-						const responseText = undefined;
-
-						if (response.headers["content-type"] === "application/xml") {
-							return response.body.text().then(body => {
-								// biome-ignore lint/suspicious/noExplicitAny: :shrug:
-								let error: any;
-								try {
-									error = xmlParser.parse(body);
-								} catch (cause) {
-									return controller.error(
-										new S3Error("Unknown", path, {
-											message: "Could not parse XML error response.",
-											status: response.statusCode,
-											cause,
-										}),
-									);
-								}
-								return controller.error(
-									new S3Error(error.Error.Code || "Unknown", path, {
-										message: error.Error.Message || undefined, // Message might be "",
-										status: response.statusCode,
-									}),
-								);
-							}, onNetworkError);
-						}
-
-						return controller.error(
+		// This is deliberately not a byte stream (`type: "bytes"`): enqueuing into a byte stream
+		// detaches the chunk's ArrayBuffer, but undici's HTTP parser emits body chunks as views
+		// into a buffer it keeps using, so detaching it crashes the parser (observable with
+		// chunked-encoding responses). See `src/backpressure.test.ts`.
+		return new ReadableStream<Uint8Array>(
+			{
+				start: controller => {
+					const onNetworkError = (cause: unknown) => {
+						controller.error(
 							new S3Error("Unknown", path, {
-								status: response.statusCode,
 								message: undefined,
-								cause: responseText,
+								cause,
 							}),
 						);
-					}
+					};
 
-					// TODO: Support other status codes
-					return controller.error(
-						new Error(
-							`Handling for status code ${status} not implemented yet. You might want to open an issue and describe your situation.`,
-						),
-					);
-				}, onNetworkError);
+					request(url, {
+						method: "GET",
+						signal: signal ? AbortSignal.any([signal, ac.signal]) : ac.signal,
+						dispatcher: this.#dispatcher,
+						headers: {
+							...headersToBeSigned,
+							authorization: getAuthorizationHeader(
+								this.#keyCache,
+								"GET",
+								url.pathname as ObjectKey,
+								url.search,
+								now,
+								headersToBeSigned,
+								region,
+								contentHashStr,
+								this.#options.accessKeyId,
+								this.#options.secretAccessKey,
+							),
+							"user-agent": "lean-s3",
+						},
+					}).then(response => {
+						body = response.body;
+						const onData = (chunk: Uint8Array<ArrayBuffer>) => {
+							controller.enqueue(chunk);
+							// Pause the source when the consumer falls behind, `pull` resumes it.
+							// Otherwise the entire object gets buffered into the queue.
+							if ((controller.desiredSize ?? 1) <= 0) {
+								response.body.pause();
+							}
+						};
+						const onClose = controller.close.bind(controller);
+
+						const expectPartialResponse = range !== undefined;
+						const status = response.statusCode;
+						if (status === 200) {
+							if (expectPartialResponse) {
+								return controller.error(
+									new S3Error("Unknown", path, {
+										message: "Expected partial response to range request.",
+									}),
+								);
+							}
+
+							response.body.on("data", onData);
+							response.body.once("error", onNetworkError);
+							response.body.once("end", onClose);
+							return;
+						}
+
+						if (status === 206) {
+							if (!expectPartialResponse) {
+								return controller.error(
+									new S3Error("Unknown", path, {
+										message: "Received partial response but expected a full response.",
+									}),
+								);
+							}
+
+							response.body.on("data", onData);
+							response.body.once("error", onNetworkError);
+							response.body.once("end", onClose);
+							return;
+						}
+
+						if (400 <= status && status < 500) {
+							// Some providers actually support JSON via "accept: application/json", but we cant rely on it
+							const responseText = undefined;
+
+							if (response.headers["content-type"] === "application/xml") {
+								return response.body.text().then(body => {
+									// biome-ignore lint/suspicious/noExplicitAny: :shrug:
+									let error: any;
+									try {
+										error = xmlParser.parse(body);
+									} catch (cause) {
+										return controller.error(
+											new S3Error("Unknown", path, {
+												message: "Could not parse XML error response.",
+												status: response.statusCode,
+												cause,
+											}),
+										);
+									}
+									return controller.error(
+										new S3Error(error.Error.Code || "Unknown", path, {
+											message: error.Error.Message || undefined, // Message might be "",
+											status: response.statusCode,
+										}),
+									);
+								}, onNetworkError);
+							}
+
+							return controller.error(
+								new S3Error("Unknown", path, {
+									status: response.statusCode,
+									message: undefined,
+									cause: responseText,
+								}),
+							);
+						}
+
+						// TODO: Support other status codes
+						return controller.error(
+							new Error(
+								`Handling for status code ${status} not implemented yet. You might want to open an issue and describe your situation.`,
+							),
+						);
+					}, onNetworkError);
+				},
+				pull: () => {
+					// Resumes a source paused by `onData`. No-op while flowing or before the response arrived.
+					body?.resume();
+				},
+				cancel(reason) {
+					ac.abort(reason);
+				},
 			},
-			cancel(reason) {
-				ac.abort(reason);
-			},
-		});
+			// Makes `desiredSize` byte-based, so the pause threshold is independent of chunk sizes
+			new ByteLengthQueuingStrategy({ highWaterMark: 256 * 1024 }),
+		);
 	}
 
 	[nodeUtil.inspect.custom](_depth?: number, options: nodeUtil.InspectOptions = {}) {

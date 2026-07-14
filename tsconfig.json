@@ -4,6 +4,7 @@
     "moduleResolution": "nodenext",
     "target": "es2024",
     "lib": ["es2024"],
+    "types": ["node"],
 
     "moduleDetection": "force",
     "isolatedModules": true,
@@ -13,7 +14,7 @@
     "noImplicitOverride": true,
 
     "allowJs": true,
-    "checkJs": false, // tsgo checks node_modules dependencies otherwise. See: https://github.com/microsoft/typescript-go/issues/931
+    "checkJs": false,
     "strict": true,
     "noEmit": true
   },

@@ -34,8 +34,8 @@
   "types": "./dist/index.d.mts",
   "scripts": {
     "build": "tsdown",
-    "test": "tsgo && node --test src/*.test.ts src/test/*.test.ts",
-    "test:integration": "tsgo && node --test src/test/test.integration.ts",
+    "test": "tsc && node --test src/*.test.ts src/test/*.test.ts",
+    "test:integration": "tsc && node --test src/test/test.integration.ts",
     "ci": "oxlint --type-aware --deny-warnings -f github",
     "docs": "typedoc",
     "format": "oxfmt",
@@ -52,7 +52,6 @@
     "@testcontainers/minio": "^12.0.4",
     "@testcontainers/s3mock": "^12.0.4",
     "@types/node": "^26.1.1",
-    "@typescript/native-preview": "^7.0.0-dev.20260707.2",
     "expect": "^30.4.1",
     "lefthook": "^2.1.10",
     "oxfmt": "^0.59.0",
@@ -60,7 +59,8 @@
     "oxlint-tsgolint": "^0.24.0",
     "testcontainers": "^12.0.4",
     "tsdown": "^0.22.7",
-    "typedoc": "^0.28.20"
+    "typedoc": "^0.28.20",
+    "typescript": "^7.0.2"
   },
   "engines": {
     "node": "^22.22.3 || ^24.15.0 || ^26.1.0"

@@ -22,8 +22,21 @@ export function getAmzDate(dateTime: Date): AmzDate {
 	};
 }
 
+let lastNowSecond = -1;
+let lastNowValue: AmzDate;
+
+/**
+ * Returns the current time as {@link AmzDate}.
+ * Since the format only has second granularity, the result is cached for the current second.
+ * {@link AmzDate} values are never mutated, so sharing one instance is safe.
+ */
 export function now(): AmzDate {
-	return getAmzDate(new Date());
+	const second = (Date.now() / 1000) | 0;
+	if (second !== lastNowSecond) {
+		lastNowSecond = second;
+		lastNowValue = getAmzDate(new Date(second * 1000));
+	}
+	return lastNowValue;
 }
 
 function pad4(v: number): string {

@@ -500,6 +500,16 @@ export default class S3Client {
 	#options: Readonly<InternalS3ClientOptions>;
 	#keyCache = new KeyCache();
 
+	/** The presign credential scope only changes with the UTC day and region, so we cache it (same idea as {@link KeyCache}). */
+	#credentialCache:
+		| {
+				numericDayStart: number;
+				region: Region;
+				plain: string;
+				encoded: string;
+		  }
+		| undefined;
+
 	// TODO: pass options to this in client? Do we want to expose the internal use of undici?
 	#dispatcher: Dispatcher = new Agent();
 
@@ -532,6 +542,25 @@ export default class S3Client {
 			options.endpoint ? ensureValidEndpoint(options.endpoint) : this.#options.endpoint,
 			options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket,
 		];
+	}
+
+	#getCredential(date: amzDate.AmzDate, region: Region) {
+		let credential = this.#credentialCache;
+		if (
+			credential === undefined ||
+			credential.numericDayStart !== date.numericDayStart ||
+			credential.region !== region
+		) {
+			const plain = `${this.#options.accessKeyId}/${date.date}/${region}/s3/aws4_request`;
+			credential = {
+				numericDayStart: date.numericDayStart,
+				region,
+				plain,
+				encoded: encodeURIComponentExtended(plain),
+			};
+			this.#credentialCache = credential;
+		}
+		return credential;
 	}
 
 	/**
@@ -618,11 +647,10 @@ export default class S3Client {
 
 		const res = buildRequestUrl(endpoint, bucket, region, ensureValidPath(path));
 
-		const now = new Date();
-		const date = amzDate.getAmzDate(now);
+		const date = amzDate.now();
 
 		const query = buildSearchParams(
-			`${this.#options.accessKeyId}/${date.date}/${region}/s3/aws4_request`,
+			this.#getCredential(date, region).encoded,
 			date,
 			options.expiresIn ?? 3600,
 			typeof contentLength === "number" || typeof contentType === "string"
@@ -679,8 +707,7 @@ export default class S3Client {
 	}
 
 	presignPost(options: PresignPostOptions): PresignPostResult {
-		const now = new Date();
-		const date = amzDate.getAmzDate(now);
+		const date = amzDate.now();
 
 		const key = options.key as ObjectKey;
 		const region = ensureValidRegion(options.region ?? this.#options.region);
@@ -688,7 +715,7 @@ export default class S3Client {
 		const endpoint = ensureValidEndpoint(options.endpoint ?? this.#options.endpoint);
 		const expiresIn = options.expiresIn ?? 3600;
 
-		const credential = `${this.#options.accessKeyId}/${date.date}/${region}/s3/aws4_request`;
+		const credential = this.#getCredential(date, region).plain;
 
 		const fields = {
 			...options.fields,
@@ -703,7 +730,7 @@ export default class S3Client {
 				: undefined),
 		} satisfies Record<string, string>;
 
-		const expirationDate = new Date(now.getTime() + expiresIn * 1000);
+		const expirationDate = new Date(Date.now() + expiresIn * 1000);
 
 		const policy = {
 			expiration: expirationDate.toISOString().replace(/\.\d{3}Z$/, "Z"), // AWS SDK does the same
@@ -1932,7 +1959,7 @@ export default class S3Client {
 }
 
 export function buildSearchParams(
-	amzCredential: string,
+	encodedAmzCredential: string,
 	date: amzDate.AmzDate,
 	expiresIn: number,
 	headerList: string,
@@ -1963,7 +1990,8 @@ export function buildSearchParams(
 		res += `&X-Amz-Content-Sha256=${contentHashStr}`;
 	}
 
-	res += `&X-Amz-Credential=${encodeURIComponentExtended(amzCredential)}`;
+	// Pre-encoded by the caller since the credential is cacheable per (day, region)
+	res += `&X-Amz-Credential=${encodedAmzCredential}`;
 	res += `&X-Amz-Date=${date.dateTime}`; // internal dateTimes don't need encoding
 	res += `&X-Amz-Expires=${expiresIn}`; // number -> no encoding
 

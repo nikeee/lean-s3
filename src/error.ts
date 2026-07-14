@@ -3,7 +3,8 @@ import { XMLParser } from "fast-xml-parser";
 
 import S3Error from "./S3Error.ts";
 
-const xmlParser = new XMLParser();
+// never coerce tag values, message contents could look numeric
+const xmlParser = new XMLParser({ parseTagValue: false });
 
 export async function getResponseError(
 	response: Dispatcher.ResponseData<unknown>,
@@ -16,16 +17,19 @@ export async function getResponseError(
 	} catch (cause) {
 		return new S3Error("Unknown", path, {
 			message: "Could not read response body.",
+			status: response.statusCode,
 			cause,
 		});
 	}
 
-	if (response.headers["content-type"] === "application/xml") {
-		return parseAndGetXmlError(body, path);
+	// includes() instead of ===: providers append parameters like "; charset=utf-8"
+	if (String(response.headers["content-type"] ?? "").includes("xml")) {
+		return parseAndGetXmlError(body, path, response.statusCode);
 	}
 
 	return new S3Error("Unknown", path, {
 		message: "Unknown error during S3 request.",
+		status: response.statusCode,
 	});
 }
 
@@ -47,7 +51,7 @@ export function fromStatusCode(code: number, path: string): S3Error | undefined 
 	}
 }
 
-function parseAndGetXmlError(body: string, path: string): S3Error {
+function parseAndGetXmlError(body: string, path: string, status: number): S3Error {
 	// biome-ignore lint/suspicious/noExplicitAny: :shrug:
 	let error: any;
 	try {
@@ -55,6 +59,7 @@ function parseAndGetXmlError(body: string, path: string): S3Error {
 	} catch (cause) {
 		return new S3Error("Unknown", path, {
 			message: "Could not parse XML error response.",
+			status,
 			cause,
 		});
 	}
@@ -63,10 +68,12 @@ function parseAndGetXmlError(body: string, path: string): S3Error {
 		const e = error.Error;
 		return new S3Error(e.Code || "Unknown", path, {
 			message: e.Message || undefined, // Message might be "",
+			status,
 		});
 	}
 
 	return new S3Error(error.Code || "Unknown", path, {
 		message: error.Message || undefined, // Message might be "",
+		status,
 	});
 }

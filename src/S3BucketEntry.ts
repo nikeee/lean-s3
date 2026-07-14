@@ -38,7 +38,7 @@ export default class S3BucketEntry {
 		// TODO: check values and throw exceptions
 		return new S3BucketEntry(
 			source.Key,
-			source.Size,
+			Number(source.Size), // string, the parser doesn't coerce values
 			new Date(source.LastModified),
 			source.ETag,
 			source.StorageClass,

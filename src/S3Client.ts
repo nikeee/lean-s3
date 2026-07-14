@@ -46,6 +46,10 @@ export const kGetEffectiveParams = Symbol("kGetEffectiveParams");
 
 const xmlParser = new XMLParser({
 	ignoreAttributes: true,
+	// Never coerce tag values: the defaults turn numeric-looking keys into numbers
+	// ("0123" -> 123, "1e5" -> 100000), silently corrupting object keys, prefixes and markers.
+	// Numeric/boolean fields are converted explicitly where they are read.
+	parseTagValue: false,
 	isArray: (_, jPath) =>
 		jPath === "ListMultipartUploadsResult.Upload" ||
 		jPath === "ListBucketResult.Contents" ||
@@ -937,7 +941,7 @@ export default class S3Client {
 			uploadIdMarker: root.UploadIdMarker || undefined,
 			nextKeyMarker: root.NextKeyMarker || undefined,
 			nextUploadIdMarker: root.NextUploadIdMarker || undefined,
-			maxUploads: root.MaxUploads ?? 1000, // not using || to not override 0; caution: minio supports 10000(!)
+			maxUploads: xmlNumber(root.MaxUploads) ?? 1000, // not using || to not override 0; caution: minio supports 10000(!)
 			isTruncated: root.IsTruncated === "true",
 			uploads:
 				root.Upload?.map(
@@ -1161,15 +1165,15 @@ export default class S3Client {
 				uploadId: root.UploadId,
 				partNumberMarker: root.PartNumberMarker ?? undefined,
 				nextPartNumberMarker: root.NextPartNumberMarker ?? undefined,
-				maxParts: root.MaxParts ?? 1000,
-				isTruncated: root.IsTruncated ?? false,
+				maxParts: xmlNumber(root.MaxParts) ?? 1000,
+				isTruncated: root.IsTruncated === "true",
 				parts:
 					// biome-ignore lint/suspicious/noExplicitAny: parsing code
 					root.Part?.map((part: any) => ({
 						etag: part.ETag,
 						lastModified: part.LastModified ? new Date(part.LastModified) : undefined,
-						partNumber: part.PartNumber ?? undefined,
-						size: part.Size ?? undefined,
+						partNumber: xmlNumber(part.PartNumber),
+						size: xmlNumber(part.Size),
 					})) ?? [],
 			};
 		}
@@ -1568,10 +1572,10 @@ export default class S3Client {
 			name: res.Name,
 			prefix: res.Prefix,
 			startAfter: res.StartAfter,
-			isTruncated: res.IsTruncated,
+			isTruncated: res.IsTruncated === "true",
 			continuationToken: res.ContinuationToken,
-			maxKeys: res.MaxKeys,
-			keyCount: res.KeyCount,
+			maxKeys: xmlNumber(res.MaxKeys) ?? 0,
+			keyCount: xmlNumber(res.KeyCount) ?? 0,
 			nextContinuationToken: res.NextContinuationToken,
 			contents: res.Contents?.map(S3BucketEntry.parse) ?? [],
 		};
@@ -2033,6 +2037,11 @@ export function buildSearchParams(
 	}
 
 	return res;
+}
+
+/** The parsers run with `parseTagValue: false`, so all values arrive as strings. */
+function xmlNumber(value: string | undefined): number | undefined {
+	return value === undefined || value === "" ? undefined : Number(value);
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: parsing result is just unknown

@@ -1,4 +1,5 @@
 import type { BucketName, Endpoint, ObjectKey, Region } from "./branded.ts";
+import { escapeExtendedChars } from "./encode.ts";
 
 export function buildRequestUrl(
 	endpoint: Endpoint,
@@ -22,16 +23,8 @@ export function buildRequestUrl(
 		? normalizePath(path)
 		: `${normalizedBucket}/${normalizePath(path)}`;
 
-	result.pathname =
-		pathPrefix +
-		pathSuffix
-			.replaceAll(":", "%3A") // See: https://github.com/nikeee/lean-s3/issues/61
-			.replaceAll("+", "%2B")
-			.replaceAll("(", "%28")
-			.replaceAll(")", "%29")
-			.replaceAll(",", "%2C")
-			.replaceAll("'", "%27")
-			.replaceAll("*", "%2A");
+	// See: https://github.com/nikeee/lean-s3/issues/61
+	result.pathname = pathPrefix + escapeExtendedChars(pathSuffix);
 
 	return result;
 }

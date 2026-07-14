@@ -494,6 +494,82 @@ summary(() => {
         }
       });
     });
+
+    group(() => {
+      // Escaping the chars of https://github.com/nikeee/lean-s3/issues/61:
+      // chained replaceAll (7 full scans) vs. single test + one-pass replace.
+      // Most keys contain none of these chars, so the test acts as a no-op fast path.
+
+      const extendedChars = /[:+(),'*]/;
+      const extendedCharsGlobal = /[:+(),'*]/g;
+      const extendedCharMap = {
+        ":": "%3A",
+        "+": "%2B",
+        "(": "%28",
+        ")": "%29",
+        ",": "%2C",
+        "'": "%27",
+        "*": "%2A",
+      };
+      const replaceExtendedChar = c => extendedCharMap[c];
+
+      function escapeChained(value) {
+        return value
+          .replaceAll(":", "%3A")
+          .replaceAll("+", "%2B")
+          .replaceAll("(", "%28")
+          .replaceAll(")", "%29")
+          .replaceAll(",", "%2C")
+          .replaceAll("'", "%27")
+          .replaceAll("*", "%2A");
+      }
+
+      function escapeSinglePass(value) {
+        return extendedChars.test(value)
+          ? value.replace(extendedCharsGlobal, replaceExtendedChar)
+          : value;
+      }
+
+      const cleanKeys = [
+        "some-bucket/deeply/nested/object-key.bin",
+        "583ea250-5016-48e5-8b26-b3ce0d9e5822/foo-key-9000",
+        "images/2025/06/20/photo_0001.jpeg",
+      ];
+      const dirtyKeys = [
+        "some-bucket/report (final), v2 + notes.pdf",
+        "it's-a-key:with*many(special)chars,everywhere",
+        "a:b+c(d)e,f'g*h",
+      ];
+
+      bench("escape chained replaceAll (clean keys)", () => {
+        for (let i = 0; i < 1000; ++i) {
+          for (const key of cleanKeys) {
+            do_not_optimize(escapeChained(key));
+          }
+        }
+      });
+      bench("escape single-pass (clean keys)", () => {
+        for (let i = 0; i < 1000; ++i) {
+          for (const key of cleanKeys) {
+            do_not_optimize(escapeSinglePass(key));
+          }
+        }
+      });
+      bench("escape chained replaceAll (dirty keys)", () => {
+        for (let i = 0; i < 1000; ++i) {
+          for (const key of dirtyKeys) {
+            do_not_optimize(escapeChained(key));
+          }
+        }
+      });
+      bench("escape single-pass (dirty keys)", () => {
+        for (let i = 0; i < 1000; ++i) {
+          for (const key of dirtyKeys) {
+            do_not_optimize(escapeSinglePass(key));
+          }
+        }
+      });
+    });
   });
 });
 

@@ -570,13 +570,7 @@ export function runTests(
 			await f.write(testId);
 			try {
 				const slicedFile = f.slice(10000);
-				if (implementation === "s3mock") {
-					// S3Mock is currenty inconsistent
-					// See: https://github.com/adobe/S3Mock/pull/3044
-					await expectS3Error(slicedFile.text(), "RequestedRangeNotSatisfiable", path, 416);
-				} else {
-					await expectS3Error(slicedFile.text(), "InvalidRange", path, 416);
-				}
+				await expectS3Error(slicedFile.text(), "InvalidRange", path, 416);
 			} finally {
 				await f.delete();
 			}

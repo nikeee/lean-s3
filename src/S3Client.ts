@@ -803,14 +803,17 @@ export default class S3Client {
 		// See `benchmark-operations.js` on why we don't use URLSearchParams but string concat
 		// tldr: This is faster and we know the params exactly, so we can focus our encoding
 
-		let query = "uploads="; // MinIO requires the = to be present
+		// ! The signature is computed over the query string as-is, so the params must be
+		// ! appended in alphabetical order to form a valid SigV4 canonical query string.
+
+		let query = "";
 
 		if (options.delimiter) {
 			if (typeof options.delimiter !== "string") {
 				throw new TypeError("`delimiter` must be a `string`.");
 			}
 
-			query += `&delimiter=${encodeURIComponent(options.delimiter)}`;
+			query += `delimiter=${encodeURIComponent(options.delimiter)}&`;
 		}
 
 		// we don't support encoding-type
@@ -820,7 +823,7 @@ export default class S3Client {
 				throw new TypeError("`keyMarker` must be a `string`.");
 			}
 
-			query += `&key-marker=${encodeURIComponent(options.keyMarker)}`;
+			query += `key-marker=${encodeURIComponent(options.keyMarker)}&`;
 		}
 		if (typeof options.maxUploads !== "undefined") {
 			if (typeof options.maxUploads !== "number") {
@@ -830,7 +833,7 @@ export default class S3Client {
 				throw new RangeError("`maxUploads` has to be between 1 and 1000.");
 			}
 
-			query += `&max-uploads=${options.maxUploads}`; // no encoding needed, it's a number
+			query += `max-uploads=${options.maxUploads}&`; // no encoding needed, it's a number
 		}
 
 		if (options.prefix) {
@@ -838,8 +841,18 @@ export default class S3Client {
 				throw new TypeError("`prefix` must be a `string`.");
 			}
 
-			query += `&prefix=${encodeURIComponent(options.prefix)}`;
+			query += `prefix=${encodeURIComponent(options.prefix)}&`;
 		}
+
+		if (options.uploadIdMarker) {
+			if (typeof options.uploadIdMarker !== "string") {
+				throw new TypeError("`uploadIdMarker` must be a `string`.");
+			}
+
+			query += `upload-id-marker=${encodeURIComponent(options.uploadIdMarker)}&`;
+		}
+
+		query += "uploads="; // MinIO requires the = to be present; sorts after all other params
 
 		const response = await this[kSignedRequest](
 			this.#options.region,

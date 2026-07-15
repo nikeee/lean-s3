@@ -82,11 +82,16 @@ export type ChecksumType = "COMPOSITE" | "FULL_OBJECT";
 export type PresignableHttpMethod = "GET" | "DELETE" | "PUT" | "HEAD";
 export type HttpMethod = PresignableHttpMethod | "POST"; // There are also others, but we don't want to support them yet
 
-export type ByteSource = string | Buffer | Uint8Array | Readable | Blob;
+export type ByteSource =
+	| string
+	| Buffer
+	| Uint8Array
+	| ArrayBufferView
+	| ArrayBuffer
+	| SharedArrayBuffer
+	| Readable
+	| Blob;
 // TODO
-// | ArrayBufferView
-// | ArrayBuffer
-// | SharedArrayBuffer
 // | Request
 // | Response
 // | S3File

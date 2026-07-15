@@ -277,6 +277,35 @@ export function runTests(
 		}
 	});
 
+	void test("roundtrip with ArrayBuffer", async () => {
+		const testId = crypto.randomUUID();
+		const bytes = new TextEncoder().encode(testId);
+		const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+		const f = client.file(`${runId}/roundtrip-arraybuffer.txt`);
+		await f.write(buffer);
+		try {
+			expect(new Uint8Array(await f.arrayBuffer())).toStrictEqual(bytes);
+		} finally {
+			await f.delete();
+		}
+	});
+
+	void test("roundtrip with ArrayBufferView at non-zero offset", async () => {
+		const testId = crypto.randomUUID();
+		const bytes = new TextEncoder().encode(testId);
+		// place payload at offset 3 in a larger buffer; the view must be written, not the whole buffer
+		const padded = new Uint8Array(bytes.byteLength + 5).fill(0xff);
+		padded.set(bytes, 3);
+		const view = new DataView(padded.buffer, 3, bytes.byteLength);
+		const f = client.file(`${runId}/roundtrip-view.txt`);
+		await f.write(view);
+		try {
+			expect(new Uint8Array(await f.arrayBuffer())).toStrictEqual(bytes);
+		} finally {
+			await f.delete();
+		}
+	});
+
 	void test("roundtrip with directory marker key (trailing slash)", async () => {
 		const testId = crypto.randomUUID();
 		// "folder/" is a valid key, distinct from "folder"

@@ -283,17 +283,16 @@ export default class S3File {
 			return [data, undefined, undefined];
 		}
 
-		if (
-			data instanceof ArrayBuffer ||
-			data instanceof SharedArrayBuffer ||
-			ArrayBuffer.isView(data)
-		) {
-			// TODO: Support hashing
-			return [
-				data,
-				data.byteLength,
-				undefined, // TODO: Compute hash some day
-			];
+		// node:crypto rejects bare (Shared)ArrayBuffers, so wrap everything buffer-ish
+		// as Uint8Array (zero-copy) before hashing; also keeps [kWrite]'s body type narrow
+		if (data instanceof ArrayBuffer || data instanceof SharedArrayBuffer) {
+			const bytes = new Uint8Array(data);
+			return [bytes, bytes.byteLength, sha256(bytes)];
+		}
+
+		if (ArrayBuffer.isView(data)) {
+			const bytes = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+			return [bytes, bytes.byteLength, sha256(bytes)];
 		}
 
 		assertNever(data);

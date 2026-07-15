@@ -1847,9 +1847,9 @@ export default class S3Client {
 
 						if (400 <= status && status < 500) {
 							// Some providers actually support JSON via "accept: application/json", but we cant rely on it
-							const responseText = undefined;
 
-							if (response.headers["content-type"] === "application/xml") {
+							// includes() instead of ===: providers append parameters like "; charset=utf-8"
+							if (String(response.headers["content-type"] ?? "").includes("xml")) {
 								return response.body.text().then(body => {
 									// biome-ignore lint/suspicious/noExplicitAny: :shrug:
 									let error: any;
@@ -1865,8 +1865,8 @@ export default class S3Client {
 										);
 									}
 									return controller.error(
-										new S3Error(error.Error.Code || "Unknown", path, {
-											message: error.Error.Message || undefined, // Message might be "",
+										new S3Error(error.Error?.Code || "Unknown", path, {
+											message: error.Error?.Message || undefined, // Message might be "",
 											status: response.statusCode,
 										}),
 									);

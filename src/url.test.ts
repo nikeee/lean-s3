@@ -118,6 +118,38 @@ void describe("buildRequestUrl", () => {
 		);
 	});
 
+	void test("trailing slash is kept (directory marker keys)", () => {
+		expect(
+			buildRequestUrl(
+				"https://{bucket}.s3.{region}.amazonaws.com" as Endpoint,
+				"mybucket" as BucketName,
+				"us-west-1" as Region,
+				"folder/" as ObjectKey,
+			),
+		).toStrictEqual(new URL("https://mybucket.s3.us-west-1.amazonaws.com/folder/"));
+	});
+
+	void test("literal percent is escaped", () => {
+		expect(
+			buildRequestUrl(
+				"https://{bucket}.s3.{region}.amazonaws.com" as Endpoint,
+				"mybucket" as BucketName,
+				"us-west-1" as Region,
+				"file 100%.txt" as ObjectKey,
+			),
+		).toStrictEqual(new URL("https://mybucket.s3.us-west-1.amazonaws.com/file%20100%25.txt"));
+
+		// keys are taken literally, "%41" is not decoded to "A"
+		expect(
+			buildRequestUrl(
+				"https://{bucket}.s3.{region}.amazonaws.com" as Endpoint,
+				"mybucket" as BucketName,
+				"us-west-1" as Region,
+				"%41.txt" as ObjectKey,
+			),
+		).toStrictEqual(new URL("https://mybucket.s3.us-west-1.amazonaws.com/%2541.txt"));
+	});
+
 	void test("slashes shouldn't be escaped", () => {
 		expect(
 			buildRequestUrl(

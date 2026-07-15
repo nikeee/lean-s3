@@ -1662,8 +1662,6 @@ export default class S3Client {
 		contentType: string,
 		contentLength: number | undefined,
 		contentHash: Buffer | undefined,
-		rangeStart: number | undefined,
-		rangeEndExclusive: number | undefined,
 		signal?: AbortSignal,
 	): Promise<void> {
 		const bucket = this.#options.bucket;
@@ -1682,7 +1680,6 @@ export default class S3Client {
 			"content-length": contentLength?.toString() ?? undefined,
 			"content-type": contentType,
 			host: url.host,
-			range: getRangeHeader(rangeStart, rangeEndExclusive),
 			"x-amz-content-sha256": contentHashStr,
 			"x-amz-date": now.dateTime,
 		});

@@ -18,10 +18,6 @@ export function deriveSigningKey(date: string, region: string, secretAccessKey: 
 	return createHmac("sha256", signedDateRegionService).update("aws4_request").digest();
 }
 
-export function signEncodedPolicy(signingKey: Buffer, encodedPolicy: string): string {
-	return createHmac("sha256", signingKey).update(encodedPolicy).digest("hex");
-}
-
 export function signCanonicalDataHash(
 	signingKey: Buffer,
 	canonicalDataHash: string,

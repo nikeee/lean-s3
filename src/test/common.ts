@@ -277,6 +277,21 @@ export function runTests(
 		}
 	});
 
+	void test("roundtrip with directory marker key (trailing slash)", async () => {
+		const testId = crypto.randomUUID();
+		// "folder/" is a valid key, distinct from "folder"
+		const f = client.file(`${runId}/${testId}/folder/`);
+		await f.write(testId);
+		try {
+			expect(await f.exists()).toBe(true);
+			expect(await client.file(`${runId}/${testId}/folder`).exists()).toBe(false);
+			expect(await f.text()).toStrictEqual(testId);
+		} finally {
+			await f.delete();
+		}
+		expect(await f.exists()).toBe(false);
+	});
+
 	void describe("slicing", async () => {
 		void test("n-m", async () => {
 			const testId = crypto.randomUUID();
@@ -596,6 +611,32 @@ export function runTests(
 					`${runId}/${testId}/test-a-1.txt`,
 					`${runId}/${testId}/test-b-2.txt`,
 					`${runId}/${testId}/test-b-3.txt`,
+				]);
+			}
+		});
+
+		void test("list with delimiter and maxKeys", async () => {
+			const testId = crypto.randomUUID();
+			try {
+				await client.file(`${runId}/${testId}/dir-a/file-0.txt`).write(crypto.randomUUID());
+				await client.file(`${runId}/${testId}/dir-b/file-1.txt`).write(crypto.randomUUID());
+				await client.file(`${runId}/${testId}/file-2.txt`).write(crypto.randomUUID());
+
+				// delimiter + maxKeys exercises the SigV4 canonical query string ordering
+				const result = await client.list({
+					prefix: `${runId}/${testId}/`,
+					delimiter: "/",
+					maxKeys: 10,
+				});
+
+				expect(result.contents).toStrictEqual([
+					expect.objectContaining({ key: `${runId}/${testId}/file-2.txt` }),
+				]);
+			} finally {
+				await client.deleteObjects([
+					`${runId}/${testId}/dir-a/file-0.txt`,
+					`${runId}/${testId}/dir-b/file-1.txt`,
+					`${runId}/${testId}/file-2.txt`,
 				]);
 			}
 		});

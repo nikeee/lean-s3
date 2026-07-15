@@ -1419,7 +1419,9 @@ export default class S3Client {
 		// See `benchmark-operations.js` on why we don't use URLSearchParams but string concat
 		// tldr: This is faster and we know the params exactly, so we can focus our encoding
 
-		// ! minio requires these params to be in alphabetical order
+		// ! The signature is computed over the query string as-is, so the params must be
+		// ! appended in alphabetical order to form a valid SigV4 canonical query string
+		// ! (minio also requires this ordering).
 
 		let query = "";
 
@@ -1429,6 +1431,14 @@ export default class S3Client {
 			}
 
 			query += `continuation-token=${encodeURIComponent(options.continuationToken)}&`;
+		}
+
+		if (typeof options.delimiter !== "undefined") {
+			if (typeof options.delimiter !== "string") {
+				throw new TypeError("`delimiter` must be a `string`.");
+			}
+			// always encoded: the canonical query string requires "/" as %2F in values
+			query += `delimiter=${encodeURIComponent(options.delimiter)}&`;
 		}
 
 		query += "list-type=2";
@@ -1443,13 +1453,6 @@ export default class S3Client {
 			}
 
 			query += `&max-keys=${options.maxKeys}`; // no encoding needed, it's a number
-		}
-
-		if (typeof options.delimiter !== "undefined") {
-			if (typeof options.delimiter !== "string") {
-				throw new TypeError("`delimiter` must be a `string`.");
-			}
-			query += `&delimiter=${options.delimiter === "/" ? "/" : encodeURIComponent(options.delimiter)}`;
 		}
 
 		// plain `if(a)` check, so empty strings will also not go into this branch, omitting the parameter

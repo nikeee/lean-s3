@@ -1327,9 +1327,8 @@ export default class S3Client {
 		);
 
 		if (response.statusCode !== 200) {
-			// undici docs state that we should dump the body if not used
-			void response.body.dump(); // dump's floating promise should not throw
-			throw fromStatusCode(response.statusCode, "");
+			// getResponseError consumes the body; fromStatusCode would be undefined for most codes
+			throw await getResponseError(response, "");
 		}
 
 		const text = await response.body.text();
@@ -1374,10 +1373,12 @@ export default class S3Client {
 		);
 
 		if (response.statusCode !== 204) {
-			// undici docs state that we should dump the body if not used
-			void response.body.dump(); // dump's floating promise should not throw
-			throw fromStatusCode(response.statusCode, "");
+			// getResponseError consumes the body; fromStatusCode would be undefined for most codes
+			throw await getResponseError(response, "");
 		}
+
+		// undici docs state that we should dump the body if not used
+		void response.body.dump(); // dump's floating promise should not throw
 	}
 
 	//#endregion

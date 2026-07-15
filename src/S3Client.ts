@@ -8,7 +8,7 @@ import S3BucketEntry from "./S3BucketEntry.ts";
 import KeyCache from "./KeyCache.ts";
 import * as amzDate from "./AmzDate.ts";
 import * as sign from "./sign.ts";
-import { buildRequestUrl, getRangeHeader, normalizePath, prepareHeadersForSigning } from "./url.ts";
+import { buildRequestUrl, getRangeHeader, normalizeKey, prepareHeadersForSigning } from "./url.ts";
 import type {
 	Acl,
 	BucketInfo,
@@ -20,7 +20,7 @@ import type {
 	PresignableHttpMethod,
 	StorageClass,
 } from "./index.ts";
-import { fromStatusCode, getResponseError } from "./error.ts";
+import { getResponseError } from "./error.ts";
 import { getAuthorizationHeader } from "./request.ts";
 import {
 	ensureValidAccessKeyId,
@@ -142,7 +142,6 @@ export type DeleteObjectsError = {
 };
 
 export interface S3FilePresignOptions extends OverridableS3ClientOptions {
-	contentHash?: Buffer;
 	/**
 	 * In seconds.
 	 * @default 3600 (1 hour)
@@ -714,7 +713,7 @@ export default class S3Client {
 			: this.#options.bucket;
 
 		// The value must be URL-encoded.
-		const normalizedSourceKey = normalizePath(ensureValidPath(sourceKey));
+		const normalizedSourceKey = normalizeKey(ensureValidPath(sourceKey));
 		const copySource = encodeURIComponent(`${sourceBucket}/${normalizedSourceKey}`);
 
 		const response = await this[kSignedRequest](

@@ -243,42 +243,51 @@ void describe("cancellation", () => {
 			);
 		});
 
-		void test("abortMultipartUpload rejects with abort reason", async () => {
+		void test("S3MultipartUpload.abort rejects with abort reason", async () => {
 			const ac = new AbortController();
 			ac.abort();
 			await expectAbortRejection(
-				makeClient().abortMultipartUpload("k", "upload-id", { signal: ac.signal }),
+				makeClient().multipartUpload("k", "upload-id").abort({ signal: ac.signal }),
 				ac.signal,
 			);
 		});
 
-		void test("completeMultipartUpload rejects with abort reason", async () => {
+		void test("S3MultipartUpload.complete rejects with abort reason", async () => {
 			const ac = new AbortController();
 			ac.abort();
 			await expectAbortRejection(
-				makeClient().completeMultipartUpload("k", "upload-id", [{ partNumber: 1, etag: "etag" }], {
-					signal: ac.signal,
-				}),
+				makeClient()
+					.multipartUpload("k", "upload-id")
+					.complete([{ partNumber: 1, etag: "etag" }], { signal: ac.signal }),
 				ac.signal,
 			);
 		});
 
-		void test("uploadPart rejects with abort reason", async () => {
+		void test("S3MultipartUpload.uploadPart rejects with abort reason", async () => {
 			const ac = new AbortController();
 			ac.abort();
 			await expectAbortRejection(
-				makeClient().uploadPart("k", "upload-id", "data", 1, { signal: ac.signal }),
+				makeClient().multipartUpload("k", "upload-id").uploadPart(1, "data", { signal: ac.signal }),
 				ac.signal,
 			);
 		});
 
-		void test("listParts rejects with abort reason", async () => {
+		void test("S3MultipartUpload.parts rejects with abort reason", async () => {
 			const ac = new AbortController();
 			ac.abort();
 			await expectAbortRejection(
-				makeClient().listParts("k", "upload-id", { signal: ac.signal }),
+				makeClient().multipartUpload("k", "upload-id").parts({ signal: ac.signal }),
 				ac.signal,
 			);
+		});
+
+		void test("S3MultipartUpload.partsIterating rejects with abort reason on first iteration", async () => {
+			const ac = new AbortController();
+			ac.abort();
+			const iter = makeClient().multipartUpload("k", "upload-id").partsIterating({
+				signal: ac.signal,
+			});
+			await expectAbortRejection(iter.next(), ac.signal);
 		});
 
 		void test("createBucket rejects with abort reason", async () => {
@@ -365,9 +374,9 @@ void describe("cancellation", () => {
 			await expectAbortRejection(promise, ac.signal);
 		});
 
-		void test("uploadPart rejects with abort reason", async () => {
+		void test("S3MultipartUpload.uploadPart rejects with abort reason", async () => {
 			const ac = new AbortController();
-			const promise = makeClient().uploadPart("k", "upload-id", "data", 1, {
+			const promise = makeClient().multipartUpload("k", "upload-id").uploadPart(1, "data", {
 				signal: ac.signal,
 			});
 			await delay(25);

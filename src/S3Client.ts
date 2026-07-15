@@ -3,6 +3,7 @@ import { request, Agent, type Dispatcher } from "undici";
 import { XMLParser, XMLBuilder } from "fast-xml-parser";
 
 import S3File from "./S3File.ts";
+import S3MultipartUpload from "./S3MultipartUpload.ts";
 import S3Error from "./S3Error.ts";
 import S3BucketEntry from "./S3BucketEntry.ts";
 import KeyCache from "./KeyCache.ts";
@@ -62,7 +63,8 @@ const xmlParser = new XMLParser({
 		jPath === "CORSConfiguration.CORSRule.AllowedHeader" ||
 		jPath === "CORSConfiguration.CORSRule.ExposeHeader",
 });
-const xmlBuilder = new XMLBuilder({
+/** @internal */
+export const xmlBuilder = new XMLBuilder({
 	attributeNamePrefix: "$",
 	ignoreAttributes: false,
 });
@@ -273,116 +275,10 @@ export type CreateMultipartUploadOptions = {
 	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
-export type CreateMultipartUploadResult = {
-	/** Name of the bucket the multipart upload was created in. */
-	bucket: string;
-	key: string;
-	uploadId: string;
-};
-export type AbortMultipartUploadOptions = {
+export type CreateMultipartUploadInstanceOptions = {
 	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
-	/** Signal to abort the request. */
-	signal?: AbortSignal;
 };
-
-export type CompleteMultipartUploadOptions = {
-	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
-	bucket?: string;
-	/** Signal to abort the request. */
-	signal?: AbortSignal;
-};
-export type CompleteMultipartUploadResult = {
-	/** The URI that identifies the newly created object. */
-	location?: string;
-	/** Name of the bucket the multipart upload was created in. */
-	bucket?: string;
-	key?: string;
-	etag?: string;
-	/** The Base64 encoded, 32-bit `CRC32` checksum of the part. This checksum is present if the multipart upload request was created with the `CRC32` checksum algorithm. */
-	checksumCRC32?: string;
-	/** The Base64 encoded, 32-bit `CRC32C` checksum of the part. This checksum is present if the multipart upload request was created with the `CRC32C` checksum algorithm. */
-	checksumCRC32C?: string;
-	/** The Base64 encoded, 64-bit `CRC64NVME` checksum of the part. This checksum is present if the multipart upload request was created with the `CRC64NVME` checksum algorithm. */
-	checksumCRC64NVME?: string;
-	/** The Base64 encoded, 160-bit `SHA1` checksum of the part. This checksum is present if the multipart upload request was created with the `SHA1` checksum algorithm. */
-	checksumSHA1?: string;
-	/** The Base64 encoded, 256-bit `SHA256` checksum of the part. This checksum is present if the multipart upload request was created with the `SHA256` checksum algorithm. */
-	checksumSHA256?: string;
-	/**
-	 * The checksum type, which determines how part-level checksums are combined to create an object-level checksum for multipart objects.
-	 * You can use this header as a data integrity check to verify that the checksum type that is received is the same checksum type that was specified during the `CreateMultipartUpload` request.
-	 */
-	checksumType?: ChecksumType;
-};
-export type MultipartUploadPart = {
-	partNumber: number;
-	etag: string;
-};
-export type UploadPartOptions = {
-	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
-	bucket?: string;
-	/** Signal to abort the request. */
-	signal?: AbortSignal;
-};
-export type UploadPartResult = {
-	partNumber: number;
-	etag: string;
-};
-export type ListPartsOptions = {
-	maxParts?: number;
-	partNumberMarker?: string;
-
-	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
-	bucket?: string;
-	/** Signal to abort the request. */
-	signal?: AbortSignal;
-};
-export type ListPartsResult = {
-	/** Name of the bucket. */
-	bucket: string;
-	key: string;
-	uploadId: string;
-	partNumberMarker?: string;
-	nextPartNumberMarker?: string;
-	maxParts?: number;
-	isTruncated: boolean;
-	parts: Array<{
-		/** The Base64 encoded, 32-bit `CRC32` checksum of the part. This checksum is present if the multipart upload request was created with the `CRC32` checksum algorithm. */
-		checksumCRC32?: string;
-		/** The Base64 encoded, 32-bit `CRC32C` checksum of the part. This checksum is present if the multipart upload request was created with the `CRC32C` checksum algorithm. */
-		checksumCRC32C?: string;
-		/** The Base64 encoded, 64-bit `CRC64NVME` checksum of the part. This checksum is present if the multipart upload request was created with the `CRC64NVME` checksum algorithm. */
-		checksumCRC64NVME?: string;
-		/** The Base64 encoded, 160-bit `SHA1` checksum of the part. This checksum is present if the multipart upload request was created with the `SHA1` checksum algorithm. */
-		checksumSHA1?: string;
-		/** The Base64 encoded, 256-bit `SHA256` checksum of the part. This checksum is present if the multipart upload request was created with the `SHA256` checksum algorithm. */
-		checksumSHA256?: string;
-		etag: string;
-		lastModified: Date;
-		partNumber: number;
-		size: number;
-	}>;
-
-	storageClass?: StorageClass;
-	checksumAlgorithm?: ChecksumAlgorithm;
-	checksumType?: ChecksumType;
-
-	// TODO
-	// initiator: unknown;
-	// <Initiator>
-	// 	<DisplayName>string</DisplayName>
-	// 	<ID>string</ID>
-	// </Initiator>
-
-	// TODO
-	// owner: unknown;
-	// <Owner>
-	// 	<DisplayName>string</DisplayName>
-	// 	<ID>string</ID>
-	// </Owner>
-};
-
 //#endregion
 
 export type ListObjectsResult = {
@@ -760,16 +656,34 @@ export default class S3Client {
 
 	//#region multipart uploads
 
+	/**
+	 * Starts a new multipart upload and returns a {@link S3MultipartUpload} handle for it.
+	 *
+	 * @remarks Uses [`CreateMultipartUpload`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateMultipartUpload.html).
+	 *
+	 * @example
+	 * ```js
+	 * const upload = await client.createMultipartUpload("large-file.bin");
+	 * const parts = [
+	 *   await upload.uploadPart(1, chunk1),
+	 *   await upload.uploadPart(2, chunk2),
+	 * ];
+	 * await upload.complete(parts);
+	 * ```
+	 */
 	async createMultipartUpload(
 		key: string,
 		options: CreateMultipartUploadOptions = {},
-	): Promise<CreateMultipartUploadResult> {
+	): Promise<S3MultipartUpload> {
+		const path = ensureValidPath(key);
+		const bucket = options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket;
+
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,
-			options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket,
+			bucket,
 			"POST",
-			ensureValidPath(key),
+			path,
 			"uploads=",
 			undefined,
 			undefined,
@@ -785,11 +699,34 @@ export default class S3Client {
 		const text = await response.body.text();
 		const res = ensureParsedXml(text).InitiateMultipartUploadResult ?? {};
 
-		return {
-			bucket: res.Bucket,
-			key: res.Key,
-			uploadId: res.UploadId,
-		};
+		if (typeof res.UploadId !== "string" || res.UploadId.length === 0) {
+			throw new Error("S3 server returned an invalid response for `CreateMultipartUpload`");
+		}
+
+		return new S3MultipartUpload(this, path, res.UploadId, bucket);
+	}
+
+	/**
+	 * Creates a {@link S3MultipartUpload} handle for an already existing multipart upload,
+	 * e.g. one found via {@link S3Client#listMultipartUploads}. Does not perform a network request.
+	 *
+	 * @example
+	 * ```js
+	 * const upload = client.multipartUpload("large-file.bin", uploadId);
+	 * await upload.abort();
+	 * ```
+	 */
+	multipartUpload(
+		key: string,
+		uploadId: string,
+		options: CreateMultipartUploadInstanceOptions = {},
+	): S3MultipartUpload {
+		return new S3MultipartUpload(
+			this,
+			ensureValidPath(key),
+			uploadId,
+			options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket,
+		);
 	}
 
 	/**
@@ -900,235 +837,6 @@ export default class S3Client {
 						}) satisfies MultipartUpload,
 				) ?? [],
 		};
-	}
-
-	/**
-	 * @remarks Uses [`AbortMultipartUpload`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_AbortMultipartUpload.html).
-	 * @throws {RangeError} If `key` is not at least 1 character long.
-	 * @throws {Error} If `uploadId` is not provided.
-	 */
-	async abortMultipartUpload(
-		path: string,
-		uploadId: string,
-		options: AbortMultipartUploadOptions = {},
-	): Promise<void> {
-		if (!uploadId) {
-			throw new Error("`uploadId` is required.");
-		}
-
-		const response = await this[kSignedRequest](
-			this.#options.region,
-			this.#options.endpoint,
-			options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket,
-			"DELETE",
-			ensureValidPath(path),
-			`uploadId=${encodeURIComponent(uploadId)}`,
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-			options.signal,
-		);
-
-		if (response.statusCode !== 204) {
-			throw await getResponseError(response, path);
-		}
-	}
-
-	/**
-	 * @remarks Uses [`CompleteMultipartUpload`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html).
-	 * @throws {RangeError} If `key` is not at least 1 character long.
-	 * @throws {Error} If `uploadId` is not provided.
-	 */
-	async completeMultipartUpload(
-		path: string,
-		uploadId: string,
-		parts: readonly MultipartUploadPart[],
-		options: CompleteMultipartUploadOptions = {},
-	): Promise<CompleteMultipartUploadResult> {
-		if (!uploadId) {
-			throw new Error("`uploadId` is required.");
-		}
-
-		const body = xmlBuilder.build({
-			CompleteMultipartUpload: {
-				Part: parts.map(part => ({
-					PartNumber: part.partNumber,
-					ETag: part.etag,
-				})),
-			},
-		});
-
-		const response = await this[kSignedRequest](
-			this.#options.region,
-			this.#options.endpoint,
-			options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket,
-			"POST",
-			ensureValidPath(path),
-			`uploadId=${encodeURIComponent(uploadId)}`,
-			body,
-			undefined,
-			undefined,
-			undefined,
-			options.signal,
-		);
-
-		if (response.statusCode !== 200) {
-			throw await getResponseError(response, path);
-		}
-		const text = await response.body.text();
-		const parsed = ensureParsedXml(text);
-		// CompleteMultipartUpload can return "200 OK" with an error document as body:
-		// https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html
-		if (parsed.Error) {
-			throw new S3Error(parsed.Error.Code || "Unknown", path, {
-				message: parsed.Error.Message || undefined,
-				status: response.statusCode,
-			});
-		}
-		const res = parsed.CompleteMultipartUploadResult ?? {};
-
-		return {
-			location: res.Location || undefined,
-			bucket: res.Bucket || undefined,
-			key: res.Key || undefined,
-			etag: res.ETag || undefined,
-			checksumCRC32: res.ChecksumCRC32 || undefined,
-			checksumCRC32C: res.ChecksumCRC32C || undefined,
-			checksumCRC64NVME: res.ChecksumCRC64NVME || undefined,
-			checksumSHA1: res.ChecksumSHA1 || undefined,
-			checksumSHA256: res.ChecksumSHA256 || undefined,
-			checksumType: res.ChecksumType || undefined,
-		};
-	}
-
-	/**
-	 * @remarks Uses [`UploadPart`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPart.html).
-	 * @throws {RangeError} If `key` is not at least 1 character long.
-	 * @throws {Error} If `uploadId` is not provided.
-	 */
-	async uploadPart(
-		path: string,
-		uploadId: string,
-		data: string | Buffer | Uint8Array | Readable,
-		partNumber: number,
-		options: UploadPartOptions = {},
-	): Promise<UploadPartResult> {
-		if (!uploadId) {
-			throw new Error("`uploadId` is required.");
-		}
-		if (!data) {
-			throw new Error("`data` is required.");
-		}
-		if (typeof partNumber !== "number" || partNumber <= 0) {
-			throw new Error("`partNumber` has to be a `number` which is >= 1.");
-		}
-
-		const response = await this[kSignedRequest](
-			this.#options.region,
-			this.#options.endpoint,
-			options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket,
-			"PUT",
-			ensureValidPath(path),
-			`partNumber=${partNumber}&uploadId=${encodeURIComponent(uploadId)}`,
-			data,
-			undefined,
-			undefined,
-			undefined,
-			options.signal,
-		);
-
-		if (response.statusCode === 200) {
-			void response.body.dump(); // dump's floating promise should not throw
-
-			const etag = response.headers.etag;
-			if (typeof etag !== "string" || etag.length === 0) {
-				throw new S3Error("Unknown", "", {
-					message: "Response did not contain an etag.",
-				});
-			}
-			return {
-				partNumber,
-				etag,
-			};
-		}
-
-		throw await getResponseError(response, "");
-	}
-
-	/**
-	 * @remarks Uses [`ListParts`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListParts.html).
-	 * @throws {RangeError} If `key` is not at least 1 character long.
-	 * @throws {Error} If `uploadId` is not provided.
-	 * @throws {TypeError} If `options.maxParts` is not a `number`.
-	 * @throws {RangeError} If `options.maxParts` is <= 0.
-	 * @throws {TypeError} If `options.partNumberMarker` is not a `string`.
-	 */
-	async listParts(
-		path: string,
-		uploadId: string,
-		options: ListPartsOptions = {},
-	): Promise<ListPartsResult> {
-		let query = "";
-
-		if (options.maxParts) {
-			if (typeof options.maxParts !== "number") {
-				throw new TypeError("`maxParts` must be a `number`.");
-			}
-			if (options.maxParts <= 0) {
-				throw new RangeError("`maxParts` must be >= 1.");
-			}
-
-			query += `&max-parts=${options.maxParts}`;
-		}
-
-		if (options.partNumberMarker) {
-			if (typeof options.partNumberMarker !== "string") {
-				throw new TypeError("`partNumberMarker` must be a `string`.");
-			}
-			query += `&part-number-marker=${encodeURIComponent(options.partNumberMarker)}`;
-		}
-
-		query += `&uploadId=${encodeURIComponent(uploadId)}`;
-
-		const response = await this[kSignedRequest](
-			this.#options.region,
-			this.#options.endpoint,
-			options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket,
-			"GET",
-			ensureValidPath(path),
-			// We always have a leading &, so we can slice the leading & away (this way, we have less conditionals on the hot path); see benchmark-operations.js
-			query.substring(1),
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-			options?.signal,
-		);
-
-		if (response.statusCode === 200) {
-			const text = await response.body.text();
-			const root = ensureParsedXml(text).ListPartsResult ?? {};
-			return {
-				bucket: root.Bucket,
-				key: root.Key,
-				uploadId: root.UploadId,
-				partNumberMarker: root.PartNumberMarker ?? undefined,
-				nextPartNumberMarker: root.NextPartNumberMarker ?? undefined,
-				maxParts: xmlNumber(root.MaxParts) ?? 1000,
-				isTruncated: root.IsTruncated === "true",
-				parts:
-					// biome-ignore lint/suspicious/noExplicitAny: parsing code
-					root.Part?.map((part: any) => ({
-						etag: part.ETag,
-						lastModified: part.LastModified ? new Date(part.LastModified) : undefined,
-						partNumber: xmlNumber(part.PartNumber),
-						size: xmlNumber(part.Size),
-					})) ?? [],
-			};
-		}
-
-		throw await getResponseError(response, path);
 	}
 
 	//#endregion
@@ -2001,13 +1709,17 @@ export function buildSearchParams(
 	return res;
 }
 
-/** The parsers run with `parseTagValue: false`, so all values arrive as strings. */
-function xmlNumber(value: string | undefined): number | undefined {
+/**
+ * The parsers run with `parseTagValue: false`, so all values arrive as strings.
+ * @internal
+ */
+export function xmlNumber(value: string | undefined): number | undefined {
 	return value === undefined || value === "" ? undefined : Number(value);
 }
 
+/** @internal */
 // biome-ignore lint/suspicious/noExplicitAny: parsing result is just unknown
-function ensureParsedXml(text: string): any {
+export function ensureParsedXml(text: string): any {
 	try {
 		const r = xmlParser.parse(text);
 		if (!r) {

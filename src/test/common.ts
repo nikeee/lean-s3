@@ -917,13 +917,11 @@ export function runTests(
 			const testId = crypto.randomUUID();
 			const key = `${testId}/foo-key-9000`;
 
-			const res = await client.createMultipartUpload(key);
+			const upload = await client.createMultipartUpload(key);
 			try {
-				expect(res).toStrictEqual({
-					bucket: expect.any(String),
-					key,
-					uploadId: expect.any(String),
-				});
+				expect(upload.bucket).toEqual(expect.any(String));
+				expect(upload.key).toBe(key);
+				expect(upload.uploadId).toEqual(expect.any(String));
 
 				// Use `expect.arrayContaining` because the tests will run in parallel and might interfere
 				const uploads = await client.listMultipartUploads();
@@ -934,12 +932,13 @@ export function runTests(
 							key,
 							// storageClass is missing or STANDARD on different services
 							// cloudflare somehow returns a different uploadId than the one provided by createMultipartUpload
-							// uploadId: res.uploadId,
+							// uploadId: upload.uploadId,
 						}),
 					]),
 				);
 			} finally {
-				await client.abortMultipartUpload(key, res.uploadId);
+				// re-attach via the sync factory to also cover client.multipartUpload()
+				await client.multipartUpload(key, upload.uploadId).abort();
 			}
 		});
 
@@ -947,12 +946,9 @@ export function runTests(
 			const testId = crypto.randomUUID();
 			const key = `${testId}/foo-key-9000`;
 
-			const res = await client.createMultipartUpload(key);
-			expect(res).toStrictEqual({
-				bucket: expect.any(String),
-				key: key,
-				uploadId: expect.any(String),
-			});
+			const upload = await client.createMultipartUpload(key);
+			expect(upload.key).toBe(key);
+			expect(upload.uploadId).toEqual(expect.any(String));
 			try {
 				// R2 requires parts to be at least 5 MiB. Also, they have to be the same size (except the last one, which has to be <= in size)
 				const parts = [
@@ -962,16 +958,12 @@ export function runTests(
 				];
 
 				const uploadedParts = [
-					await client.uploadPart(res.key, res.uploadId, parts[0], 1),
-					await client.uploadPart(res.key, res.uploadId, parts[1], 2),
-					await client.uploadPart(res.key, res.uploadId, parts[2], 3),
+					await upload.uploadPart(1, parts[0]),
+					await upload.uploadPart(2, parts[1]),
+					await upload.uploadPart(3, parts[2]),
 				];
 
-				const completed = await client.completeMultipartUpload(
-					res.key,
-					res.uploadId,
-					uploadedParts,
-				);
+				const completed = await upload.complete(uploadedParts);
 				expect(completed).toStrictEqual(
 					expect.objectContaining({
 						bucket: expect.any(String),
@@ -1010,12 +1002,9 @@ export function runTests(
 			const testId = crypto.randomUUID();
 			const key = `${testId}/foo-key-9000`;
 
-			const res = await client.createMultipartUpload(key);
-			expect(res).toStrictEqual({
-				bucket: expect.any(String),
-				key: key,
-				uploadId: expect.any(String),
-			});
+			const upload = await client.createMultipartUpload(key);
+			expect(upload.key).toBe(key);
+			expect(upload.uploadId).toEqual(expect.any(String));
 
 			try {
 				// R2 requires parts to be at least 5 MiB. Also, they have to be the same size (except the last one, which has to be <= in size)
@@ -1025,17 +1014,17 @@ export function runTests(
 					Buffer.alloc(1 * 1024 * 1024).fill(3),
 				];
 
-				await client.uploadPart(res.key, res.uploadId, parts[0], 1);
-				await client.uploadPart(res.key, res.uploadId, parts[1], 2);
-				await client.uploadPart(res.key, res.uploadId, parts[2], 3);
+				await upload.uploadPart(1, parts[0]);
+				await upload.uploadPart(2, parts[1]);
+				await upload.uploadPart(3, parts[2]);
 
-				const availableParts = await client.listParts(key, res.uploadId);
+				const availableParts = await upload.parts();
 
 				expect(availableParts).toStrictEqual(
 					expect.objectContaining({
 						bucket: expect.any(String),
 						key,
-						uploadId: res.uploadId,
+						uploadId: upload.uploadId,
 						// partNumberMarker: 0, // minio/localstack return 0, garage returns undefined
 						// nextPartNumberMarker: expect.any(Number), // minio returns 0, localstack returns 3, garage returns undefined
 						// maxParts: expect.any(Number), garage returns undefined, minio/localstack return some number
@@ -1063,7 +1052,47 @@ export function runTests(
 					}),
 				);
 			} finally {
-				await client.abortMultipartUpload(res.key, res.uploadId);
+				await upload.abort();
+			}
+		});
+
+		void test("partsIterating", async t => {
+			if (implementation === "garage") {
+				// garage does not return NextPartNumberMarker, so paging through parts cannot work
+				t.todo(`S3 implementation "${implementation}" does not support part pagination`);
+				return;
+			}
+
+			const testId = crypto.randomUUID();
+			const key = `${testId}/foo-key-9000`;
+
+			const upload = await client.createMultipartUpload(key);
+			try {
+				// R2 requires parts to be at least 5 MiB. Also, they have to be the same size (except the last one, which has to be <= in size)
+				const parts = [
+					Buffer.alloc(6 * 1024 * 1024).fill(1),
+					Buffer.alloc(6 * 1024 * 1024).fill(2),
+					Buffer.alloc(1 * 1024 * 1024).fill(3),
+				];
+
+				await upload.uploadPart(1, parts[0]);
+				await upload.uploadPart(2, parts[1]);
+				await upload.uploadPart(3, parts[2]);
+
+				const seen = [];
+				// internalPageSize of 1 forces a ListParts request per part, exercising pagination
+				for await (const part of upload.partsIterating({ internalPageSize: 1 })) {
+					seen.push(part);
+				}
+
+				expect(seen.map(p => p.partNumber)).toStrictEqual([1, 2, 3]);
+				expect(seen.map(p => p.size)).toStrictEqual([
+					6 * 1024 * 1024,
+					6 * 1024 * 1024,
+					1 * 1024 * 1024,
+				]);
+			} finally {
+				await upload.abort();
 			}
 		});
 	});

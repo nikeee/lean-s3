@@ -956,7 +956,16 @@ export default class S3Client {
 			throw await getResponseError(response, path);
 		}
 		const text = await response.body.text();
-		const res = ensureParsedXml(text).CompleteMultipartUploadResult ?? {};
+		const parsed = ensureParsedXml(text);
+		// CompleteMultipartUpload can return "200 OK" with an error document as body:
+		// https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html
+		if (parsed.Error) {
+			throw new S3Error(parsed.Error.Code || "Unknown", path, {
+				message: parsed.Error.Message || undefined,
+				status: response.statusCode,
+			});
+		}
+		const res = parsed.CompleteMultipartUploadResult ?? {};
 
 		return {
 			location: res.Location || undefined,

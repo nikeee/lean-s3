@@ -738,7 +738,16 @@ export default class S3Client {
 		}
 
 		const text = await response.body.text();
-		const res = ensureParsedXml(text).CopyObjectResult ?? {};
+		const parsed = ensureParsedXml(text);
+		// CopyObject can return "200 OK" with an error document as body:
+		// https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html
+		if (parsed.Error) {
+			throw new S3Error(parsed.Error.Code || "Unknown", destinationKey, {
+				message: parsed.Error.Message || undefined,
+				status: response.statusCode,
+			});
+		}
+		const res = parsed.CopyObjectResult ?? {};
 
 		return {
 			etag: res.ETag,

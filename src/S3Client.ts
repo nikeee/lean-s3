@@ -537,6 +537,18 @@ export default class S3Client {
 		};
 	}
 
+	/**
+	 * Closes the underlying connection pool.
+	 * Only needed when a client should be disposed before the process exits; requests started afterwards will fail.
+	 */
+	async close(): Promise<void> {
+		await this.#dispatcher.close();
+	}
+
+	async [Symbol.asyncDispose](): Promise<void> {
+		await this.close();
+	}
+
 	/** @internal */
 	[kGetEffectiveParams](
 		options: OverridableS3ClientOptions,

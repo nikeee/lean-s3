@@ -1813,6 +1813,8 @@ export default class S3Client {
 						const status = response.statusCode;
 						if (status === 200) {
 							if (expectPartialResponse) {
+								// undici docs state that we should dump the body if not used
+								void response.body.dump(); // dump's floating promise should not throw
 								return controller.error(
 									new S3Error("Unknown", path, {
 										message: "Expected partial response to range request.",
@@ -1828,6 +1830,8 @@ export default class S3Client {
 
 						if (status === 206) {
 							if (!expectPartialResponse) {
+								// undici docs state that we should dump the body if not used
+								void response.body.dump(); // dump's floating promise should not throw
 								return controller.error(
 									new S3Error("Unknown", path, {
 										message: "Received partial response but expected a full response.",
@@ -1869,16 +1873,19 @@ export default class S3Client {
 								}, onNetworkError);
 							}
 
+							// undici docs state that we should dump the body if not used
+							void response.body.dump(); // dump's floating promise should not throw
 							return controller.error(
 								new S3Error("Unknown", path, {
 									status: response.statusCode,
 									message: undefined,
-									cause: responseText,
 								}),
 							);
 						}
 
 						// TODO: Support other status codes
+						// undici docs state that we should dump the body if not used
+						void response.body.dump(); // dump's floating promise should not throw
 						return controller.error(
 							new Error(
 								`Handling for status code ${status} not implemented yet. You might want to open an issue and describe your situation.`,

@@ -73,13 +73,20 @@ export default class S3File {
 	 * @param contentType The content-type for the new {@link S3File}.
 	 */
 	slice(start?: number, end?: number, contentType?: string): S3File {
-		return new S3File(
-			this.#client,
-			this.#path,
-			start ?? undefined,
-			end ?? undefined,
-			contentType ?? this.#contentType,
-		);
+		if (typeof start === "number" && start < 0) {
+			throw new Error("Invalid slice `start`.");
+		}
+		if (typeof end === "number" && (end < 0 || (typeof start === "number" && end < start))) {
+			throw new Error("Invalid slice `end`.");
+		}
+
+		const base = this.#start ?? 0;
+		const newStart = start === undefined ? this.#start : base + start;
+		let newEnd = end === undefined ? this.#end : base + end;
+		if (this.#end !== undefined && newEnd !== undefined) {
+			newEnd = Math.min(newEnd, this.#end);
+		}
+		return new S3File(this.#client, this.#path, newStart, newEnd, contentType ?? this.#contentType);
 	}
 
 	/**
@@ -300,15 +307,21 @@ export default class S3File {
 	async write(data: ByteSource, options: S3FileWriteOptions = {}): Promise<void> {
 		// TODO: Support S3File as input and maybe use CopyObject
 		// TODO: Support Request and Response as input?
+		if (this.#start !== undefined || this.#end !== undefined) {
+			throw new Error(
+				"Cannot write to a sliced S3File. S3 does not support writing byte ranges of an object.",
+			);
+		}
+
 		const [bytes, length, hash] = await this.#transformData(data);
 		return await this.#client[kWrite](
 			this.#path,
 			bytes,
 			options.type ?? this.#contentType,
-			length,
+			// Content length of streams cannot be known in advance; some providers reject
+			// chunked uploads, so callers can provide it via `options.contentLength`.
+			length ?? options.contentLength,
 			hash,
-			this.#start,
-			this.#end,
 			options.signal,
 		);
 	}
@@ -358,6 +371,11 @@ export interface S3FileReadOptions {
 export type S3FileWriteOptions = {
 	/** Content-Type of the file. */
 	type?: string;
+	/**
+	 * Size of the data in bytes. Only used when writing a stream ({@link Readable}), where the size
+	 * cannot be known in advance. Some providers (e.g. AWS) reject uploads without a known content length.
+	 */
+	contentLength?: number;
 	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };

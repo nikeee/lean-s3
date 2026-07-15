@@ -1602,6 +1602,10 @@ export default class S3Client {
 		objects: readonly S3BucketEntry[] | readonly string[],
 		options: DeleteObjectsOptions = {},
 	): Promise<DeleteObjectsResult> {
+		if (objects.length > 1000) {
+			throw new RangeError("`DeleteObjects` supports at most 1000 keys per request.");
+		}
+
 		const body = xmlBuilder.build({
 			Delete: {
 				Quiet: true,

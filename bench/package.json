@@ -16,7 +16,7 @@
     "@aws-lite/client": "^0.23.7",
     "@aws-lite/s3": "^0.2.7",
     "@aws-sdk/client-s3": "^3.1091.0",
-    "@aws-sdk/s3-request-presigner": "^3.1086.0",
+    "@aws-sdk/s3-request-presigner": "^3.1091.0",
     "@monstermann/tinybench-pretty-printer": "^0.3.0",
     "@testcontainers/minio": "^12.0.4",
     "aws4fetch": "^1.0.20",

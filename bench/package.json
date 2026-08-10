@@ -15,17 +15,17 @@
   "dependencies": {
     "@aws-lite/client": "^0.23.7",
     "@aws-lite/s3": "^0.2.7",
-    "@aws-sdk/client-s3": "^3.1101.0",
-    "@aws-sdk/s3-request-presigner": "^3.1101.0",
+    "@aws-sdk/client-s3": "^3.1107.0",
+    "@aws-sdk/s3-request-presigner": "^3.1107.0",
     "@monstermann/tinybench-pretty-printer": "^0.3.0",
-    "@testcontainers/minio": "^12.0.4",
+    "@testcontainers/minio": "^12.1.0",
     "aws4fetch": "^1.0.20",
     "bun": "^1.3.14",
     "fast-xml-parser": "^5.10.1",
     "minio": "^8.0.7",
     "mitata": "^1.0.34",
-    "s3mini": "^0.9.5",
-    "tinybench": "^6.1.2"
+    "s3mini": "^1.0.0",
+    "tinybench": "^6.1.3"
   },
   "devDependencies": {
     "@aws-lite/s3-types": "^0.2.8"

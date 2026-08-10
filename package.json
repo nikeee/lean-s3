@@ -45,19 +45,19 @@
   },
   "dependencies": {
     "fast-xml-parser": "^5.10.1",
-    "undici": "^8.9.0"
+    "undici": "^8.10.0"
   },
   "devDependencies": {
-    "@testcontainers/localstack": "^12.0.4",
-    "@testcontainers/minio": "^12.0.4",
-    "@testcontainers/s3mock": "^12.0.4",
-    "@types/node": "^26.1.2",
+    "@testcontainers/localstack": "^12.1.0",
+    "@testcontainers/minio": "^12.1.0",
+    "@testcontainers/s3mock": "^12.1.0",
+    "@types/node": "^26.2.0",
     "expect": "^30.4.1",
     "lefthook": "^2.1.10",
-    "oxfmt": "^0.61.0",
-    "oxlint": "^1.76.0",
+    "oxfmt": "^0.63.0",
+    "oxlint": "^1.78.0",
     "oxlint-tsgolint": "^7.0.2001",
-    "testcontainers": "^12.0.4",
+    "testcontainers": "^12.1.0",
     "tsdown": "^0.22.14",
     "typedoc": "^0.28.20",
     "typescript": "^7.0.2"

@@ -90,28 +90,33 @@ Due to the scalability, portability and AWS integrations of @aws-sdk/client-s3, 
 lean-s3 is currently about 30x faster than AWS SDK when it comes to pre-signing URLs:
 ```
 benchmark                    avg (min … max) p75 / p99
--------------------------------------------- ---------
-@aws-sdk/s3-request-presigner 130.73 µs/iter 128.99 µs
-                     (102.27 µs … 938.72 µs) 325.96 µs
-                     (712.00  b …   5.85 mb) 228.48 kb
+-------------------------------------------- ----------
+@aws-sdk/s3-request-presigner 140.12 µs/iter 143.53 µs
+                      (96.47 µs … 674.16 µs) 348.75 µs
+                     (  3.10 kb …   1.98 mb) 226.95 kb
 
-lean-s3                         4.22 µs/iter   4.20 µs
-                         (4.02 µs … 5.96 µs)   4.52 µs
-                     (  3.54 kb …   3.54 kb)   3.54 kb
+s3mini                         34.83 µs/iter  33.58 µs
+                      (26.91 µs … 611.92 µs)  81.47 µs
+                     (  1.29 kb … 334.05 kb)  29.82 kb
 
-aws4fetch                      52.41 µs/iter  50.71 µs
-                        (36.06 µs … 1.79 ms) 173.15 µs
-                     ( 24.00  b …   1.66 mb)  51.60 kb
+lean-s3                        13.82 µs/iter  14.03 µs
+                      (12.01 µs … 382.96 µs)  21.40 µs
+                     (  2.41 kb … 595.80 kb)   5.20 kb
 
-minio client                   16.21 µs/iter  15.13 µs
-                        (13.14 µs … 1.25 ms)  27.08 µs
-                     (192.00  b …   1.43 mb)  16.02 kb
+aws4fetch                      44.79 µs/iter  43.36 µs
+                      (33.95 µs … 972.53 µs)  90.25 µs
+                     ( 80.00  b … 741.64 kb)  33.90 kb
+
+minio client                   58.11 µs/iter  56.44 µs
+                        (46.77 µs … 4.03 ms)  92.10 µs
+                     (  1.25 kb … 437.31 kb)  21.57 kb
 
 summary
   lean-s3
-   3.84x faster than minio client
-   12.42x faster than aws4fetch
-   30.99x faster than @aws-sdk/s3-request-presigner
+   2.52x faster than s3mini
+   3.24x faster than aws4fetch
+   4.2x faster than minio client
+   10.14x faster than @aws-sdk/s3-request-presigner
 ```
 
 Don't trust this benchmark and [run it yourself](./BENCHMARKS.md). I am just some random internet guy trying to tell you [how much better this s3 client is](https://xkcd.com/927/). For `PUT` operations, it is ~1.5x faster than `@aws-sdk/client-s3`. We still work on improving these numbers.

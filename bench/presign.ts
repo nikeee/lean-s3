@@ -4,6 +4,7 @@ import { S3Client as AWSS3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { AwsClient as AWSs4FetchClient } from "aws4fetch";
 import { Client as MinioClient } from "minio";
+import { S3mini as S3miniClient } from "s3mini";
 
 import { S3Client as LeanS3Client } from "../dist/index.mjs";
 
@@ -36,6 +37,22 @@ mitata.summary(async () => {
 				await generatePresignedUrl("test-bucket", "path.json", 3600);
 			})
 			.gc("once");
+	}
+	//#endregion
+	//#region s3mini
+	{
+		const s3mini = new S3miniClient({
+			region: "auto",
+			endpoint: "https://localhost:9000",
+			accessKeyId: "sample-key-id",
+			secretAccessKey: "sample-secret-key",
+		});
+		mitata
+			.bench("s3mini", async () => {
+				await s3mini.getPresignedUrl("PUT", "uploads/file.bin", 3600);
+			})
+			.gc("once")
+			.baseline(true);
 	}
 	//#endregion
 	//#region lean-s3

@@ -67,7 +67,14 @@ async function loadHarness(): Promise<Harness> {
 			const fn = (rest.length > 1 ? rest[1] : rest[0]) as () => unknown;
 			const options = (rest.length > 1 ? rest[0] : undefined) as { skip?: boolean } | undefined;
 			if (options?.skip) {
-				return (bunTest.describe as any).skip?.(name, fn) ?? bunTest.describe(name, () => {});
+				// `node:test` does not execute the body of a skipped suite at all.
+				// `bun:test`'s `describe.skip` follows Jest semantics and *does* run the
+				// block to collect (skipped) tests, which would still execute expensive
+				// suite setup (e.g. starting testcontainers). Pass an empty body instead.
+				const emptyBody = () => {};
+				return (
+					(bunTest.describe as any).skip?.(name, emptyBody) ?? bunTest.describe(name, emptyBody)
+				);
 			}
 			return bunTest.describe(name, fn);
 		};

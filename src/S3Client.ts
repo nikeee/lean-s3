@@ -1,14 +1,15 @@
 import * as nodeUtil from "node:util";
-import { request, type ResponseData } from "./http.ts";
+import { createHttpClient, type HttpClient, type ResponseBody, type ResponseData } from "./http.ts";
 import { XMLParser, XMLBuilder } from "fast-xml-parser";
 
 import S3File from "./S3File.ts";
+import S3MultipartUpload from "./S3MultipartUpload.ts";
 import S3Error from "./S3Error.ts";
 import S3BucketEntry from "./S3BucketEntry.ts";
 import KeyCache from "./KeyCache.ts";
 import * as amzDate from "./AmzDate.ts";
 import * as sign from "./sign.ts";
-import { buildRequestUrl, getRangeHeader, normalizePath, prepareHeadersForSigning } from "./url.ts";
+import { buildRequestUrl, getRangeHeader, normalizeKey, prepareHeadersForSigning } from "./url.ts";
 import type {
 	Acl,
 	BucketInfo,
@@ -20,7 +21,7 @@ import type {
 	PresignableHttpMethod,
 	StorageClass,
 } from "./index.ts";
-import { fromStatusCode, getResponseError } from "./error.ts";
+import { getResponseError } from "./error.ts";
 import { getAuthorizationHeader } from "./request.ts";
 import {
 	ensureValidAccessKeyId,
@@ -46,6 +47,10 @@ export const kGetEffectiveParams = Symbol("kGetEffectiveParams");
 
 const xmlParser = new XMLParser({
 	ignoreAttributes: true,
+	// Never coerce tag values: the defaults turn numeric-looking keys into numbers
+	// ("0123" -> 123, "1e5" -> 100000), silently corrupting object keys, prefixes and markers.
+	// Numeric/boolean fields are converted explicitly where they are read.
+	parseTagValue: false,
 	isArray: (_, jPath) =>
 		jPath === "ListMultipartUploadsResult.Upload" ||
 		jPath === "ListBucketResult.Contents" ||
@@ -58,7 +63,8 @@ const xmlParser = new XMLParser({
 		jPath === "CORSConfiguration.CORSRule.AllowedHeader" ||
 		jPath === "CORSConfiguration.CORSRule.ExposeHeader",
 });
-const xmlBuilder = new XMLBuilder({
+/** @internal */
+export const xmlBuilder = new XMLBuilder({
 	attributeNamePrefix: "$",
 	ignoreAttributes: false,
 });
@@ -138,7 +144,6 @@ export type DeleteObjectsError = {
 };
 
 export interface S3FilePresignOptions extends OverridableS3ClientOptions {
-	contentHash?: Buffer;
 	/**
 	 * In seconds.
 	 * @default 3600 (1 hour)
@@ -174,31 +179,6 @@ export interface S3FilePresignOptions extends OverridableS3ClientOptions {
 		contentDisposition?: ContentDisposition;
 	};
 }
-
-/**
- * Ref: https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-HTTPPOSTConstructPolicy.html#sigv4-ConditionMatching
- */
-export type ConditionMatchType = "starts-with" | "eq" | "content-length-range";
-
-export type PostPolicyCondition =
-	| [string, string]
-	| [ConditionMatchType, string | number, string | number];
-
-export interface PresignPostOptions extends OverridableS3ClientOptions {
-	key: string;
-	/**
-	 * In seconds.
-	 * @default 3600 (1 hour)
-	 */
-	// TODO: Maybe rename this to expiresInSeconds
-	expiresIn?: number;
-	fields?: Record<string, string>;
-	conditions?: PostPolicyCondition[];
-}
-export type PresignPostResult = {
-	url: string;
-	fields: Record<string, string>;
-};
 
 export type CopyObjectOptions = {
 	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
@@ -295,116 +275,10 @@ export type CreateMultipartUploadOptions = {
 	/** Signal to abort the request. */
 	signal?: AbortSignal;
 };
-export type CreateMultipartUploadResult = {
-	/** Name of the bucket the multipart upload was created in. */
-	bucket: string;
-	key: string;
-	uploadId: string;
-};
-export type AbortMultipartUploadOptions = {
+export type CreateMultipartUploadInstanceOptions = {
 	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
 	bucket?: string;
-	/** Signal to abort the request. */
-	signal?: AbortSignal;
 };
-
-export type CompleteMultipartUploadOptions = {
-	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
-	bucket?: string;
-	/** Signal to abort the request. */
-	signal?: AbortSignal;
-};
-export type CompleteMultipartUploadResult = {
-	/** The URI that identifies the newly created object. */
-	location?: string;
-	/** Name of the bucket the multipart upload was created in. */
-	bucket?: string;
-	key?: string;
-	etag?: string;
-	/** The Base64 encoded, 32-bit `CRC32` checksum of the part. This checksum is present if the multipart upload request was created with the `CRC32` checksum algorithm. */
-	checksumCRC32?: string;
-	/** The Base64 encoded, 32-bit `CRC32C` checksum of the part. This checksum is present if the multipart upload request was created with the `CRC32C` checksum algorithm. */
-	checksumCRC32C?: string;
-	/** The Base64 encoded, 64-bit `CRC64NVME` checksum of the part. This checksum is present if the multipart upload request was created with the `CRC64NVME` checksum algorithm. */
-	checksumCRC64NVME?: string;
-	/** The Base64 encoded, 160-bit `SHA1` checksum of the part. This checksum is present if the multipart upload request was created with the `SHA1` checksum algorithm. */
-	checksumSHA1?: string;
-	/** The Base64 encoded, 256-bit `SHA256` checksum of the part. This checksum is present if the multipart upload request was created with the `SHA256` checksum algorithm. */
-	checksumSHA256?: string;
-	/**
-	 * The checksum type, which determines how part-level checksums are combined to create an object-level checksum for multipart objects.
-	 * You can use this header as a data integrity check to verify that the checksum type that is received is the same checksum type that was specified during the `CreateMultipartUpload` request.
-	 */
-	checksumType?: ChecksumType;
-};
-export type MultipartUploadPart = {
-	partNumber: number;
-	etag: string;
-};
-export type UploadPartOptions = {
-	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
-	bucket?: string;
-	/** Signal to abort the request. */
-	signal?: AbortSignal;
-};
-export type UploadPartResult = {
-	partNumber: number;
-	etag: string;
-};
-export type ListPartsOptions = {
-	maxParts?: number;
-	partNumberMarker?: string;
-
-	/** Set this to override the {@link S3ClientOptions#bucket} that was passed on creation of the {@link S3Client}. */
-	bucket?: string;
-	/** Signal to abort the request. */
-	signal?: AbortSignal;
-};
-export type ListPartsResult = {
-	/** Name of the bucket. */
-	bucket: string;
-	key: string;
-	uploadId: string;
-	partNumberMarker?: string;
-	nextPartNumberMarker?: string;
-	maxParts?: number;
-	isTruncated: boolean;
-	parts: Array<{
-		/** The Base64 encoded, 32-bit `CRC32` checksum of the part. This checksum is present if the multipart upload request was created with the `CRC32` checksum algorithm. */
-		checksumCRC32?: string;
-		/** The Base64 encoded, 32-bit `CRC32C` checksum of the part. This checksum is present if the multipart upload request was created with the `CRC32C` checksum algorithm. */
-		checksumCRC32C?: string;
-		/** The Base64 encoded, 64-bit `CRC64NVME` checksum of the part. This checksum is present if the multipart upload request was created with the `CRC64NVME` checksum algorithm. */
-		checksumCRC64NVME?: string;
-		/** The Base64 encoded, 160-bit `SHA1` checksum of the part. This checksum is present if the multipart upload request was created with the `SHA1` checksum algorithm. */
-		checksumSHA1?: string;
-		/** The Base64 encoded, 256-bit `SHA256` checksum of the part. This checksum is present if the multipart upload request was created with the `SHA256` checksum algorithm. */
-		checksumSHA256?: string;
-		etag: string;
-		lastModified: Date;
-		partNumber: number;
-		size: number;
-	}>;
-
-	storageClass?: StorageClass;
-	checksumAlgorithm?: ChecksumAlgorithm;
-	checksumType?: ChecksumType;
-
-	// TODO
-	// initiator: unknown;
-	// <Initiator>
-	// 	<DisplayName>string</DisplayName>
-	// 	<ID>string</ID>
-	// </Initiator>
-
-	// TODO
-	// owner: unknown;
-	// <Owner>
-	// 	<DisplayName>string</DisplayName>
-	// 	<ID>string</ID>
-	// </Owner>
-};
-
 //#endregion
 
 export type ListObjectsResult = {
@@ -500,6 +374,22 @@ export default class S3Client {
 	#options: Readonly<InternalS3ClientOptions>;
 	#keyCache = new KeyCache();
 
+	/** The presign credential scope only changes with the UTC day and region, so we cache it (same idea as {@link KeyCache}). */
+	#credentialCache:
+		| {
+				numericDayStart: number;
+				region: Region;
+				plain: string;
+				encoded: string;
+		  }
+		| undefined;
+
+	/**
+	 * Per-client HTTP backend (undici `Agent` on Node.js, global `fetch` on Bun).
+	 * See `src/http.ts` and DESIGN_DECISIONS.md ("Runtime-adaptive HTTP backend").
+	 */
+	#http: HttpClient = createHttpClient();
+
 	/**
 	 * Create a new instance of an S3 bucket so that credentials can be managed from a single instance instead of being passed to every method.
 	 *
@@ -520,6 +410,18 @@ export default class S3Client {
 		};
 	}
 
+	/**
+	 * Closes the underlying connection pool.
+	 * Only needed when a client should be disposed before the process exits; requests started afterwards will fail.
+	 */
+	async close(): Promise<void> {
+		await this.#http.close();
+	}
+
+	async [Symbol.asyncDispose](): Promise<void> {
+		await this.close();
+	}
+
 	/** @internal */
 	[kGetEffectiveParams](
 		options: OverridableS3ClientOptions,
@@ -529,6 +431,25 @@ export default class S3Client {
 			options.endpoint ? ensureValidEndpoint(options.endpoint) : this.#options.endpoint,
 			options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket,
 		];
+	}
+
+	#getCredential(date: amzDate.AmzDate, region: Region) {
+		let credential = this.#credentialCache;
+		if (
+			credential === undefined ||
+			credential.numericDayStart !== date.numericDayStart ||
+			credential.region !== region
+		) {
+			const plain = `${this.#options.accessKeyId}/${date.date}/${region}/s3/aws4_request`;
+			credential = {
+				numericDayStart: date.numericDayStart,
+				region,
+				plain,
+				encoded: encodeURIComponentExtended(plain),
+			};
+			this.#credentialCache = credential;
+		}
+		return credential;
 	}
 
 	/**
@@ -615,11 +536,10 @@ export default class S3Client {
 
 		const res = buildRequestUrl(endpoint, bucket, region, ensureValidPath(path));
 
-		const now = new Date();
-		const date = amzDate.getAmzDate(now);
+		const date = amzDate.now();
 
 		const query = buildSearchParams(
-			`${this.#options.accessKeyId}/${date.date}/${region}/s3/aws4_request`,
+			this.#getCredential(date, region).encoded,
 			date,
 			options.expiresIn ?? 3600,
 			typeof contentLength === "number" || typeof contentType === "string"
@@ -675,74 +595,6 @@ export default class S3Client {
 		return res.toString();
 	}
 
-	presignPost(options: PresignPostOptions): PresignPostResult {
-		const now = new Date();
-		const date = amzDate.getAmzDate(now);
-
-		const key = options.key as ObjectKey;
-		const region = ensureValidRegion(options.region ?? this.#options.region);
-		const bucket = ensureValidBucketName(options.bucket ?? this.#options.bucket);
-		const endpoint = ensureValidEndpoint(options.endpoint ?? this.#options.endpoint);
-		const expiresIn = options.expiresIn ?? 3600;
-
-		const credential = `${this.#options.accessKeyId}/${date.date}/${region}/s3/aws4_request`;
-
-		const fields = {
-			...options.fields,
-			bucket,
-			"X-Amz-Algorithm": "AWS4-HMAC-SHA256",
-			"X-Amz-Credential": credential,
-			"X-Amz-Date": date.dateTime,
-			...(this.#options.sessionToken
-				? {
-						"X-Amz-Security-Token": this.#options.sessionToken,
-					}
-				: undefined),
-		} satisfies Record<string, string>;
-
-		const expirationDate = new Date(now.getTime() + expiresIn * 1000);
-
-		const policy = {
-			expiration: expirationDate.toISOString().replace(/\.\d{3}Z$/, "Z"), // AWS SDK does the same
-			conditions: [
-				["eq", "$bucket", bucket],
-				key.endsWith("{{filename}}")
-					? ["starts-with", "$key", key.substring(0, key.lastIndexOf("{{filename}}"))]
-					: ["eq", "$key", key],
-				...(options.conditions ? options.conditions : []),
-				["eq", "$x-amz-algorithm", "AWS4-HMAC-SHA256"],
-				["eq", "$x-amz-credential", credential],
-				["eq", "$x-amz-date", date.dateTime],
-			],
-		};
-
-		if (this.#options.sessionToken) {
-			policy.conditions.push(["eq", "$x-amz-security-token", this.#options.sessionToken]);
-		}
-
-		const policyJson = JSON.stringify(policy);
-		const encodedPolicy = Buffer.from(policyJson).toString("base64");
-
-		const signingKey = this.#keyCache.computeIfAbsent(
-			date,
-			region,
-			this.#options.accessKeyId,
-			this.#options.secretAccessKey,
-		);
-
-		const url = buildRequestUrl(endpoint, bucket, region, "" as ObjectKey);
-
-		return {
-			url: url.toString(),
-			fields: {
-				...fields,
-				key,
-				Policy: encodedPolicy,
-				"X-Amz-Signature": sign.signEncodedPolicy(signingKey, encodedPolicy),
-			},
-		};
-	}
-
 	/**
 	 * Copies an object from a source to a destination.
 	 * @remarks Uses [`CopyObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html).
@@ -760,7 +612,7 @@ export default class S3Client {
 			: this.#options.bucket;
 
 		// The value must be URL-encoded.
-		const normalizedSourceKey = normalizePath(ensureValidPath(sourceKey));
+		const normalizedSourceKey = normalizeKey(ensureValidPath(sourceKey));
 		const copySource = encodeURIComponent(`${sourceBucket}/${normalizedSourceKey}`);
 
 		const response = await this[kSignedRequest](
@@ -784,7 +636,16 @@ export default class S3Client {
 		}
 
 		const text = await response.body.text();
-		const res = ensureParsedXml(text).CopyObjectResult ?? {};
+		const parsed = ensureParsedXml(text);
+		// CopyObject can return "200 OK" with an error document as body:
+		// https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html
+		if (parsed.Error) {
+			throw new S3Error(parsed.Error.Code || "Unknown", destinationKey, {
+				message: parsed.Error.Message || undefined,
+				status: response.statusCode,
+			});
+		}
+		const res = parsed.CopyObjectResult ?? {};
 
 		return {
 			etag: res.ETag,
@@ -798,16 +659,34 @@ export default class S3Client {
 
 	//#region multipart uploads
 
+	/**
+	 * Starts a new multipart upload and returns a {@link S3MultipartUpload} handle for it.
+	 *
+	 * @remarks Uses [`CreateMultipartUpload`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateMultipartUpload.html).
+	 *
+	 * @example
+	 * ```js
+	 * const upload = await client.createMultipartUpload("large-file.bin");
+	 * const parts = [
+	 *   await upload.uploadPart(1, chunk1),
+	 *   await upload.uploadPart(2, chunk2),
+	 * ];
+	 * await upload.complete(parts);
+	 * ```
+	 */
 	async createMultipartUpload(
 		key: string,
 		options: CreateMultipartUploadOptions = {},
-	): Promise<CreateMultipartUploadResult> {
+	): Promise<S3MultipartUpload> {
+		const path = ensureValidPath(key);
+		const bucket = options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket;
+
 		const response = await this[kSignedRequest](
 			this.#options.region,
 			this.#options.endpoint,
-			options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket,
+			bucket,
 			"POST",
-			ensureValidPath(key),
+			path,
 			"uploads=",
 			undefined,
 			undefined,
@@ -823,11 +702,34 @@ export default class S3Client {
 		const text = await response.body.text();
 		const res = ensureParsedXml(text).InitiateMultipartUploadResult ?? {};
 
-		return {
-			bucket: res.Bucket,
-			key: res.Key,
-			uploadId: res.UploadId,
-		};
+		if (typeof res.UploadId !== "string" || res.UploadId.length === 0) {
+			throw new Error("S3 server returned an invalid response for `CreateMultipartUpload`");
+		}
+
+		return new S3MultipartUpload(this, path, res.UploadId, bucket);
+	}
+
+	/**
+	 * Creates a {@link S3MultipartUpload} handle for an already existing multipart upload,
+	 * e.g. one found via {@link S3Client#listMultipartUploads}. Does not perform a network request.
+	 *
+	 * @example
+	 * ```js
+	 * const upload = client.multipartUpload("large-file.bin", uploadId);
+	 * await upload.abort();
+	 * ```
+	 */
+	multipartUpload(
+		key: string,
+		uploadId: string,
+		options: CreateMultipartUploadInstanceOptions = {},
+	): S3MultipartUpload {
+		return new S3MultipartUpload(
+			this,
+			ensureValidPath(key),
+			uploadId,
+			options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket,
+		);
 	}
 
 	/**
@@ -840,14 +742,17 @@ export default class S3Client {
 		// See `benchmark-operations.js` on why we don't use URLSearchParams but string concat
 		// tldr: This is faster and we know the params exactly, so we can focus our encoding
 
-		let query = "uploads="; // MinIO requires the = to be present
+		// ! The signature is computed over the query string as-is, so the params must be
+		// ! appended in alphabetical order to form a valid SigV4 canonical query string.
+
+		let query = "";
 
 		if (options.delimiter) {
 			if (typeof options.delimiter !== "string") {
 				throw new TypeError("`delimiter` must be a `string`.");
 			}
 
-			query += `&delimiter=${encodeURIComponent(options.delimiter)}`;
+			query += `delimiter=${encodeURIComponent(options.delimiter)}&`;
 		}
 
 		// we don't support encoding-type
@@ -857,7 +762,7 @@ export default class S3Client {
 				throw new TypeError("`keyMarker` must be a `string`.");
 			}
 
-			query += `&key-marker=${encodeURIComponent(options.keyMarker)}`;
+			query += `key-marker=${encodeURIComponent(options.keyMarker)}&`;
 		}
 		if (typeof options.maxUploads !== "undefined") {
 			if (typeof options.maxUploads !== "number") {
@@ -867,7 +772,7 @@ export default class S3Client {
 				throw new RangeError("`maxUploads` has to be between 1 and 1000.");
 			}
 
-			query += `&max-uploads=${options.maxUploads}`; // no encoding needed, it's a number
+			query += `max-uploads=${options.maxUploads}&`; // no encoding needed, it's a number
 		}
 
 		if (options.prefix) {
@@ -875,8 +780,18 @@ export default class S3Client {
 				throw new TypeError("`prefix` must be a `string`.");
 			}
 
-			query += `&prefix=${encodeURIComponent(options.prefix)}`;
+			query += `prefix=${encodeURIComponent(options.prefix)}&`;
 		}
+
+		if (options.uploadIdMarker) {
+			if (typeof options.uploadIdMarker !== "string") {
+				throw new TypeError("`uploadIdMarker` must be a `string`.");
+			}
+
+			query += `upload-id-marker=${encodeURIComponent(options.uploadIdMarker)}&`;
+		}
+
+		query += "uploads="; // MinIO requires the = to be present; sorts after all other params
 
 		const response = await this[kSignedRequest](
 			this.#options.region,
@@ -907,7 +822,7 @@ export default class S3Client {
 			uploadIdMarker: root.UploadIdMarker || undefined,
 			nextKeyMarker: root.NextKeyMarker || undefined,
 			nextUploadIdMarker: root.NextUploadIdMarker || undefined,
-			maxUploads: root.MaxUploads ?? 1000, // not using || to not override 0; caution: minio supports 10000(!)
+			maxUploads: xmlNumber(root.MaxUploads) ?? 1000, // not using || to not override 0; caution: minio supports 10000(!)
 			isTruncated: root.IsTruncated === "true",
 			uploads:
 				root.Upload?.map(
@@ -925,226 +840,6 @@ export default class S3Client {
 						}) satisfies MultipartUpload,
 				) ?? [],
 		};
-	}
-
-	/**
-	 * @remarks Uses [`AbortMultipartUpload`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_AbortMultipartUpload.html).
-	 * @throws {RangeError} If `key` is not at least 1 character long.
-	 * @throws {Error} If `uploadId` is not provided.
-	 */
-	async abortMultipartUpload(
-		path: string,
-		uploadId: string,
-		options: AbortMultipartUploadOptions = {},
-	): Promise<void> {
-		if (!uploadId) {
-			throw new Error("`uploadId` is required.");
-		}
-
-		const response = await this[kSignedRequest](
-			this.#options.region,
-			this.#options.endpoint,
-			options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket,
-			"DELETE",
-			ensureValidPath(path),
-			`uploadId=${encodeURIComponent(uploadId)}`,
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-			options.signal,
-		);
-
-		if (response.statusCode !== 204) {
-			throw await getResponseError(response, path);
-		}
-	}
-
-	/**
-	 * @remarks Uses [`CompleteMultipartUpload`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html).
-	 * @throws {RangeError} If `key` is not at least 1 character long.
-	 * @throws {Error} If `uploadId` is not provided.
-	 */
-	async completeMultipartUpload(
-		path: string,
-		uploadId: string,
-		parts: readonly MultipartUploadPart[],
-		options: CompleteMultipartUploadOptions = {},
-	): Promise<CompleteMultipartUploadResult> {
-		if (!uploadId) {
-			throw new Error("`uploadId` is required.");
-		}
-
-		const body = xmlBuilder.build({
-			CompleteMultipartUpload: {
-				Part: parts.map(part => ({
-					PartNumber: part.partNumber,
-					ETag: part.etag,
-				})),
-			},
-		});
-
-		const response = await this[kSignedRequest](
-			this.#options.region,
-			this.#options.endpoint,
-			options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket,
-			"POST",
-			ensureValidPath(path),
-			`uploadId=${encodeURIComponent(uploadId)}`,
-			body,
-			undefined,
-			undefined,
-			undefined,
-			options.signal,
-		);
-
-		if (response.statusCode !== 200) {
-			throw await getResponseError(response, path);
-		}
-		const text = await response.body.text();
-		const res = ensureParsedXml(text).CompleteMultipartUploadResult ?? {};
-
-		return {
-			location: res.Location || undefined,
-			bucket: res.Bucket || undefined,
-			key: res.Key || undefined,
-			etag: res.ETag || undefined,
-			checksumCRC32: res.ChecksumCRC32 || undefined,
-			checksumCRC32C: res.ChecksumCRC32C || undefined,
-			checksumCRC64NVME: res.ChecksumCRC64NVME || undefined,
-			checksumSHA1: res.ChecksumSHA1 || undefined,
-			checksumSHA256: res.ChecksumSHA256 || undefined,
-			checksumType: res.ChecksumType || undefined,
-		};
-	}
-
-	/**
-	 * @remarks Uses [`UploadPart`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPart.html).
-	 * @throws {RangeError} If `key` is not at least 1 character long.
-	 * @throws {Error} If `uploadId` is not provided.
-	 */
-	async uploadPart(
-		path: string,
-		uploadId: string,
-		data: string | Buffer | Uint8Array | Readable,
-		partNumber: number,
-		options: UploadPartOptions = {},
-	): Promise<UploadPartResult> {
-		if (!uploadId) {
-			throw new Error("`uploadId` is required.");
-		}
-		if (!data) {
-			throw new Error("`data` is required.");
-		}
-		if (typeof partNumber !== "number" || partNumber <= 0) {
-			throw new Error("`partNumber` has to be a `number` which is >= 1.");
-		}
-
-		const response = await this[kSignedRequest](
-			this.#options.region,
-			this.#options.endpoint,
-			options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket,
-			"PUT",
-			ensureValidPath(path),
-			`partNumber=${partNumber}&uploadId=${encodeURIComponent(uploadId)}`,
-			data,
-			undefined,
-			undefined,
-			undefined,
-			options.signal,
-		);
-
-		if (response.statusCode === 200) {
-			void response.body.dump(); // dump's floating promise should not throw
-
-			const etag = response.headers.etag;
-			if (typeof etag !== "string" || etag.length === 0) {
-				throw new S3Error("Unknown", "", {
-					message: "Response did not contain an etag.",
-				});
-			}
-			return {
-				partNumber,
-				etag,
-			};
-		}
-
-		throw await getResponseError(response, "");
-	}
-
-	/**
-	 * @remarks Uses [`ListParts`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListParts.html).
-	 * @throws {RangeError} If `key` is not at least 1 character long.
-	 * @throws {Error} If `uploadId` is not provided.
-	 * @throws {TypeError} If `options.maxParts` is not a `number`.
-	 * @throws {RangeError} If `options.maxParts` is <= 0.
-	 * @throws {TypeError} If `options.partNumberMarker` is not a `string`.
-	 */
-	async listParts(
-		path: string,
-		uploadId: string,
-		options: ListPartsOptions = {},
-	): Promise<ListPartsResult> {
-		let query = "";
-
-		if (options.maxParts) {
-			if (typeof options.maxParts !== "number") {
-				throw new TypeError("`maxParts` must be a `number`.");
-			}
-			if (options.maxParts <= 0) {
-				throw new RangeError("`maxParts` must be >= 1.");
-			}
-
-			query += `&max-parts=${options.maxParts}`;
-		}
-
-		if (options.partNumberMarker) {
-			if (typeof options.partNumberMarker !== "string") {
-				throw new TypeError("`partNumberMarker` must be a `string`.");
-			}
-			query += `&part-number-marker=${encodeURIComponent(options.partNumberMarker)}`;
-		}
-
-		query += `&uploadId=${encodeURIComponent(uploadId)}`;
-
-		const response = await this[kSignedRequest](
-			this.#options.region,
-			this.#options.endpoint,
-			options.bucket ? ensureValidBucketName(options.bucket) : this.#options.bucket,
-			"GET",
-			ensureValidPath(path),
-			// We always have a leading &, so we can slice the leading & away (this way, we have less conditionals on the hot path); see benchmark-operations.js
-			query.substring(1),
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-			options?.signal,
-		);
-
-		if (response.statusCode === 200) {
-			const text = await response.body.text();
-			const root = ensureParsedXml(text).ListPartsResult ?? {};
-			return {
-				bucket: root.Bucket,
-				key: root.Key,
-				uploadId: root.UploadId,
-				partNumberMarker: root.PartNumberMarker ?? undefined,
-				nextPartNumberMarker: root.NextPartNumberMarker ?? undefined,
-				maxParts: root.MaxParts ?? 1000,
-				isTruncated: root.IsTruncated ?? false,
-				parts:
-					// biome-ignore lint/suspicious/noExplicitAny: parsing code
-					root.Part?.map((part: any) => ({
-						etag: part.ETag,
-						lastModified: part.LastModified ? new Date(part.LastModified) : undefined,
-						partNumber: part.PartNumber ?? undefined,
-						size: part.Size ?? undefined,
-					})) ?? [],
-			};
-		}
-
-		throw await getResponseError(response, path);
 	}
 
 	//#endregion
@@ -1364,9 +1059,8 @@ export default class S3Client {
 		);
 
 		if (response.statusCode !== 200) {
-			// undici docs state that we should dump the body if not used
-			void response.body.dump(); // dump's floating promise should not throw
-			throw fromStatusCode(response.statusCode, "");
+			// getResponseError consumes the body; fromStatusCode would be undefined for most codes
+			throw await getResponseError(response, "");
 		}
 
 		const text = await response.body.text();
@@ -1411,10 +1105,12 @@ export default class S3Client {
 		);
 
 		if (response.statusCode !== 204) {
-			// undici docs state that we should dump the body if not used
-			void response.body.dump(); // dump's floating promise should not throw
-			throw fromStatusCode(response.statusCode, "");
+			// getResponseError consumes the body; fromStatusCode would be undefined for most codes
+			throw await getResponseError(response, "");
 		}
+
+		// undici docs state that we should dump the body if not used
+		void response.body.dump(); // dump's floating promise should not throw
 	}
 
 	//#endregion
@@ -1455,7 +1151,9 @@ export default class S3Client {
 		// See `benchmark-operations.js` on why we don't use URLSearchParams but string concat
 		// tldr: This is faster and we know the params exactly, so we can focus our encoding
 
-		// ! minio requires these params to be in alphabetical order
+		// ! The signature is computed over the query string as-is, so the params must be
+		// ! appended in alphabetical order to form a valid SigV4 canonical query string
+		// ! (minio also requires this ordering).
 
 		let query = "";
 
@@ -1465,6 +1163,14 @@ export default class S3Client {
 			}
 
 			query += `continuation-token=${encodeURIComponent(options.continuationToken)}&`;
+		}
+
+		if (typeof options.delimiter !== "undefined") {
+			if (typeof options.delimiter !== "string") {
+				throw new TypeError("`delimiter` must be a `string`.");
+			}
+			// always encoded: the canonical query string requires "/" as %2F in values
+			query += `delimiter=${encodeURIComponent(options.delimiter)}&`;
 		}
 
 		query += "list-type=2";
@@ -1479,13 +1185,6 @@ export default class S3Client {
 			}
 
 			query += `&max-keys=${options.maxKeys}`; // no encoding needed, it's a number
-		}
-
-		if (typeof options.delimiter !== "undefined") {
-			if (typeof options.delimiter !== "string") {
-				throw new TypeError("`delimiter` must be a `string`.");
-			}
-			query += `&delimiter=${options.delimiter === "/" ? "/" : encodeURIComponent(options.delimiter)}`;
 		}
 
 		// plain `if(a)` check, so empty strings will also not go into this branch, omitting the parameter
@@ -1538,10 +1237,10 @@ export default class S3Client {
 			name: res.Name,
 			prefix: res.Prefix,
 			startAfter: res.StartAfter,
-			isTruncated: res.IsTruncated,
+			isTruncated: res.IsTruncated === "true",
 			continuationToken: res.ContinuationToken,
-			maxKeys: res.MaxKeys,
-			keyCount: res.KeyCount,
+			maxKeys: xmlNumber(res.MaxKeys) ?? 0,
+			keyCount: xmlNumber(res.KeyCount) ?? 0,
 			nextContinuationToken: res.NextContinuationToken,
 			contents: res.Contents?.map(S3BucketEntry.parse) ?? [],
 		};
@@ -1556,6 +1255,10 @@ export default class S3Client {
 		objects: readonly S3BucketEntry[] | readonly string[],
 		options: DeleteObjectsOptions = {},
 	): Promise<DeleteObjectsResult> {
+		if (objects.length > 1000) {
+			throw new RangeError("`DeleteObjects` supports at most 1000 keys per request.");
+		}
+
 		const body = xmlBuilder.build({
 			Delete: {
 				Quiet: true,
@@ -1655,7 +1358,7 @@ export default class S3Client {
 		});
 
 		try {
-			return await request(url, {
+			return await this.#http.request(url, {
 				method,
 				signal,
 				headers: {
@@ -1693,8 +1396,6 @@ export default class S3Client {
 		contentType: string,
 		contentLength: number | undefined,
 		contentHash: Buffer | undefined,
-		rangeStart: number | undefined,
-		rangeEndExclusive: number | undefined,
 		signal?: AbortSignal,
 	): Promise<void> {
 		const bucket = this.#options.bucket;
@@ -1713,14 +1414,13 @@ export default class S3Client {
 			"content-length": contentLength?.toString() ?? undefined,
 			"content-type": contentType,
 			host: url.host,
-			range: getRangeHeader(rangeStart, rangeEndExclusive),
 			"x-amz-content-sha256": contentHashStr,
 			"x-amz-date": now.dateTime,
 		});
 
 		let response: ResponseData;
 		try {
-			response = await request(url, {
+			response = await this.#http.request(url, {
 				method: "PUT",
 				signal,
 				headers: {
@@ -1790,6 +1490,10 @@ export default class S3Client {
 
 		const ac = new AbortController();
 
+		// The response body is only available once the request promise resolves (see `start`),
+		// but `pull` may be called before that. It stays `undefined` until then.
+		let body: ResponseBody | undefined;
+
 		// The request can settle (e.g. via abort/cancel) after the stream
 		// controller has already been closed or errored. Calling
 		// `controller.error()`/`close()`/`enqueue()` in that state throws
@@ -1800,147 +1504,172 @@ export default class S3Client {
 		// in-flight request's later rejection must not touch the controller.
 		let settled = false;
 
-		return new ReadableStream({
-			type: "bytes",
-			start: controller => {
-				const safeError = (error: unknown) => {
-					if (settled) {
-						return;
-					}
-					settled = true;
-					controller.error(error);
-				};
-				const safeClose = () => {
-					if (settled) {
-						return;
-					}
-					settled = true;
-					controller.close();
-				};
-				const safeEnqueue = (chunk: Uint8Array) => {
-					if (settled) {
-						return;
-					}
-					controller.enqueue(chunk as Uint8Array<ArrayBuffer>);
-				};
-
-				const onNetworkError = (cause: unknown) => {
-					safeError(
-						new S3Error("Unknown", path, {
-							message: undefined,
-							cause,
-						}),
-					);
-				};
-
-				request(url, {
-					method: "GET",
-					signal: signal ? AbortSignal.any([signal, ac.signal]) : ac.signal,
-					headers: {
-						...headersToBeSigned,
-						authorization: getAuthorizationHeader(
-							this.#keyCache,
-							"GET",
-							url.pathname as ObjectKey,
-							url.search,
-							now,
-							headersToBeSigned,
-							region,
-							contentHashStr,
-							this.#options.accessKeyId,
-							this.#options.secretAccessKey,
-						),
-						"user-agent": "lean-s3",
-					},
-				}).then(response => {
-					const onData = safeEnqueue;
-					const onClose = safeClose;
-
-					const expectPartialResponse = range !== undefined;
-					const status = response.statusCode;
-					if (status === 200) {
-						if (expectPartialResponse) {
-							return safeError(
-								new S3Error("Unknown", path, {
-									message: "Expected partial response to range request.",
-								}),
-							);
+		// This is deliberately not a byte stream (`type: "bytes"`): enqueuing into a byte stream
+		// detaches the chunk's ArrayBuffer, but undici's HTTP parser emits body chunks as views
+		// into a buffer it keeps using, so detaching it crashes the parser (observable with
+		// chunked-encoding responses). See `src/backpressure.test.ts`.
+		return new ReadableStream<Uint8Array>(
+			{
+				start: controller => {
+					const safeError = (error: unknown) => {
+						if (settled) {
+							return;
 						}
-
-						response.body.on("data", onData);
-						response.body.once("error", onNetworkError);
-						response.body.once("end", onClose);
-						return;
-					}
-
-					if (status === 206) {
-						if (!expectPartialResponse) {
-							return safeError(
-								new S3Error("Unknown", path, {
-									message: "Received partial response but expected a full response.",
-								}),
-							);
+						settled = true;
+						controller.error(error);
+					};
+					const safeClose = () => {
+						if (settled) {
+							return;
 						}
+						settled = true;
+						controller.close();
+					};
 
-						response.body.on("data", onData);
-						response.body.once("error", onNetworkError);
-						response.body.once("end", onClose);
-						return;
-					}
+					const onNetworkError = (cause: unknown) => {
+						safeError(
+							new S3Error("Unknown", path, {
+								message: undefined,
+								cause,
+							}),
+						);
+					};
 
-					if (400 <= status && status < 500) {
-						// Some providers actually support JSON via "accept: application/json", but we cant rely on it
-						const responseText = undefined;
+					this.#http
+						.request(url, {
+							method: "GET",
+							signal: signal ? AbortSignal.any([signal, ac.signal]) : ac.signal,
+							headers: {
+								...headersToBeSigned,
+								authorization: getAuthorizationHeader(
+									this.#keyCache,
+									"GET",
+									url.pathname as ObjectKey,
+									url.search,
+									now,
+									headersToBeSigned,
+									region,
+									contentHashStr,
+									this.#options.accessKeyId,
+									this.#options.secretAccessKey,
+								),
+								"user-agent": "lean-s3",
+							},
+						})
+						.then(response => {
+							body = response.body;
+							const onData = (chunk: Uint8Array<ArrayBuffer>) => {
+								if (settled) {
+									return;
+								}
+								controller.enqueue(chunk);
+								// Pause the source when the consumer falls behind, `pull` resumes it.
+								// Otherwise the entire object gets buffered into the queue.
+								if ((controller.desiredSize ?? 1) <= 0) {
+									response.body.pause();
+								}
+							};
+							const onClose = safeClose;
 
-						if (response.headers["content-type"] === "application/xml") {
-							return response.body.text().then(body => {
-								// biome-ignore lint/suspicious/noExplicitAny: :shrug:
-								let error: any;
-								try {
-									error = xmlParser.parse(body);
-								} catch (cause) {
+							const expectPartialResponse = range !== undefined;
+							const status = response.statusCode;
+							if (status === 200) {
+								if (expectPartialResponse) {
+									// undici docs state that we should dump the body if not used
+									void response.body.dump(); // dump's floating promise should not throw
 									return safeError(
 										new S3Error("Unknown", path, {
-											message: "Could not parse XML error response.",
-											status: response.statusCode,
-											cause,
+											message: "Expected partial response to range request.",
 										}),
 									);
 								}
+
+								response.body.on("data", onData);
+								response.body.once("error", onNetworkError);
+								response.body.once("end", onClose);
+								return;
+							}
+
+							if (status === 206) {
+								if (!expectPartialResponse) {
+									// undici docs state that we should dump the body if not used
+									void response.body.dump(); // dump's floating promise should not throw
+									return safeError(
+										new S3Error("Unknown", path, {
+											message: "Received partial response but expected a full response.",
+										}),
+									);
+								}
+
+								response.body.on("data", onData);
+								response.body.once("error", onNetworkError);
+								response.body.once("end", onClose);
+								return;
+							}
+
+							if (400 <= status && status < 500) {
+								// Some providers actually support JSON via "accept: application/json", but we cant rely on it
+
+								// includes() instead of ===: providers append parameters like "; charset=utf-8"
+								if (String(response.headers["content-type"] ?? "").includes("xml")) {
+									return response.body.text().then(body => {
+										// biome-ignore lint/suspicious/noExplicitAny: :shrug:
+										let error: any;
+										try {
+											error = xmlParser.parse(body);
+										} catch (cause) {
+											return safeError(
+												new S3Error("Unknown", path, {
+													message: "Could not parse XML error response.",
+													status: response.statusCode,
+													cause,
+												}),
+											);
+										}
+										return safeError(
+											new S3Error(error.Error?.Code || "Unknown", path, {
+												message: error.Error?.Message || undefined, // Message might be "",
+												status: response.statusCode,
+											}),
+										);
+									}, onNetworkError);
+								}
+
+								// undici docs state that we should dump the body if not used
+								void response.body.dump(); // dump's floating promise should not throw
 								return safeError(
-									new S3Error(error.Error.Code || "Unknown", path, {
-										message: error.Error.Message || undefined, // Message might be "",
+									new S3Error("Unknown", path, {
 										status: response.statusCode,
+										message: undefined,
 									}),
 								);
-							}, onNetworkError);
-						}
+							}
 
-						return safeError(
-							new S3Error("Unknown", path, {
-								status: response.statusCode,
-								message: undefined,
-								cause: responseText,
-							}),
-						);
-					}
-
-					// TODO: Support other status codes
-					return safeError(
-						new Error(
-							`Handling for status code ${status} not implemented yet. You might want to open an issue and describe your situation.`,
-						),
-					);
-				}, onNetworkError);
+							// TODO: Support other status codes
+							// undici docs state that we should dump the body if not used
+							void response.body.dump(); // dump's floating promise should not throw
+							return safeError(
+								new Error(
+									`Handling for status code ${status} not implemented yet. You might want to open an issue and describe your situation.`,
+								),
+							);
+						}, onNetworkError);
+				},
+				pull: () => {
+					// Resumes a source paused by `onData`. No-op while flowing or before the response arrived.
+					body?.resume();
+				},
+				cancel(reason) {
+					// The controller is being torn down by the consumer; mark the
+					// stream as settled so the (now aborted) in-flight request's
+					// rejection doesn't try to error an already-closed controller.
+					settled = true;
+					ac.abort(reason);
+				},
 			},
-			cancel(reason) {
-				// The controller is being torn down by the consumer; mark the
-				// stream as settled so the (now aborted) in-flight request's
-				// rejection doesn't try to error an already-closed controller.
-				settled = true;
-				ac.abort(reason);
-			},
-		});
+			// Makes `desiredSize` byte-based, so the pause threshold is independent of chunk sizes
+			new ByteLengthQueuingStrategy({ highWaterMark: 256 * 1024 }),
+		);
 	}
 
 	[nodeUtil.inspect.custom](_depth?: number, options: nodeUtil.InspectOptions = {}) {
@@ -1961,7 +1690,7 @@ export default class S3Client {
 }
 
 export function buildSearchParams(
-	amzCredential: string,
+	encodedAmzCredential: string,
 	date: amzDate.AmzDate,
 	expiresIn: number,
 	headerList: string,
@@ -1992,7 +1721,8 @@ export function buildSearchParams(
 		res += `&X-Amz-Content-Sha256=${contentHashStr}`;
 	}
 
-	res += `&X-Amz-Credential=${encodeURIComponentExtended(amzCredential)}`;
+	// Pre-encoded by the caller since the credential is cacheable per (day, region)
+	res += `&X-Amz-Credential=${encodedAmzCredential}`;
 	res += `&X-Amz-Date=${date.dateTime}`; // internal dateTimes don't need encoding
 	res += `&X-Amz-Expires=${expiresIn}`; // number -> no encoding
 
@@ -2013,8 +1743,17 @@ export function buildSearchParams(
 	return res;
 }
 
+/**
+ * The parsers run with `parseTagValue: false`, so all values arrive as strings.
+ * @internal
+ */
+export function xmlNumber(value: string | undefined): number | undefined {
+	return value === undefined || value === "" ? undefined : Number(value);
+}
+
+/** @internal */
 // biome-ignore lint/suspicious/noExplicitAny: parsing result is just unknown
-function ensureParsedXml(text: string): any {
+export function ensureParsedXml(text: string): any {
 	try {
 		const r = xmlParser.parse(text);
 		if (!r) {

@@ -9,9 +9,22 @@ export {
 	type S3FileWriteOptions,
 } from "./S3File.ts";
 export {
+	default as S3MultipartUpload,
+	type UploadPartOptions,
+	type UploadPartResult,
+	type ListPartsOptions,
+	type ListPartsIteratingOptions,
+	type ListPartsResult,
+	type ListedPart,
+	type AbortMultipartUploadOptions,
+	type CompleteMultipartUploadOptions,
+	type CompleteMultipartUploadResult,
+	type MultipartUploadPart,
+} from "./S3MultipartUpload.ts";
+export {
 	default as S3Client,
 	type CreateMultipartUploadOptions,
-	type CreateMultipartUploadResult,
+	type CreateMultipartUploadInstanceOptions,
 	type DeleteObjectsResult,
 	type DeleteObjectsError,
 	type ListObjectsOptions,
@@ -19,15 +32,7 @@ export {
 	type ListObjectsResult,
 	type ListMultipartUploadsOptions,
 	type ListMultipartUploadsResult,
-	type ListPartsOptions,
-	type ListPartsResult,
-	type AbortMultipartUploadOptions,
-	type UploadPartOptions,
-	type UploadPartResult,
-	type CompleteMultipartUploadOptions,
-	type CompleteMultipartUploadResult,
 	type MultipartUpload,
-	type MultipartUploadPart,
 	type CreateFileInstanceOptions,
 	type OverridableS3ClientOptions,
 	type S3ClientOptions,
@@ -77,11 +82,16 @@ export type ChecksumType = "COMPOSITE" | "FULL_OBJECT";
 export type PresignableHttpMethod = "GET" | "DELETE" | "PUT" | "HEAD";
 export type HttpMethod = PresignableHttpMethod | "POST"; // There are also others, but we don't want to support them yet
 
-export type ByteSource = string | Buffer | Uint8Array | Readable | Blob;
+export type ByteSource =
+	| string
+	| Buffer
+	| Uint8Array
+	| ArrayBufferView
+	| ArrayBuffer
+	| SharedArrayBuffer
+	| Readable
+	| Blob;
 // TODO
-// | ArrayBufferView
-// | ArrayBuffer
-// | SharedArrayBuffer
 // | Request
 // | Response
 // | S3File

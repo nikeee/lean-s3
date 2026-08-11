@@ -1,4 +1,5 @@
 import type { BucketName, Endpoint, ObjectKey, Region } from "./branded.ts";
+import { escapeExtendedChars } from "./encode.ts";
 
 export function buildRequestUrl(
 	endpoint: Endpoint,
@@ -19,19 +20,13 @@ export function buildRequestUrl(
 	const pathPrefix = result.pathname.endsWith("/") ? result.pathname : `${result.pathname}/`;
 
 	const pathSuffix = replacedBucket
-		? normalizePath(path)
-		: `${normalizedBucket}/${normalizePath(path)}`;
+		? normalizeKey(path)
+		: `${normalizedBucket}/${normalizeKey(path)}`;
 
-	result.pathname =
-		pathPrefix +
-		pathSuffix
-			.replaceAll(":", "%3A") // See: https://github.com/nikeee/lean-s3/issues/61
-			.replaceAll("+", "%2B")
-			.replaceAll("(", "%28")
-			.replaceAll(")", "%29")
-			.replaceAll(",", "%2C")
-			.replaceAll("'", "%27")
-			.replaceAll("*", "%2A");
+	// Escape literal "%" first, otherwise the URL parser treats it as the start of a percent-encoding
+	// and the server would decode it, addressing a different key.
+	// See: https://github.com/nikeee/lean-s3/issues/61 for the extended characters
+	result.pathname = pathPrefix + escapeExtendedChars(pathSuffix.replaceAll("%", "%25"));
 
 	return result;
 }
@@ -46,12 +41,20 @@ function replaceDomainPlaceholders(
 }
 
 /**
- * Removes trailing and leading slash.
+ * Removes trailing and leading slash. Only used for bucket names / endpoint parts.
  */
 export function normalizePath(path: string): string {
 	const start = path[0] === "/" ? 1 : 0;
 	const end = path[path.length - 1] === "/" ? path.length - 1 : path.length;
 	return path.substring(start, end);
+}
+
+/**
+ * Removes a leading slash. Unlike {@link normalizePath}, the trailing slash is kept:
+ * keys like `folder/` (directory markers) are valid, distinct S3 keys.
+ */
+export function normalizeKey(key: string): string {
+	return key[0] === "/" ? key.substring(1) : key;
 }
 
 /**

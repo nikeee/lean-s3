@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { hash } from "node:crypto";
 
 import { describe, test, expect } from "./test-harness.ts";
 
@@ -25,7 +25,7 @@ void describe("signCanonicalDataHash", () => {
 		const canonicalData =
 			"GET\n/test.txt\nX-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAIOSFODNN7EXAMPLE%2F20130524%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20130524T000000Z&X-Amz-Expires=86400&X-Amz-SignedHeaders=host\nhost:examplebucket.s3.amazonaws.com\n\nhost\nUNSIGNED-PAYLOAD";
 
-		const canonicalDataHash = createHash("sha256").update(canonicalData).digest("hex");
+		const canonicalDataHash = hash("sha256", canonicalData, "hex");
 
 		const amzDate = {
 			numericDayStart: -1,
@@ -85,7 +85,7 @@ void describe("signCanonicalDataHash", () => {
 
 		const canonicalData =
 			"PUT\n/test.json\nX-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=sample-key-id%2F20250319%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20250319T151759Z&X-Amz-Expires=42690&X-Amz-SignedHeaders=host&x-id=PutObject\nhost:test-bucket.localhost:9000\n\nhost\nUNSIGNED-PAYLOAD";
-		const canonicalDataHash = createHash("sha256").update(canonicalData).digest("hex");
+		const canonicalDataHash = hash("sha256", canonicalData, "hex");
 
 		const amzDate = {
 			numericDayStart: -1,
@@ -119,7 +119,7 @@ void describe("signCanonicalDataHash", () => {
 
 		const canonicalData =
 			"PUT\n/test-bucket/test.json\nX-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=sample-key-id%2F20250319%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20250319T143536Z&X-Amz-Expires=42069&X-Amz-SignedHeaders=host\nhost:localhost:9000\n\nhost\nUNSIGNED-PAYLOAD";
-		const canonicalDataHash = createHash("sha256").update(canonicalData).digest("hex");
+		const canonicalDataHash = hash("sha256", canonicalData, "hex");
 
 		const amzDate = {
 			numericDayStart: -1,
@@ -138,7 +138,7 @@ void describe("signCanonicalDataHash", () => {
 
 		const canonicalData =
 			"GET\nTODO\nx-amz-algorithm=AWS4-HMAC-SHA256&x-amz-credential=sample-key-id%2F20250326%2Fauto%2Fs3%2Faws4_request&x-amz-date=20250326T132719Z&x-amz-expires=3600&x-amz-signedheaders=host\nhost:s3.us-east-1.amazonaws.com\n\nhost\nUNSIGNED-PAYLOAD";
-		const canonicalDataHash = createHash("sha256").update(canonicalData).digest("hex");
+		const canonicalDataHash = hash("sha256", canonicalData, "hex");
 
 		const amzDate = {
 			numericDayStart: -1,

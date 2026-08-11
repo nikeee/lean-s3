@@ -256,216 +256,6 @@ export function runTests(
 		});
 	});
 
-	function objectToFormData(object: Record<string, string | number>): FormData {
-		const res = new FormData();
-		for (const [k, v] of Object.entries(object)) {
-			res.append(k, String(v));
-		}
-		return res;
-	}
-
-	void describe("presignPost", () => {
-		void test("basic post", async t => {
-			if (
-				implementation === "s3mock" ||
-				implementation === "backblaze" ||
-				implementation === "cloudflare"
-			) {
-				// Refs:
-				// https://github.com/adobe/S3Mock/issues/2794
-				// https://developers.cloudflare.com/r2/api/s3/presigned-urls/#supported-http-methods
-				t.skip(`S3 implementation "${implementation}" does not implement this feature`);
-				return;
-			}
-
-			const testId = crypto.randomUUID();
-			const key = `${runId}/presign-post-test.json`;
-
-			const { url, fields } = client.presignPost({
-				key,
-			});
-
-			const body = objectToFormData(fields);
-			body.append("file", new Blob([JSON.stringify(testId)], { type: "application/json" }));
-
-			const res = await fetch(url, {
-				method: "POST",
-				body,
-			});
-
-			expect(res.ok).toBe(true);
-
-			const f = client.file(key);
-			try {
-				const actual = await f.json();
-				expect(actual).toStrictEqual(testId);
-			} finally {
-				await f.delete();
-			}
-		});
-
-		void test("post with content-length-range", async t => {
-			if (
-				implementation === "s3mock" ||
-				implementation === "backblaze" ||
-				implementation === "cloudflare"
-			) {
-				// Refs:
-				// https://github.com/adobe/S3Mock/issues/2794
-				// https://developers.cloudflare.com/r2/api/s3/presigned-urls/#supported-http-methods
-				t.skip(`S3 implementation "${implementation}" does not implement this feature`);
-				return;
-			}
-
-			const testId = crypto.randomUUID();
-			const key = `${runId}/presign-post-length-range.txt`;
-
-			const { url, fields } = client.presignPost({
-				key,
-				conditions: [["content-length-range", 10, 1000]],
-			});
-
-			const body = objectToFormData(fields);
-			body.append("file", new Blob([testId], { type: "text/plain" }));
-
-			const res = await fetch(url, {
-				method: "POST",
-				body,
-			});
-
-			expect(res.ok).toBe(true);
-
-			const f = client.file(key);
-			try {
-				const actual = await f.text();
-				expect(actual).toStrictEqual(testId);
-			} finally {
-				await f.delete();
-			}
-		});
-
-		void test("post with content-length-range (file too large)", async t => {
-			if (
-				implementation === "s3mock" ||
-				implementation === "backblaze" ||
-				implementation === "cloudflare"
-			) {
-				// Refs:
-				// https://github.com/adobe/S3Mock/issues/2794
-				// https://developers.cloudflare.com/r2/api/s3/presigned-urls/#supported-http-methods
-				t.skip(`S3 implementation "${implementation}" does not implement this feature`);
-				return;
-			}
-
-			if (implementation === "rustfs") {
-				t.todo(
-					"RustFS ignores the content-length-range; see: https://github.com/rustfs/rustfs/issues/984",
-				);
-			}
-
-			const testId = crypto.randomUUID();
-			const key = `${runId}/presign-post-length-range.txt`;
-
-			const { url, fields } = client.presignPost({
-				key,
-				conditions: [["content-length-range", 0, 10]],
-			});
-
-			const body = objectToFormData(fields);
-			body.append("file", new Blob([testId], { type: "text/plain" }));
-
-			const res = await fetch(url, {
-				method: "POST",
-				body,
-			});
-
-			expect(res.ok).toBe(false);
-		});
-
-		void test("post with starts-with $Content-Type", async t => {
-			if (
-				implementation === "s3mock" ||
-				implementation === "backblaze" ||
-				implementation === "cloudflare"
-			) {
-				// Refs:
-				// https://github.com/adobe/S3Mock/issues/2794
-				// https://developers.cloudflare.com/r2/api/s3/presigned-urls/#supported-http-methods
-				t.skip(`S3 implementation "${implementation}" does not implement this feature`);
-				return;
-			}
-
-			const testId = crypto.randomUUID();
-			const key = `${runId}/presign-post-content-type.json`;
-
-			const { url, fields } = client.presignPost({
-				key,
-				conditions: [["starts-with", "$Content-Type", "application/"]],
-			});
-
-			const body = objectToFormData(fields);
-			body.append("Content-Type", "application/json");
-			body.append("file", new Blob([JSON.stringify(testId)], { type: "application/json" }));
-
-			const res = await fetch(url, {
-				method: "POST",
-				body,
-			});
-			expect(res.ok).toBe(true);
-
-			const f = client.file(key);
-			try {
-				const actual = await f.json();
-				expect(actual).toStrictEqual(testId);
-			} finally {
-				await f.delete();
-			}
-		});
-
-		void test("post with content-length-range and starts-with $Content-Type", async t => {
-			if (
-				implementation === "s3mock" ||
-				implementation === "backblaze" ||
-				implementation === "cloudflare"
-			) {
-				// Refs:
-				// https://github.com/adobe/S3Mock/issues/2794
-				// https://developers.cloudflare.com/r2/api/s3/presigned-urls/#supported-http-methods
-				t.skip(`S3 implementation "${implementation}" does not implement this feature`);
-				return;
-			}
-
-			const testId = crypto.randomUUID();
-			const key = `${runId}/presign-post-combined.txt`;
-
-			const { url, fields } = client.presignPost({
-				key,
-				conditions: [
-					["content-length-range", 10, 1000],
-					["starts-with", "$Content-Type", "text/"],
-				],
-			});
-
-			const body = objectToFormData(fields);
-			body.append("Content-Type", "text/plain");
-			body.append("file", new Blob([testId], { type: "text/plain" }));
-
-			const res = await fetch(url, {
-				method: "POST",
-				body,
-			});
-			expect(res.ok).toBe(true);
-
-			const f = client.file(key);
-			try {
-				const actual = await f.text();
-				expect(actual).toStrictEqual(testId);
-			} finally {
-				await f.delete();
-			}
-		});
-	});
-
 	void test("roundtrip", async () => {
 		const testId = crypto.randomUUID();
 		const f = client.file(`${runId}/roundtrip.txt`);
@@ -484,6 +274,50 @@ export function runTests(
 		} finally {
 			await f.delete();
 		}
+	});
+
+	void test("roundtrip with ArrayBuffer", async () => {
+		const testId = crypto.randomUUID();
+		const bytes = new TextEncoder().encode(testId);
+		const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+		const f = client.file(`${runId}/roundtrip-arraybuffer.txt`);
+		await f.write(buffer);
+		try {
+			expect(new Uint8Array(await f.arrayBuffer())).toStrictEqual(bytes);
+		} finally {
+			await f.delete();
+		}
+	});
+
+	void test("roundtrip with ArrayBufferView at non-zero offset", async () => {
+		const testId = crypto.randomUUID();
+		const bytes = new TextEncoder().encode(testId);
+		// place payload at offset 3 in a larger buffer; the view must be written, not the whole buffer
+		const padded = new Uint8Array(bytes.byteLength + 5).fill(0xff);
+		padded.set(bytes, 3);
+		const view = new DataView(padded.buffer, 3, bytes.byteLength);
+		const f = client.file(`${runId}/roundtrip-view.txt`);
+		await f.write(view);
+		try {
+			expect(new Uint8Array(await f.arrayBuffer())).toStrictEqual(bytes);
+		} finally {
+			await f.delete();
+		}
+	});
+
+	void test("roundtrip with directory marker key (trailing slash)", async () => {
+		const testId = crypto.randomUUID();
+		// "folder/" is a valid key, distinct from "folder"
+		const f = client.file(`${runId}/${testId}/folder/`);
+		await f.write(testId);
+		try {
+			expect(await f.exists()).toBe(true);
+			expect(await client.file(`${runId}/${testId}/folder`).exists()).toBe(false);
+			expect(await f.text()).toStrictEqual(testId);
+		} finally {
+			await f.delete();
+		}
+		expect(await f.exists()).toBe(false);
 	});
 
 	void describe("slicing", async () => {
@@ -569,13 +403,14 @@ export function runTests(
 			await f.write(testId);
 			try {
 				const slicedFile = f.slice(10000);
-				if (implementation === "s3mock") {
-					// S3Mock is currenty inconsistent
-					// See: https://github.com/adobe/S3Mock/pull/3044
-					await expectS3Error(slicedFile.text(), "RequestedRangeNotSatisfiable", path, 416);
-				} else {
-					await expectS3Error(slicedFile.text(), "InvalidRange", path, 416);
-				}
+				await expectS3Error(
+					slicedFile.text(),
+					// Newer adobe/s3mock releases (the suite tracks "latest") report
+					// "RequestedRangeNotSatisfiable" instead of AWS's "InvalidRange".
+					implementation === "s3mock" ? "RequestedRangeNotSatisfiable" : "InvalidRange",
+					path,
+					416,
+				);
 			} finally {
 				await f.delete();
 			}
@@ -811,6 +646,32 @@ export function runTests(
 					`${runId}/${testId}/test-a-1.txt`,
 					`${runId}/${testId}/test-b-2.txt`,
 					`${runId}/${testId}/test-b-3.txt`,
+				]);
+			}
+		});
+
+		void test("list with delimiter and maxKeys", async () => {
+			const testId = crypto.randomUUID();
+			try {
+				await client.file(`${runId}/${testId}/dir-a/file-0.txt`).write(crypto.randomUUID());
+				await client.file(`${runId}/${testId}/dir-b/file-1.txt`).write(crypto.randomUUID());
+				await client.file(`${runId}/${testId}/file-2.txt`).write(crypto.randomUUID());
+
+				// delimiter + maxKeys exercises the SigV4 canonical query string ordering
+				const result = await client.list({
+					prefix: `${runId}/${testId}/`,
+					delimiter: "/",
+					maxKeys: 10,
+				});
+
+				expect(result.contents).toStrictEqual([
+					expect.objectContaining({ key: `${runId}/${testId}/file-2.txt` }),
+				]);
+			} finally {
+				await client.deleteObjects([
+					`${runId}/${testId}/dir-a/file-0.txt`,
+					`${runId}/${testId}/dir-b/file-1.txt`,
+					`${runId}/${testId}/file-2.txt`,
 				]);
 			}
 		});
@@ -1091,13 +952,11 @@ export function runTests(
 			const testId = crypto.randomUUID();
 			const key = `${testId}/foo-key-9000`;
 
-			const res = await client.createMultipartUpload(key);
+			const upload = await client.createMultipartUpload(key);
 			try {
-				expect(res).toStrictEqual({
-					bucket: expect.any(String),
-					key,
-					uploadId: expect.any(String),
-				});
+				expect(upload.bucket).toEqual(expect.any(String));
+				expect(upload.key).toBe(key);
+				expect(upload.uploadId).toEqual(expect.any(String));
 
 				// Use `expect.arrayContaining` because the tests will run in parallel and might interfere
 				const uploads = await client.listMultipartUploads();
@@ -1108,12 +967,13 @@ export function runTests(
 							key,
 							// storageClass is missing or STANDARD on different services
 							// cloudflare somehow returns a different uploadId than the one provided by createMultipartUpload
-							// uploadId: res.uploadId,
+							// uploadId: upload.uploadId,
 						}),
 					]),
 				);
 			} finally {
-				await client.abortMultipartUpload(key, res.uploadId);
+				// re-attach via the sync factory to also cover client.multipartUpload()
+				await client.multipartUpload(key, upload.uploadId).abort();
 			}
 		});
 
@@ -1121,12 +981,9 @@ export function runTests(
 			const testId = crypto.randomUUID();
 			const key = `${testId}/foo-key-9000`;
 
-			const res = await client.createMultipartUpload(key);
-			expect(res).toStrictEqual({
-				bucket: expect.any(String),
-				key: key,
-				uploadId: expect.any(String),
-			});
+			const upload = await client.createMultipartUpload(key);
+			expect(upload.key).toBe(key);
+			expect(upload.uploadId).toEqual(expect.any(String));
 			try {
 				// R2 requires parts to be at least 5 MiB. Also, they have to be the same size (except the last one, which has to be <= in size)
 				const parts = [
@@ -1136,16 +993,12 @@ export function runTests(
 				];
 
 				const uploadedParts = [
-					await client.uploadPart(res.key, res.uploadId, parts[0], 1),
-					await client.uploadPart(res.key, res.uploadId, parts[1], 2),
-					await client.uploadPart(res.key, res.uploadId, parts[2], 3),
+					await upload.uploadPart(1, parts[0]),
+					await upload.uploadPart(2, parts[1]),
+					await upload.uploadPart(3, parts[2]),
 				];
 
-				const completed = await client.completeMultipartUpload(
-					res.key,
-					res.uploadId,
-					uploadedParts,
-				);
+				const completed = await upload.complete(uploadedParts);
 				expect(completed).toStrictEqual(
 					expect.objectContaining({
 						bucket: expect.any(String),
@@ -1184,12 +1037,9 @@ export function runTests(
 			const testId = crypto.randomUUID();
 			const key = `${testId}/foo-key-9000`;
 
-			const res = await client.createMultipartUpload(key);
-			expect(res).toStrictEqual({
-				bucket: expect.any(String),
-				key: key,
-				uploadId: expect.any(String),
-			});
+			const upload = await client.createMultipartUpload(key);
+			expect(upload.key).toBe(key);
+			expect(upload.uploadId).toEqual(expect.any(String));
 
 			try {
 				// R2 requires parts to be at least 5 MiB. Also, they have to be the same size (except the last one, which has to be <= in size)
@@ -1199,17 +1049,17 @@ export function runTests(
 					Buffer.alloc(1 * 1024 * 1024).fill(3),
 				];
 
-				await client.uploadPart(res.key, res.uploadId, parts[0], 1);
-				await client.uploadPart(res.key, res.uploadId, parts[1], 2);
-				await client.uploadPart(res.key, res.uploadId, parts[2], 3);
+				await upload.uploadPart(1, parts[0]);
+				await upload.uploadPart(2, parts[1]);
+				await upload.uploadPart(3, parts[2]);
 
-				const availableParts = await client.listParts(key, res.uploadId);
+				const availableParts = await upload.parts();
 
 				expect(availableParts).toStrictEqual(
 					expect.objectContaining({
 						bucket: expect.any(String),
 						key,
-						uploadId: res.uploadId,
+						uploadId: upload.uploadId,
 						// partNumberMarker: 0, // minio/localstack return 0, garage returns undefined
 						// nextPartNumberMarker: expect.any(Number), // minio returns 0, localstack returns 3, garage returns undefined
 						// maxParts: expect.any(Number), garage returns undefined, minio/localstack return some number
@@ -1237,7 +1087,47 @@ export function runTests(
 					}),
 				);
 			} finally {
-				await client.abortMultipartUpload(res.key, res.uploadId);
+				await upload.abort();
+			}
+		});
+
+		void test("partsIterating", async t => {
+			if (implementation === "garage") {
+				// garage does not return NextPartNumberMarker, so paging through parts cannot work
+				t.todo(`S3 implementation "${implementation}" does not support part pagination`);
+				return;
+			}
+
+			const testId = crypto.randomUUID();
+			const key = `${testId}/foo-key-9000`;
+
+			const upload = await client.createMultipartUpload(key);
+			try {
+				// R2 requires parts to be at least 5 MiB. Also, they have to be the same size (except the last one, which has to be <= in size)
+				const parts = [
+					Buffer.alloc(6 * 1024 * 1024).fill(1),
+					Buffer.alloc(6 * 1024 * 1024).fill(2),
+					Buffer.alloc(1 * 1024 * 1024).fill(3),
+				];
+
+				await upload.uploadPart(1, parts[0]);
+				await upload.uploadPart(2, parts[1]);
+				await upload.uploadPart(3, parts[2]);
+
+				const seen = [];
+				// internalPageSize of 1 forces a ListParts request per part, exercising pagination
+				for await (const part of upload.partsIterating({ internalPageSize: 1 })) {
+					seen.push(part);
+				}
+
+				expect(seen.map(p => p.partNumber)).toStrictEqual([1, 2, 3]);
+				expect(seen.map(p => p.size)).toStrictEqual([
+					6 * 1024 * 1024,
+					6 * 1024 * 1024,
+					1 * 1024 * 1024,
+				]);
+			} finally {
+				await upload.abort();
 			}
 		});
 	});

@@ -29,13 +29,13 @@
   "files": [
     "dist"
   ],
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org"
   },
-  "type": "module",
-  "main": "./dist/index.mjs",
-  "types": "./dist/index.d.mts",
   "scripts": {
     "build": "tsdown",
     "test": "tsc && node --test src/*.test.ts src/test/*.test.ts",
@@ -66,14 +66,14 @@
     "typedoc": "^0.28.20",
     "typescript": "^7.0.2"
   },
-  "overrides": {
-    "typescript": "^7.0.2"
-  },
   "optionalDependencies": {
     "undici": "^8.10.0"
   },
+  "overrides": {
+    "typescript": "^7.0.2"
+  },
   "engines": {
-    "node": "^22.22.3 || ^24.15.0 || ^26.1.0",
-    "bun": ">=1.1.0"
+    "bun": ">=1.1.0",
+    "node": "^22.22.3 || ^24.15.0 || ^26.1.0"
   }
 }

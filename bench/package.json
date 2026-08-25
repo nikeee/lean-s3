@@ -20,7 +20,7 @@
     "@monstermann/tinybench-pretty-printer": "^0.3.0",
     "@testcontainers/minio": "^12.1.0",
     "aws4fetch": "^1.0.20",
-    "bun": "^1.3.14",
+    "bun": "^1.4.0",
     "fast-xml-parser": "^5.11.0",
     "minio": "^8.0.7",
     "mitata": "^1.0.34",

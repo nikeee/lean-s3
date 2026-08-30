@@ -1,8 +1,8 @@
-import { after, before, describe, test } from "node:test";
 import { createServer, type Server } from "node:http";
 import { once } from "node:events";
 import { setTimeout as delay } from "node:timers/promises";
-import { expect } from "expect";
+
+import { after, before, describe, test, expect } from "./test-harness.ts";
 
 import { S3Client, S3Error } from "./index.ts";
 

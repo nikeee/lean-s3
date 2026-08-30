@@ -2,8 +2,7 @@
  * @module Used by integration tests and unit tests.
  */
 
-import { describe, test } from "node:test";
-import { expect } from "expect";
+import { describe, test, expect } from "../test-harness.ts";
 
 import { S3Client, S3Error, S3Stat } from "../index.ts";
 
@@ -404,7 +403,14 @@ export function runTests(
 			await f.write(testId);
 			try {
 				const slicedFile = f.slice(10000);
-				await expectS3Error(slicedFile.text(), "InvalidRange", path, 416);
+				await expectS3Error(
+					slicedFile.text(),
+					// Newer adobe/s3mock releases (the suite tracks "latest") report
+					// "RequestedRangeNotSatisfiable" instead of AWS's "InvalidRange".
+					implementation === "s3mock" ? "RequestedRangeNotSatisfiable" : "InvalidRange",
+					path,
+					416,
+				);
 			} finally {
 				await f.delete();
 			}

@@ -1,8 +1,8 @@
-import { after, before, describe, test } from "node:test";
 import { createServer, type Server } from "node:http";
 import { once } from "node:events";
 import { setTimeout as delay } from "node:timers/promises";
-import { expect } from "expect";
+
+import { after, before, describe, test, expect } from "./test-harness.ts";
 
 import { S3Client } from "./index.ts";
 
@@ -47,7 +47,17 @@ void describe("stream backpressure", () => {
 		server.close();
 	});
 
-	void test("slow consumer does not buffer the entire response", async () => {
+	void test("slow consumer does not buffer the entire response", async t => {
+		if (typeof (globalThis as { Bun?: unknown }).Bun !== "undefined") {
+			// Bun's native `fetch` eagerly reads the entire response body into
+			// (native) memory and does not propagate consumer backpressure to the
+			// socket, so the server-side `bytesSent` assertion cannot hold there.
+			// lean-s3's fetch shim still bounds its JS-level queue via
+			// `pause()`/`resume()` (see `src/http.ts`); the buffering happens inside
+			// Bun's fetch implementation itself.
+			t.skip("Bun's fetch buffers the response body eagerly");
+			return;
+		}
 		const client = new S3Client({
 			endpoint: baseUrl,
 			accessKeyId: "test",

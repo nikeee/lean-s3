@@ -1,6 +1,6 @@
-import { after, before, describe } from "node:test";
-import { expect } from "expect";
 import { S3MockContainer } from "@testcontainers/s3mock";
+
+import { after, before, describe, expect } from "../test-harness.ts";
 
 import { runTests } from "./common.ts";
 import { S3Client } from "../index.ts";

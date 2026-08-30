@@ -1,15 +1,12 @@
-import type { Dispatcher } from "undici";
 import { XMLParser } from "fast-xml-parser";
 
 import S3Error from "./S3Error.ts";
+import type { ResponseData } from "./http.ts";
 
 // never coerce tag values, message contents could look numeric
 const xmlParser = new XMLParser({ parseTagValue: false });
 
-export async function getResponseError(
-	response: Dispatcher.ResponseData<unknown>,
-	path: string,
-): Promise<S3Error> {
+export async function getResponseError(response: ResponseData, path: string): Promise<S3Error> {
 	// biome-ignore lint/suspicious/noExplicitAny: :shrug:
 	let body: any;
 	try {

@@ -1,5 +1,5 @@
 import * as nodeUtil from "node:util";
-import { request, Agent, type Dispatcher } from "undici";
+import { createHttpClient, type HttpClient, type ResponseBody, type ResponseData } from "./http.ts";
 import { XMLParser, XMLBuilder } from "fast-xml-parser";
 
 import S3File from "./S3File.ts";
@@ -384,8 +384,11 @@ export default class S3Client {
 		  }
 		| undefined;
 
-	// TODO: pass options to this in client? Do we want to expose the internal use of undici?
-	#dispatcher: Dispatcher = new Agent();
+	/**
+	 * Per-client HTTP backend (undici `Agent` on Node.js, global `fetch` on Bun).
+	 * See `src/http.ts` and DESIGN_DECISIONS.md ("Runtime-adaptive HTTP backend").
+	 */
+	#http: HttpClient = createHttpClient();
 
 	/**
 	 * Create a new instance of an S3 bucket so that credentials can be managed from a single instance instead of being passed to every method.
@@ -412,7 +415,7 @@ export default class S3Client {
 	 * Only needed when a client should be disposed before the process exits; requests started afterwards will fail.
 	 */
 	async close(): Promise<void> {
-		await this.#dispatcher.close();
+		await this.#http.close();
 	}
 
 	async [Symbol.asyncDispose](): Promise<void> {
@@ -1355,10 +1358,9 @@ export default class S3Client {
 		});
 
 		try {
-			return await request(url, {
+			return await this.#http.request(url, {
 				method,
 				signal,
-				dispatcher: this.#dispatcher,
 				headers: {
 					...headersToBeSigned,
 					authorization: getAuthorizationHeader(
@@ -1416,12 +1418,11 @@ export default class S3Client {
 			"x-amz-date": now.dateTime,
 		});
 
-		let response: Dispatcher.ResponseData<unknown>;
+		let response: ResponseData;
 		try {
-			response = await request(url, {
+			response = await this.#http.request(url, {
 				method: "PUT",
 				signal,
-				dispatcher: this.#dispatcher,
 				headers: {
 					...headersToBeSigned,
 					authorization: getAuthorizationHeader(
@@ -1491,7 +1492,17 @@ export default class S3Client {
 
 		// The response body is only available once the request promise resolves (see `start`),
 		// but `pull` may be called before that. It stays `undefined` until then.
-		let body: Readable | undefined;
+		let body: ResponseBody | undefined;
+
+		// The request can settle (e.g. via abort/cancel) after the stream
+		// controller has already been closed or errored. Calling
+		// `controller.error()`/`close()`/`enqueue()` in that state throws
+		// (notably on Bun: "Controller is already closed"). Track whether the
+		// stream is settled and turn subsequent controller operations into no-ops.
+		// This is shared between `start` and `cancel`: when a consumer cancels the
+		// reader, the controller closes without going through our helpers, so the
+		// in-flight request's later rejection must not touch the controller.
+		let settled = false;
 
 		// This is deliberately not a byte stream (`type: "bytes"`): enqueuing into a byte stream
 		// detaches the chunk's ArrayBuffer, but undici's HTTP parser emits body chunks as views
@@ -1500,8 +1511,23 @@ export default class S3Client {
 		return new ReadableStream<Uint8Array>(
 			{
 				start: controller => {
+					const safeError = (error: unknown) => {
+						if (settled) {
+							return;
+						}
+						settled = true;
+						controller.error(error);
+					};
+					const safeClose = () => {
+						if (settled) {
+							return;
+						}
+						settled = true;
+						controller.close();
+					};
+
 					const onNetworkError = (cause: unknown) => {
-						controller.error(
+						safeError(
 							new S3Error("Unknown", path, {
 								message: undefined,
 								cause,
@@ -1509,127 +1535,135 @@ export default class S3Client {
 						);
 					};
 
-					request(url, {
-						method: "GET",
-						signal: signal ? AbortSignal.any([signal, ac.signal]) : ac.signal,
-						dispatcher: this.#dispatcher,
-						headers: {
-							...headersToBeSigned,
-							authorization: getAuthorizationHeader(
-								this.#keyCache,
-								"GET",
-								url.pathname as ObjectKey,
-								url.search,
-								now,
-								headersToBeSigned,
-								region,
-								contentHashStr,
-								this.#options.accessKeyId,
-								this.#options.secretAccessKey,
-							),
-							"user-agent": "lean-s3",
-						},
-					}).then(response => {
-						body = response.body;
-						const onData = (chunk: Uint8Array<ArrayBuffer>) => {
-							controller.enqueue(chunk);
-							// Pause the source when the consumer falls behind, `pull` resumes it.
-							// Otherwise the entire object gets buffered into the queue.
-							if ((controller.desiredSize ?? 1) <= 0) {
-								response.body.pause();
-							}
-						};
-						const onClose = controller.close.bind(controller);
+					this.#http
+						.request(url, {
+							method: "GET",
+							signal: signal ? AbortSignal.any([signal, ac.signal]) : ac.signal,
+							headers: {
+								...headersToBeSigned,
+								authorization: getAuthorizationHeader(
+									this.#keyCache,
+									"GET",
+									url.pathname as ObjectKey,
+									url.search,
+									now,
+									headersToBeSigned,
+									region,
+									contentHashStr,
+									this.#options.accessKeyId,
+									this.#options.secretAccessKey,
+								),
+								"user-agent": "lean-s3",
+							},
+						})
+						.then(response => {
+							body = response.body;
+							const onData = (chunk: Uint8Array<ArrayBuffer>) => {
+								if (settled) {
+									return;
+								}
+								controller.enqueue(chunk);
+								// Pause the source when the consumer falls behind, `pull` resumes it.
+								// Otherwise the entire object gets buffered into the queue.
+								if ((controller.desiredSize ?? 1) <= 0) {
+									response.body.pause();
+								}
+							};
+							const onClose = safeClose;
 
-						const expectPartialResponse = range !== undefined;
-						const status = response.statusCode;
-						if (status === 200) {
-							if (expectPartialResponse) {
-								// undici docs state that we should dump the body if not used
-								void response.body.dump(); // dump's floating promise should not throw
-								return controller.error(
-									new S3Error("Unknown", path, {
-										message: "Expected partial response to range request.",
-									}),
-								);
-							}
-
-							response.body.on("data", onData);
-							response.body.once("error", onNetworkError);
-							response.body.once("end", onClose);
-							return;
-						}
-
-						if (status === 206) {
-							if (!expectPartialResponse) {
-								// undici docs state that we should dump the body if not used
-								void response.body.dump(); // dump's floating promise should not throw
-								return controller.error(
-									new S3Error("Unknown", path, {
-										message: "Received partial response but expected a full response.",
-									}),
-								);
-							}
-
-							response.body.on("data", onData);
-							response.body.once("error", onNetworkError);
-							response.body.once("end", onClose);
-							return;
-						}
-
-						if (400 <= status && status < 500) {
-							// Some providers actually support JSON via "accept: application/json", but we cant rely on it
-
-							// includes() instead of ===: providers append parameters like "; charset=utf-8"
-							if (String(response.headers["content-type"] ?? "").includes("xml")) {
-								return response.body.text().then(body => {
-									// biome-ignore lint/suspicious/noExplicitAny: :shrug:
-									let error: any;
-									try {
-										error = xmlParser.parse(body);
-									} catch (cause) {
-										return controller.error(
-											new S3Error("Unknown", path, {
-												message: "Could not parse XML error response.",
-												status: response.statusCode,
-												cause,
-											}),
-										);
-									}
-									return controller.error(
-										new S3Error(error.Error?.Code || "Unknown", path, {
-											message: error.Error?.Message || undefined, // Message might be "",
-											status: response.statusCode,
+							const expectPartialResponse = range !== undefined;
+							const status = response.statusCode;
+							if (status === 200) {
+								if (expectPartialResponse) {
+									// undici docs state that we should dump the body if not used
+									void response.body.dump(); // dump's floating promise should not throw
+									return safeError(
+										new S3Error("Unknown", path, {
+											message: "Expected partial response to range request.",
 										}),
 									);
-								}, onNetworkError);
+								}
+
+								response.body.on("data", onData);
+								response.body.once("error", onNetworkError);
+								response.body.once("end", onClose);
+								return;
 							}
 
+							if (status === 206) {
+								if (!expectPartialResponse) {
+									// undici docs state that we should dump the body if not used
+									void response.body.dump(); // dump's floating promise should not throw
+									return safeError(
+										new S3Error("Unknown", path, {
+											message: "Received partial response but expected a full response.",
+										}),
+									);
+								}
+
+								response.body.on("data", onData);
+								response.body.once("error", onNetworkError);
+								response.body.once("end", onClose);
+								return;
+							}
+
+							if (400 <= status && status < 500) {
+								// Some providers actually support JSON via "accept: application/json", but we cant rely on it
+
+								// includes() instead of ===: providers append parameters like "; charset=utf-8"
+								if (String(response.headers["content-type"] ?? "").includes("xml")) {
+									return response.body.text().then(body => {
+										// biome-ignore lint/suspicious/noExplicitAny: :shrug:
+										let error: any;
+										try {
+											error = xmlParser.parse(body);
+										} catch (cause) {
+											return safeError(
+												new S3Error("Unknown", path, {
+													message: "Could not parse XML error response.",
+													status: response.statusCode,
+													cause,
+												}),
+											);
+										}
+										return safeError(
+											new S3Error(error.Error?.Code || "Unknown", path, {
+												message: error.Error?.Message || undefined, // Message might be "",
+												status: response.statusCode,
+											}),
+										);
+									}, onNetworkError);
+								}
+
+								// undici docs state that we should dump the body if not used
+								void response.body.dump(); // dump's floating promise should not throw
+								return safeError(
+									new S3Error("Unknown", path, {
+										status: response.statusCode,
+										message: undefined,
+									}),
+								);
+							}
+
+							// TODO: Support other status codes
 							// undici docs state that we should dump the body if not used
 							void response.body.dump(); // dump's floating promise should not throw
-							return controller.error(
-								new S3Error("Unknown", path, {
-									status: response.statusCode,
-									message: undefined,
-								}),
+							return safeError(
+								new Error(
+									`Handling for status code ${status} not implemented yet. You might want to open an issue and describe your situation.`,
+								),
 							);
-						}
-
-						// TODO: Support other status codes
-						// undici docs state that we should dump the body if not used
-						void response.body.dump(); // dump's floating promise should not throw
-						return controller.error(
-							new Error(
-								`Handling for status code ${status} not implemented yet. You might want to open an issue and describe your situation.`,
-							),
-						);
-					}, onNetworkError);
+						}, onNetworkError);
 				},
 				pull: () => {
 					// Resumes a source paused by `onData`. No-op while flowing or before the response arrived.
 					body?.resume();
 				},
 				cancel(reason) {
+					// The controller is being torn down by the consumer; mark the
+					// stream as settled so the (now aborted) in-flight request's
+					// rejection doesn't try to error an already-closed controller.
+					settled = true;
 					ac.abort(reason);
 				},
 			},

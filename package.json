@@ -1,6 +1,6 @@
 {
-  "name": "lean-s3",
-  "version": "0.9.25",
+  "name": "@ishanarya/lean-s3",
+  "version": "0.9.29",
   "description": "A server-side S3 API for the regular user.",
   "keywords": [
     "AWS S3",
@@ -24,7 +24,7 @@
   "author": "Niklas Mollenhauer",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nikeee/lean-s3"
+    "url": "git+https://github.com/IshanArya/lean-s3.git"
   },
   "files": [
     "dist"
@@ -32,9 +32,14 @@
   "type": "module",
   "main": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
   "scripts": {
     "build": "tsdown",
     "test": "tsc && node --test src/*.test.ts src/test/*.test.ts",
+    "test:bun": "tsc && bun test src/*.test.ts src/test/*.test.ts",
     "test:integration": "tsc && node --test src/test/test.integration.ts",
     "ci": "oxlint --type-aware --deny-warnings -f github",
     "docs": "typedoc",
@@ -44,8 +49,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "fast-xml-parser": "^5.10.1",
-    "undici": "^8.10.0"
+    "fast-xml-parser": "^5.10.1"
   },
   "devDependencies": {
     "@testcontainers/localstack": "^12.1.0",
@@ -62,10 +66,14 @@
     "typedoc": "^0.28.20",
     "typescript": "^7.0.2"
   },
+  "optionalDependencies": {
+    "undici": "^8.10.0"
+  },
   "overrides": {
     "typescript": "^7.0.2"
   },
   "engines": {
+    "bun": ">=1.1.0",
     "node": "^22.22.3 || ^24.15.0 || ^26.1.0"
   }
 }

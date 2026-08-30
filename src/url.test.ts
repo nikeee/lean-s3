@@ -1,5 +1,4 @@
-import { describe, test } from "node:test";
-import { expect } from "expect";
+import { describe, test, expect } from "./test-harness.ts";
 
 import { buildRequestUrl } from "./url.ts";
 import type { BucketName, Endpoint, ObjectKey, Region } from "./branded.ts";

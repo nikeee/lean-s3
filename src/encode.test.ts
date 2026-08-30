@@ -1,5 +1,4 @@
-import { describe, test } from "node:test";
-import { expect } from "expect";
+import { describe, test, expect } from "./test-harness.ts";
 import { getContentDispositionHeader as encode } from "./encode.ts";
 
 void describe("encoding", () => {

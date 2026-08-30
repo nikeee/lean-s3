@@ -1,8 +1,6 @@
 // @ts-check
 
-import { describe, before, after } from "node:test";
-
-import { expect } from "expect";
+import { describe, before, after, expect } from "../test-harness.ts";
 
 import { runTests } from "./common.ts";
 import { S3Client } from "../index.ts";

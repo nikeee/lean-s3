@@ -54,7 +54,7 @@
     "@types/node": "^26.2.0",
     "expect": "^30.4.1",
     "lefthook": "^2.1.10",
-    "oxfmt": "^0.64.0",
+    "oxfmt": "^0.65.0",
     "oxlint": "^1.78.0",
     "oxlint-tsgolint": "^7.0.2001",
     "testcontainers": "^12.1.0",

@@ -255,6 +255,25 @@ export function runTests(
 				await f.delete();
 			}
 		});
+
+		void test("get with cache control", async () => {
+			const testId = crypto.randomUUID();
+			const f = client.file(`${runId}/${testId}`);
+			await f.write(crypto.randomUUID());
+
+			try {
+				const cacheControl = "private, max-age=31536000, immutable";
+				const url = client.presign(`${runId}/${testId}`, {
+					method: "GET",
+					response: { cacheControl },
+				});
+				const res = await fetch(url);
+				expect(res.ok).toBe(true);
+				expect(res.headers.get("cache-control")).toBe(cacheControl);
+			} finally {
+				await f.delete();
+			}
+		});
 	});
 
 	void test("roundtrip", async () => {

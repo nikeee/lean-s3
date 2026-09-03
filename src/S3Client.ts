@@ -177,6 +177,19 @@ export interface S3FilePresignOptions extends OverridableS3ClientOptions {
 		 * ```
 		 */
 		contentDisposition?: ContentDisposition;
+		/**
+		 * `Cache-Control` header the S3 service sets on the response.
+		 *
+		 * @example
+		 * ```js
+		 * client.presign("foo.jpg", {
+		 *   response: {
+		 *     cacheControl: "private, max-age=31536000, immutable",
+		 *   },
+		 * });
+		 * ```
+		 */
+		cacheControl?: string;
 	};
 }
 
@@ -553,6 +566,7 @@ export default class S3Client {
 			this.#options.sessionToken,
 			options.acl,
 			responseContentDisposition,
+			responseOptions?.cacheControl,
 		);
 
 		// This probably does'nt scale if there are more headers in the signature
@@ -1665,6 +1679,7 @@ export function buildSearchParams(
 	sessionToken: string | null | undefined,
 	acl: Acl | null | undefined,
 	responseContentDisposition: string | null | undefined,
+	responseCacheControl: string | null | undefined,
 ): string {
 	// We tried to make these query params entirely lower-cased, just like the headers
 	// but Cloudflare R2 requires them to have this exact casing
@@ -1700,6 +1715,10 @@ export function buildSearchParams(
 
 	if (storageClass) {
 		res += `&X-Amz-Storage-Class=${storageClass}`;
+	}
+
+	if (responseCacheControl) {
+		res += `&response-cache-control=${encodeURIComponentExtended(responseCacheControl)}`;
 	}
 
 	if (responseContentDisposition) {

@@ -60,10 +60,7 @@
     "testcontainers": "^12.1.0",
     "tsdown": "^0.23.0",
     "typedoc": "^0.28.20",
-    "typescript": "^7.0.2"
-  },
-  "overrides": {
-    "typescript": "^7.0.2"
+    "typescript": "^6.0.3"
   },
   "engines": {
     "node": "^22.22.3 || ^24.15.0 || ^26.1.0"

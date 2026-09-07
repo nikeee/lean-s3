@@ -20,12 +20,12 @@
     "@monstermann/tinybench-pretty-printer": "^0.3.0",
     "@testcontainers/minio": "^12.1.0",
     "aws4fetch": "^1.0.20",
-    "bun": "^1.4.0",
+    "bun": "^1.4.1",
     "fast-xml-parser": "^5.11.1",
     "minio": "^8.0.7",
     "mitata": "^1.0.34",
     "s3mini": "^1.0.1",
-    "tinybench": "^6.1.4"
+    "tinybench": "^6.1.5"
   },
   "devDependencies": {
     "@aws-lite/s3-types": "^0.2.8"

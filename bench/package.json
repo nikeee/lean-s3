@@ -13,18 +13,18 @@
     "bench:xml": "node ./xml.ts"
   },
   "dependencies": {
-    "@aws-lite/client": "^0.24.0",
+    "@aws-lite/client": "^0.24.1",
     "@aws-lite/s3": "^0.2.7",
     "@aws-sdk/client-s3": "^3.1152.0",
     "@aws-sdk/s3-request-presigner": "^3.1149.0",
     "@monstermann/tinybench-pretty-printer": "^0.3.0",
-    "@testcontainers/minio": "^12.2.0",
+    "@testcontainers/minio": "^12.2.1",
     "aws4fetch": "^1.0.20",
     "bun": "^1.4.3",
     "fast-xml-parser": "^5.11.2",
     "minio": "^8.0.7",
     "mitata": "^1.0.34",
-    "s3mini": "^1.0.2",
+    "s3mini": "^1.0.3",
     "tinybench": "^6.2.2"
   },
   "devDependencies": {

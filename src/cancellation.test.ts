@@ -77,19 +77,28 @@ void describe("cancellation", () => {
 		void test("delete rejects with abort reason", async () => {
 			const ac = new AbortController();
 			ac.abort();
-			await expectAbortRejection(makeClient().file("k").delete({ signal: ac.signal }), ac.signal);
+			await expectAbortRejection(
+				makeClient().file("k").delete({ signal: ac.signal }),
+				ac.signal,
+			);
 		});
 
 		void test("exists rejects with abort reason", async () => {
 			const ac = new AbortController();
 			ac.abort();
-			await expectAbortRejection(makeClient().file("k").exists({ signal: ac.signal }), ac.signal);
+			await expectAbortRejection(
+				makeClient().file("k").exists({ signal: ac.signal }),
+				ac.signal,
+			);
 		});
 
 		void test("stat rejects with abort reason", async () => {
 			const ac = new AbortController();
 			ac.abort();
-			await expectAbortRejection(makeClient().file("k").stat({ signal: ac.signal }), ac.signal);
+			await expectAbortRejection(
+				makeClient().file("k").stat({ signal: ac.signal }),
+				ac.signal,
+			);
 		});
 
 		void test("text rejects with S3Error wrapping abort reason", async () => {
@@ -267,7 +276,9 @@ void describe("cancellation", () => {
 			const ac = new AbortController();
 			ac.abort();
 			await expectAbortRejection(
-				makeClient().multipartUpload("k", "upload-id").uploadPart(1, "data", { signal: ac.signal }),
+				makeClient()
+					.multipartUpload("k", "upload-id")
+					.uploadPart(1, "data", { signal: ac.signal }),
 				ac.signal,
 			);
 		});
@@ -331,13 +342,19 @@ void describe("cancellation", () => {
 		void test("getBucketCors rejects with abort reason", async () => {
 			const ac = new AbortController();
 			ac.abort();
-			await expectAbortRejection(makeClient().getBucketCors({ signal: ac.signal }), ac.signal);
+			await expectAbortRejection(
+				makeClient().getBucketCors({ signal: ac.signal }),
+				ac.signal,
+			);
 		});
 
 		void test("deleteBucketCors rejects with abort reason", async () => {
 			const ac = new AbortController();
 			ac.abort();
-			await expectAbortRejection(makeClient().deleteBucketCors({ signal: ac.signal }), ac.signal);
+			await expectAbortRejection(
+				makeClient().deleteBucketCors({ signal: ac.signal }),
+				ac.signal,
+			);
 		});
 
 		void test("listIterating rejects with abort reason on first iteration", async () => {

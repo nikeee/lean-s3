@@ -86,7 +86,13 @@ export default class S3File {
 		if (this.#end !== undefined && newEnd !== undefined) {
 			newEnd = Math.min(newEnd, this.#end);
 		}
-		return new S3File(this.#client, this.#path, newStart, newEnd, contentType ?? this.#contentType);
+		return new S3File(
+			this.#client,
+			this.#path,
+			newStart,
+			newEnd,
+			contentType ?? this.#contentType,
+		);
 	}
 
 	/**

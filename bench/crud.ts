@@ -157,7 +157,9 @@ const clients: ClientWrapper[] = [
 			return await res.Body?.transformToByteArray();
 		},
 		list: async (bucket, prefix) => {
-			const r = await awsS3.send(new ListObjectsV2Command({ Bucket: bucket, Prefix: prefix }));
+			const r = await awsS3.send(
+				new ListObjectsV2Command({ Bucket: bucket, Prefix: prefix }),
+			);
 			return r.KeyCount!;
 		},
 		delete: async (bucket, key) => {

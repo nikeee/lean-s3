@@ -22,7 +22,7 @@ const KiB = 1024;
 const MiB = 1024 * KiB;
 
 async function createContainer(buckets) {
-	const s3 = await new MinioContainer("minio/minio:RELEASE.2025-04-08T15-41-24Z-cpuv1").start();
+	const s3 = await new MinioContainer("quay.io/minio/aistor/minio:latest").start();
 	process.once("beforeExit", () => void s3.stop());
 
 	const aws = new AWSS3Client({

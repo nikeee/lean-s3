@@ -107,6 +107,11 @@ export interface S3ClientOptions {
 	 */
 	secretAccessKey: string;
 	sessionToken?: string;
+	/**
+	 * Custom Undici dispatcher for configuring connections, TLS, proxies, or pooling.
+	 * When provided, the caller retains ownership and is responsible for closing it.
+	 */
+	dispatcher?: Dispatcher;
 }
 
 interface InternalS3ClientOptions {
@@ -402,8 +407,9 @@ export default class S3Client {
 		  }
 		| undefined;
 
-	// TODO: pass options to this in client? Do we want to expose the internal use of undici?
-	#dispatcher: Dispatcher = new Agent();
+	#dispatcher: Dispatcher;
+	#ownsDispatcher: boolean;
+	#closed = false;
 
 	/**
 	 * Create a new instance of an S3 bucket so that credentials can be managed from a single instance instead of being passed to every method.
@@ -423,18 +429,35 @@ export default class S3Client {
 			bucket: ensureValidBucketName(options.bucket),
 			sessionToken: options.sessionToken,
 		};
+
+		this.#dispatcher = options.dispatcher ?? new Agent();
+		this.#ownsDispatcher = options.dispatcher === undefined;
 	}
 
 	/**
-	 * Closes the underlying connection pool.
-	 * Only needed when a client should be disposed before the process exits; requests started afterwards will fail.
+	 * Closes this client and, unless a dispatcher was provided in the options, its underlying connection pool.
+	 * A caller-provided dispatcher remains open and must be closed by its owner.
 	 */
 	async close(): Promise<void> {
-		await this.#dispatcher.close();
+		if (this.#closed) {
+			return;
+		}
+
+		this.#closed = true;
+
+		if (this.#ownsDispatcher) {
+			await this.#dispatcher.close();
+		}
 	}
 
 	async [Symbol.asyncDispose](): Promise<void> {
 		await this.close();
+	}
+
+	#assertOpen(): void {
+		if (this.#closed) {
+			throw new Error("S3Client is closed.");
+		}
 	}
 
 	/** @internal */
@@ -1367,6 +1390,8 @@ export default class S3Client {
 		contentHash: Buffer | undefined,
 		signal: AbortSignal | undefined,
 	) {
+		this.#assertOpen();
+
 		const url = buildRequestUrl(endpoint, bucket, region, pathWithoutBucket);
 		if (query) {
 			url.search = query;
@@ -1427,6 +1452,8 @@ export default class S3Client {
 		contentHash: Buffer | undefined,
 		signal?: AbortSignal,
 	): Promise<void> {
+		this.#assertOpen();
+
 		const bucket = this.#options.bucket;
 		const endpoint = this.#options.endpoint;
 		const region = this.#options.region;
@@ -1499,6 +1526,8 @@ export default class S3Client {
 		rangeEndExclusive: number | undefined,
 		signal?: AbortSignal,
 	): ReadableStream<Uint8Array> {
+		this.#assertOpen();
+
 		const bucket = this.#options.bucket;
 		const endpoint = this.#options.endpoint;
 		const region = this.#options.region;

@@ -209,6 +209,39 @@ const client = new S3Client({
 
 Popular S3 provider missing? Open an issue or file a PR!
 
+### Custom TLS and dispatcher
+
+`S3Client` uses an Undici [`Dispatcher`](https://undici.nodejs.org/#/docs/api/Dispatcher) for its HTTP requests. You can provide your own dispatcher to configure TLS, proxies, connection pooling, or other Undici connection behavior. A Node.js `https.Agent` is not an Undici dispatcher and cannot be passed here.
+
+Use an Undici `Agent` to configure a client certificate and a private root CA:
+
+```js
+import { readFileSync } from "node:fs";
+import { Agent } from "undici";
+import { S3Client } from "lean-s3";
+
+const dispatcher = new Agent({
+    connect: {
+        ca: readFileSync("/path/to/root-ca.pem"),
+        cert: readFileSync("/path/to/client-cert.pem"),
+        key: readFileSync("/path/to/client-key.pem"),
+    },
+});
+
+const client = new S3Client({
+    endpoint: "https://s3.example.com",
+    region: "us-east-1",
+    bucket: "my-bucket",
+    accessKeyId: process.env.S3_ACCESS_KEY_ID,
+    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+    dispatcher,
+});
+```
+
+The `connect` options are Node.js TLS options: `ca` specifies trusted server certificate authorities, while `cert` and `key` identify the client for mutual TLS. Providing a custom CA changes which certificates are trusted; include the system CAs too if you need both public and private trust. Keep TLS certificate verification enabled.
+
+When you provide a dispatcher, you retain ownership of it. Closing the `S3Client` prevents further requests through that client but does not close the dispatcher; close it yourself when it is no longer shared or needed. The default dispatcher, created when this option is omitted, is owned and closed by the client.
+
 ## Tested On
 To ensure compability across various providers and self-hosted services, all tests are run on:
 - Amazon AWS S3

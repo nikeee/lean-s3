@@ -2,7 +2,9 @@ import { describe, test } from "node:test";
 import { expect } from "expect";
 
 import { buildRequestUrl } from "./url.ts";
+import { encodeObjectKey } from "./encode.ts";
 import type { BucketName, Endpoint, ObjectKey, Region } from "./branded.ts";
+import { sweepChars } from "./test/sigv4.ts";
 
 void describe("buildRequestUrl", () => {
 	void test("aws", () => {
@@ -179,5 +181,31 @@ void describe("buildRequestUrl", () => {
 				"https://mybucket.s3.us-west-1.amazonaws.com/weird/key/with/slashes/%3Akey%2Bwith%28some%29characters%2Cthat%27need%2Aescaping%20%60.json",
 			),
 		);
+	});
+
+	void test("endpoint path is kept", () => {
+		expect(
+			buildRequestUrl(
+				"https://example.com/some/prefix/" as Endpoint,
+				"mybucket" as BucketName,
+				"auto" as Region,
+				"a[1].txt" as ObjectKey,
+			),
+		).toStrictEqual(new URL("https://example.com/some/prefix/mybucket/a%5B1%5D.txt"));
+	});
+
+	void test("path is sent exactly as encoded, the URL parser doesn't rewrite it", () => {
+		for (const c of sweepChars) {
+			const key = `folder/a${c}b/${c}.txt`;
+			expect({
+				c,
+				pathname: buildRequestUrl(
+					"https://{bucket}.s3.{region}.amazonaws.com" as Endpoint,
+					"mybucket" as BucketName,
+					"us-west-1" as Region,
+					key as ObjectKey,
+				).pathname,
+			}).toStrictEqual({ c, pathname: `/${encodeObjectKey(key)}` });
+		}
 	});
 });

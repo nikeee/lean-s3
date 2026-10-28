@@ -1,6 +1,11 @@
 import { describe, test } from "node:test";
 import { expect } from "expect";
-import { getContentDispositionHeader as encode } from "./encode.ts";
+import {
+	encodeObjectKey,
+	encodeURIComponentExtended,
+	getContentDispositionHeader as encode,
+} from "./encode.ts";
+import { sigV4UriEncode, sweepChars } from "./test/sigv4.ts";
 
 void describe("encoding", () => {
 	void test("RFC5987", () => {
@@ -61,5 +66,32 @@ void describe("encoding", () => {
 		).toBe(
 			`attachment;filename="emoji-%F0%9F%92%BE.zip";filename*=UTF-8''emoji-%F0%9F%92%BE.zip`,
 		);
+	});
+});
+
+void describe("encodeURIComponentExtended", () => {
+	void test("matches SigV4 UriEncode for every ASCII character and some non-ASCII ones", () => {
+		for (const c of [...sweepChars, "/"]) {
+			const value = `a${c}b`;
+			expect({ c, encoded: encodeURIComponentExtended(value) }).toStrictEqual({
+				c,
+				encoded: sigV4UriEncode(value),
+			});
+		}
+	});
+});
+
+void describe("encodeObjectKey", () => {
+	void test("matches SigV4 UriEncode for every ASCII character and some non-ASCII ones", () => {
+		for (const c of sweepChars) {
+			const key = `prefix/a${c}b/${c}`;
+			const expected = `prefix/a${sigV4UriEncode(c)}b/${sigV4UriEncode(c)}`;
+			expect({ c, encoded: encodeObjectKey(key) }).toStrictEqual({ c, encoded: expected });
+		}
+	});
+
+	void test("keeps slashes, including leading, trailing and repeated ones", () => {
+		expect(encodeObjectKey("a//b/")).toBe("a//b/");
+		expect(encodeObjectKey("/a")).toBe("/a");
 	});
 });

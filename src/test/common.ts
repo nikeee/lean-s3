@@ -849,6 +849,39 @@ export function runTests(
 			}
 		});
 
+		void test("key containing characters reserved by SigV4 (write, list, presign)", async () => {
+			const testId = crypto.randomUUID();
+
+			// the folder is used as list prefix, `encodeURIComponent` leaves these characters raw
+			const folder = `${runId}/${testId} !'()*`;
+			// s3mock runs on Tomcat, which rejects paths containing `\` (even encoded as `%5C`) with 400
+			const backslash = implementation === "s3mock" ? "" : "\\";
+			// no "\r": XML parsers normalize it to "\n", so `list` would return a different key
+			const key = `${folder}/invoice[2] $&;=@|%~ a${backslash}b\tc\nd Ðø😀.txt`;
+			const f = client.file(key);
+			const content = crypto.randomUUID();
+			await f.write(content);
+			try {
+				expect(await f.exists()).toBe(true);
+				expect(await f.text()).toBe(content);
+
+				const listed = await client.list({ prefix: `${folder}/` });
+				expect(listed.contents.map(c => c.key)).toStrictEqual([key]);
+
+				// presigned URLs are used by browsers etc.
+				const putUrl = client.presign(key, { method: "PUT" });
+				const putRes = await fetch(putUrl, { method: "PUT", body: content + content });
+				expect(putRes.ok).toBe(true);
+
+				const getUrl = client.presign(key, { response: { cacheControl: "no-cache" } });
+				const getRes = await fetch(getUrl);
+				expect(getRes.ok).toBe(true);
+				expect(await getRes.text()).toBe(content + content);
+			} finally {
+				await f.delete();
+			}
+		});
+
 		void test(".write() with content-type", async () => {
 			const testId = crypto.randomUUID();
 

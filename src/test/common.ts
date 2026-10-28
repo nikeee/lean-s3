@@ -49,6 +49,22 @@ async function expectBucketCorsEventually(client: S3Client, expectedRules: unkno
 	}
 }
 
+/** Same as above, but for the case that the CORS config was deleted and the read should fail. */
+async function expectNoBucketCorsEventually(client: S3Client) {
+	const maxAttempts = 6;
+	for (let attempt = 1; ; ++attempt) {
+		try {
+			await expect(client.getBucketCors()).rejects.toThrow();
+			return;
+		} catch (e) {
+			if (attempt >= maxAttempts) {
+				throw e;
+			}
+			await sleep(500 * 2 ** (attempt - 1));
+		}
+	}
+}
+
 export type S3Implementation =
 	| "aws"
 	| "hetzner"
@@ -1281,7 +1297,7 @@ export function runTests(
 			]);
 			await client.deleteBucketCors();
 
-			void expect(client.getBucketCors()).rejects.toThrow();
+			await expectNoBucketCorsEventually(client);
 		});
 	});
 }

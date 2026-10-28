@@ -42,6 +42,7 @@ jobs:
     needs: test
 
     strategy:
+      max-parallel: 1
       matrix:
         node-version: [22.x, 24.x]
 

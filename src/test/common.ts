@@ -874,8 +874,10 @@ export function runTests(
 			const folder = `${runId}/${testId} !'()*`;
 			// s3mock runs on Tomcat, which rejects paths containing `\` (even encoded as `%5C`) with 400
 			const backslash = implementation === "s3mock" ? "" : "\\";
+			// Backblaze rejects file names containing characters with codes less than 32
 			// no "\r": XML parsers normalize it to "\n", so `list` would return a different key
-			const key = `${folder}/invoice[2] $&;=@|%~ a${backslash}b\tc\nd Ðø😀.txt`;
+			const [tab, newline] = implementation === "backblaze" ? ["", ""] : ["\t", "\n"];
+			const key = `${folder}/invoice[2] $&;=@|%~ a${backslash}b${tab}c${newline}d Ðø😀.txt`;
 			const f = client.file(key);
 			const content = crypto.randomUUID();
 			await f.write(content);

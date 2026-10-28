@@ -854,8 +854,10 @@ export function runTests(
 
 			// the folder is used as list prefix, `encodeURIComponent` leaves these characters raw
 			const folder = `${runId}/${testId} !'()*`;
+			// s3mock runs on Tomcat, which rejects paths containing `\` (even encoded as `%5C`) with 400
+			const backslash = implementation === "s3mock" ? "" : "\\";
 			// no "\r": XML parsers normalize it to "\n", so `list` would return a different key
-			const key = `${folder}/invoice[2] $&;=@|%~ a\\b\tc\nd Ðø😀.txt`;
+			const key = `${folder}/invoice[2] $&;=@|%~ a${backslash}b\tc\nd Ðø😀.txt`;
 			const f = client.file(key);
 			const content = crypto.randomUUID();
 			await f.write(content);

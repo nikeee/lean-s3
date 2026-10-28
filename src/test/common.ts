@@ -3,6 +3,7 @@
  */
 
 import { describe, test } from "node:test";
+import { setTimeout as sleep } from "node:timers/promises";
 import { expect } from "expect";
 
 import { S3Client, S3Error, S3Stat } from "../index.ts";
@@ -29,6 +30,23 @@ async function expectS3Error(
 	expect(s3Error.status).toBe(status);
 	expect(s3Error.name).toEqual(name ?? expect.any(String));
 	expect(s3Error.message).toEqual(message ?? expect.any(String));
+}
+
+/** Bucket config reads can lag behind writes (e.g. on AWS), so retry with exponential backoff. */
+async function expectBucketCorsEventually(client: S3Client, expectedRules: unknown) {
+	const maxAttempts = 6;
+	for (let attempt = 1; ; ++attempt) {
+		const { rules } = await client.getBucketCors();
+		try {
+			expect(rules).toStrictEqual(expectedRules);
+			return;
+		} catch (e) {
+			if (attempt >= maxAttempts) {
+				throw e;
+			}
+			await sleep(500 * 2 ** (attempt - 1));
+		}
+	}
 }
 
 export type S3Implementation =
@@ -1208,8 +1226,7 @@ export function runTests(
 				},
 			]);
 
-			let { rules } = await client.getBucketCors();
-			expect(rules).toStrictEqual([
+			await expectBucketCorsEventually(client, [
 				{
 					allowedMethods: ["GET"],
 					allowedOrigins: ["https://example.com"],
@@ -1229,8 +1246,7 @@ export function runTests(
 				},
 			]);
 
-			rules = (await client.getBucketCors()).rules;
-			expect(rules).toStrictEqual([
+			await expectBucketCorsEventually(client, [
 				{
 					allowedMethods: ["GET"],
 					allowedOrigins: ["https://example.com"],
@@ -1251,8 +1267,7 @@ export function runTests(
 				},
 			]);
 
-			rules = (await client.getBucketCors()).rules;
-			expect(rules).toStrictEqual([
+			await expectBucketCorsEventually(client, [
 				{
 					allowedMethods: ["GET"],
 					allowedOrigins: ["https://example.com"],

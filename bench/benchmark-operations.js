@@ -496,31 +496,27 @@ summary(() => {
     });
 
     group(() => {
-      // Escaping the chars of https://github.com/nikeee/lean-s3/issues/61:
-      // chained replaceAll (7 full scans) vs. single test + one-pass replace.
+      // Escaping the chars that `encodeURIComponent` leaves raw, but SigV4 requires to be encoded:
+      // chained replaceAll (5 full scans) vs. single test + one-pass replace.
       // Most keys contain none of these chars, so the test acts as a no-op fast path.
 
-      const extendedChars = /[:+(),'*]/;
-      const extendedCharsGlobal = /[:+(),'*]/g;
+      const extendedChars = /[!'()*]/;
+      const extendedCharsGlobal = /[!'()*]/g;
       const extendedCharMap = {
-        ":": "%3A",
-        "+": "%2B",
+        "!": "%21",
+        "'": "%27",
         "(": "%28",
         ")": "%29",
-        ",": "%2C",
-        "'": "%27",
         "*": "%2A",
       };
       const replaceExtendedChar = c => extendedCharMap[c];
 
       function escapeChained(value) {
         return value
-          .replaceAll(":", "%3A")
-          .replaceAll("+", "%2B")
+          .replaceAll("!", "%21")
+          .replaceAll("'", "%27")
           .replaceAll("(", "%28")
           .replaceAll(")", "%29")
-          .replaceAll(",", "%2C")
-          .replaceAll("'", "%27")
           .replaceAll("*", "%2A");
       }
 
@@ -537,7 +533,7 @@ summary(() => {
       ];
       const dirtyKeys = [
         "some-bucket/report (final), v2 + notes.pdf",
-        "it's-a-key:with*many(special)chars,everywhere",
+        "it's-a-key:with*many(special)chars,everywhere!",
         "a:b+c(d)e,f'g*h",
       ];
 

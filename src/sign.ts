@@ -4,7 +4,7 @@ import type { AmzDate } from "./AmzDate.ts";
 import type { HttpMethod, PresignableHttpMethod } from "./index.ts";
 
 // Spec:
-// https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
+// https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_sigv-create-signed-request.html
 
 export function deriveSigningKey(date: string, region: string, secretAccessKey: string): Buffer {
 	const key = `AWS4${secretAccessKey}`;

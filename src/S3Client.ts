@@ -799,7 +799,7 @@ export default class S3Client {
 				throw new TypeError("`delimiter` must be a `string`.");
 			}
 
-			query += `delimiter=${encodeURIComponent(options.delimiter)}&`;
+			query += `delimiter=${encodeURIComponentExtended(options.delimiter)}&`;
 		}
 
 		// we don't support encoding-type
@@ -809,7 +809,7 @@ export default class S3Client {
 				throw new TypeError("`keyMarker` must be a `string`.");
 			}
 
-			query += `key-marker=${encodeURIComponent(options.keyMarker)}&`;
+			query += `key-marker=${encodeURIComponentExtended(options.keyMarker)}&`;
 		}
 		if (typeof options.maxUploads !== "undefined") {
 			if (typeof options.maxUploads !== "number") {
@@ -827,7 +827,7 @@ export default class S3Client {
 				throw new TypeError("`prefix` must be a `string`.");
 			}
 
-			query += `prefix=${encodeURIComponent(options.prefix)}&`;
+			query += `prefix=${encodeURIComponentExtended(options.prefix)}&`;
 		}
 
 		if (options.uploadIdMarker) {
@@ -835,7 +835,7 @@ export default class S3Client {
 				throw new TypeError("`uploadIdMarker` must be a `string`.");
 			}
 
-			query += `upload-id-marker=${encodeURIComponent(options.uploadIdMarker)}&`;
+			query += `upload-id-marker=${encodeURIComponentExtended(options.uploadIdMarker)}&`;
 		}
 
 		query += "uploads="; // MinIO requires the = to be present; sorts after all other params
@@ -1213,7 +1213,7 @@ export default class S3Client {
 				throw new TypeError("`continuationToken` must be a `string`.");
 			}
 
-			query += `continuation-token=${encodeURIComponent(options.continuationToken)}&`;
+			query += `continuation-token=${encodeURIComponentExtended(options.continuationToken)}&`;
 		}
 
 		if (typeof options.delimiter !== "undefined") {
@@ -1221,7 +1221,7 @@ export default class S3Client {
 				throw new TypeError("`delimiter` must be a `string`.");
 			}
 			// always encoded: the canonical query string requires "/" as %2F in values
-			query += `delimiter=${encodeURIComponent(options.delimiter)}&`;
+			query += `delimiter=${encodeURIComponentExtended(options.delimiter)}&`;
 		}
 
 		query += "list-type=2";
@@ -1244,7 +1244,7 @@ export default class S3Client {
 				throw new TypeError("`prefix` must be a `string`.");
 			}
 
-			query += `&prefix=${encodeURIComponent(options.prefix)}`;
+			query += `&prefix=${encodeURIComponentExtended(options.prefix)}`;
 		}
 
 		if (typeof options.startAfter !== "undefined") {
@@ -1252,7 +1252,7 @@ export default class S3Client {
 				throw new TypeError("`startAfter` must be a `string`.");
 			}
 
-			query += `&start-after=${encodeURIComponent(options.startAfter)}`;
+			query += `&start-after=${encodeURIComponentExtended(options.startAfter)}`;
 		}
 
 		const response = await this[kSignedRequest](
@@ -1739,7 +1739,7 @@ export function buildSearchParams(
 	let res = "";
 
 	if (acl) {
-		res += `X-Amz-Acl=${encodeURIComponent(acl)}&`;
+		res += `X-Amz-Acl=${encodeURIComponentExtended(acl)}&`;
 	}
 
 	res += "X-Amz-Algorithm=AWS4-HMAC-SHA256";
@@ -1755,10 +1755,10 @@ export function buildSearchParams(
 	res += `&X-Amz-Expires=${expiresIn}`; // number -> no encoding
 
 	if (sessionToken) {
-		res += `&X-Amz-Security-Token=${encodeURIComponent(sessionToken)}`;
+		res += `&X-Amz-Security-Token=${encodeURIComponentExtended(sessionToken)}`;
 	}
 
-	res += `&X-Amz-SignedHeaders=${encodeURIComponent(headerList)}`;
+	res += `&X-Amz-SignedHeaders=${encodeURIComponentExtended(headerList)}`;
 
 	if (storageClass) {
 		res += `&X-Amz-Storage-Class=${storageClass}`;

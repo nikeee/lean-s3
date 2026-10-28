@@ -11,6 +11,7 @@ import {
 } from "./S3Client.ts";
 import S3Error from "./S3Error.ts";
 import { getResponseError } from "./error.ts";
+import { encodeURIComponentExtended } from "./encode.ts";
 import type { BucketName, ObjectKey } from "./branded.ts";
 import type { ChecksumAlgorithm, ChecksumType, StorageClass } from "./index.ts";
 
@@ -92,7 +93,7 @@ export default class S3MultipartUpload {
 			this.#bucket,
 			"PUT",
 			this.#key,
-			`partNumber=${partNumber}&uploadId=${encodeURIComponent(this.#uploadId)}`,
+			`partNumber=${partNumber}&uploadId=${encodeURIComponentExtended(this.#uploadId)}`,
 			data,
 			undefined,
 			undefined,
@@ -142,10 +143,10 @@ export default class S3MultipartUpload {
 			if (typeof options.partNumberMarker !== "string") {
 				throw new TypeError("`partNumberMarker` must be a `string`.");
 			}
-			query += `&part-number-marker=${encodeURIComponent(options.partNumberMarker)}`;
+			query += `&part-number-marker=${encodeURIComponentExtended(options.partNumberMarker)}`;
 		}
 
-		query += `&uploadId=${encodeURIComponent(this.#uploadId)}`;
+		query += `&uploadId=${encodeURIComponentExtended(this.#uploadId)}`;
 
 		const [region, endpoint] = this.#client[kGetEffectiveParams]({});
 
@@ -236,7 +237,7 @@ export default class S3MultipartUpload {
 			this.#bucket,
 			"POST",
 			this.#key,
-			`uploadId=${encodeURIComponent(this.#uploadId)}`,
+			`uploadId=${encodeURIComponentExtended(this.#uploadId)}`,
 			body,
 			undefined,
 			undefined,
@@ -285,7 +286,7 @@ export default class S3MultipartUpload {
 			this.#bucket,
 			"DELETE",
 			this.#key,
-			`uploadId=${encodeURIComponent(this.#uploadId)}`,
+			`uploadId=${encodeURIComponentExtended(this.#uploadId)}`,
 			undefined,
 			undefined,
 			undefined,

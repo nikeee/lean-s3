@@ -19,8 +19,8 @@ void describe("deriveSigningKey", () => {
 
 void describe("signCanonicalDataHash", () => {
 	/**
-	 * Taken from:
-	 * https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
+	 * Taken from (the page was removed from the AWS docs, archived copy):
+	 * https://web.archive.org/web/20251223152050/https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
 	 */
 	void test("spec-sample", () => {
 		const canonicalData =

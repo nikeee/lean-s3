@@ -849,6 +849,48 @@ export function runTests(
 			}
 		});
 
+		void test("keys containing characters reserved by SigV4 (write, list, presign)", async () => {
+			const testId = crypto.randomUUID();
+
+			for (const key of [
+				"invoice[2].pdf",
+				"receipt-3$.pdf",
+				"report_2025[01].PDF",
+				"!&;=@|%~.txt",
+				// no "\r": XML parsers normalize it to "\n", so `list` would return a different key
+				"a\\b\tc\nd.txt",
+				"Ðøá 😀.txt",
+			]) {
+				// the folder is used as list prefix, `encodeURIComponent` leaves these characters raw
+				const folder = `${runId}/${testId} !'()*`;
+				const fullKey = `${folder}/${key}`;
+				const f = client.file(fullKey);
+				const content = crypto.randomUUID();
+				await f.write(content);
+				try {
+					expect(await f.exists()).toBe(true);
+					expect(await f.text()).toBe(content);
+
+					const listed = await client.list({ prefix: `${folder}/` });
+					expect(listed.contents.map(c => c.key)).toStrictEqual([fullKey]);
+
+					// presigned URLs are used by browsers etc.
+					const putUrl = client.presign(fullKey, { method: "PUT" });
+					const putRes = await fetch(putUrl, { method: "PUT", body: content + content });
+					expect(putRes.ok).toBe(true);
+
+					const getUrl = client.presign(fullKey, {
+						response: { cacheControl: "no-cache" },
+					});
+					const getRes = await fetch(getUrl);
+					expect(getRes.ok).toBe(true);
+					expect(await getRes.text()).toBe(content + content);
+				} finally {
+					await f.delete();
+				}
+			}
+		});
+
 		void test(".write() with content-type", async () => {
 			const testId = crypto.randomUUID();
 

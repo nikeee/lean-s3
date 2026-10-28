@@ -1,5 +1,5 @@
 import type { BucketName, Endpoint, ObjectKey, Region } from "./branded.ts";
-import { escapeExtendedChars } from "./encode.ts";
+import { encodeObjectKey } from "./encode.ts";
 
 export function buildRequestUrl(
 	endpoint: Endpoint,
@@ -19,14 +19,12 @@ export function buildRequestUrl(
 
 	const pathPrefix = result.pathname.endsWith("/") ? result.pathname : `${result.pathname}/`;
 
-	const pathSuffix = replacedBucket
-		? normalizeKey(path)
-		: `${normalizedBucket}/${normalizeKey(path)}`;
+	const encodedKey = encodeObjectKey(normalizeKey(path));
+	const pathSuffix = replacedBucket ? encodedKey : `${normalizedBucket}/${encodedKey}`;
 
-	// Escape literal "%" first, otherwise the URL parser treats it as the start of a percent-encoding
-	// and the server would decode it, addressing a different key.
-	// See: https://github.com/nikeee/lean-s3/issues/61 for the extended characters
-	result.pathname = pathPrefix + escapeExtendedChars(pathSuffix.replaceAll("%", "%25"));
+	// The pathname setter keeps existing percent-encodings as they are, so the path we sign (`url.pathname`) is exactly
+	// the path that is sent.
+	result.pathname = pathPrefix + pathSuffix;
 
 	return result;
 }

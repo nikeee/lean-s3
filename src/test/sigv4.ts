@@ -76,12 +76,13 @@ function sign(
 
 /**
  * Computes the signature the server expects for a presigned URL (only `host` signed, unsigned payload).
+ * @returns The expected signature and the one the URL was signed with.
  */
 export function computePresignedUrlSignature(
 	presignedUrl: string,
 	method: string,
 	secretAccessKey: string,
-): string {
+): { expected: string; actual: string } {
 	const url = new URL(presignedUrl);
 
 	const canonicalRequest = [
@@ -95,12 +96,15 @@ export function computePresignedUrlSignature(
 
 	const credential = url.searchParams.get("X-Amz-Credential") ?? "";
 	const credentialScope = credential.substring(credential.indexOf("/") + 1);
-	return sign(
-		canonicalRequest,
-		url.searchParams.get("X-Amz-Date") ?? "",
-		credentialScope,
-		secretAccessKey,
-	);
+	return {
+		expected: sign(
+			canonicalRequest,
+			url.searchParams.get("X-Amz-Date") ?? "",
+			credentialScope,
+			secretAccessKey,
+		),
+		actual: url.searchParams.get("X-Amz-Signature") ?? "",
+	};
 }
 
 /**

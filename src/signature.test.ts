@@ -4,16 +4,20 @@ import { expect } from "expect";
 import { MockAgent } from "undici";
 
 import { S3Client } from "./index.ts";
-import { computeAuthorizationHeaderSignature } from "./test/sigv4.ts";
+import { computeAuthorizationHeaderSignature, computePresignedUrlSignature } from "./test/sigv4.ts";
 
 const origin = "https://s3.example.com";
+const secretAccessKey = "sample-secret-key";
+
+// Characters that `encodeURIComponent` or the URL parser leave raw or rewrite, plus some others
+const weird = "a!b'c(d)e*f [g]$h&i=j;k@l|m%n+o,p:q\\r\ts\nt/Ð😀";
 
 type CapturedRequest = { url: string; method: string; headers: Record<string, string> };
 
 /**
  * Creates a client whose requests are answered by a mock server, which records them.
  */
-function createClient(responseBody: string, statusCode = 200) {
+function createClient(responseBody = "") {
 	const requests: CapturedRequest[] = [];
 
 	const dispatcher = new MockAgent();
@@ -27,14 +31,14 @@ function createClient(responseBody: string, statusCode = 200) {
 				method: opts.method,
 				headers: opts.headers as Record<string, string>,
 			});
-			return { statusCode, data: responseBody };
+			return { statusCode: 200, data: responseBody };
 		})
 		.persist();
 
 	const client = new S3Client({
 		endpoint: origin,
 		accessKeyId: "sample-key-id",
-		secretAccessKey: "sample-secret-key",
+		secretAccessKey,
 		region: "auto",
 		bucket: "mybucket",
 		dispatcher,
@@ -42,22 +46,50 @@ function createClient(responseBody: string, statusCode = 200) {
 	return { client, requests };
 }
 
-function expectValidSignature(request: CapturedRequest | undefined) {
-	expect(request).toBeDefined();
-	const { url, method, headers } = request as CapturedRequest;
+/**
+ * Returns the URL of the only recorded request after checking its signature against what the server computes.
+ */
+function expectSingleValidRequest(requests: CapturedRequest[]): URL {
+	expect(requests).toHaveLength(1);
+	const { url, method, headers } = requests[0];
 	const { expected, actual } = computeAuthorizationHeaderSignature(
 		url,
 		method,
 		headers,
-		"sample-secret-key",
+		secretAccessKey,
 	);
 	expect(actual).toBe(expected);
+	return new URL(url);
 }
 
-// Characters that `encodeURIComponent` leaves raw, but SigV4 requires to be percent-encoded, plus some others
-const weird = "a!b'c(d)e*f [g]$h&i=j;k@l|m%n+o,p:q/Ð😀";
+void describe("signatures match what the server computes", () => {
+	void test("presign", () => {
+		const { client } = createClient();
 
-void describe("signed requests encode query values as required by SigV4", () => {
+		for (const method of ["GET", "PUT"] as const) {
+			const url = client.presign(`key/${weird}`, {
+				method,
+				response: {
+					cacheControl: "public, max-age=60",
+					contentDisposition: { type: "attachment", filename: weird },
+				},
+			});
+
+			expect(decodeURIComponent(new URL(url).pathname)).toBe(`/mybucket/key/${weird}`);
+			const { expected, actual } = computePresignedUrlSignature(url, method, secretAccessKey);
+			expect(actual).toBe(expected);
+		}
+	});
+
+	void test("object request", async () => {
+		const { client, requests } = createClient();
+
+		await client.file(`key/${weird}`).exists();
+
+		const url = expectSingleValidRequest(requests);
+		expect(decodeURIComponent(url.pathname)).toBe(`/mybucket/key/${weird}`);
+	});
+
 	void test("list", async () => {
 		const { client, requests } = createClient(
 			"<ListBucketResult><Name>mybucket</Name></ListBucketResult>",
@@ -70,13 +102,11 @@ void describe("signed requests encode query values as required by SigV4", () => 
 			delimiter: weird,
 		});
 
-		expect(requests).toHaveLength(1);
-		const url = new URL(requests[0].url);
+		const url = expectSingleValidRequest(requests);
 		expect(url.searchParams.get("prefix")).toBe(weird);
 		expect(url.searchParams.get("start-after")).toBe(weird);
 		expect(url.searchParams.get("continuation-token")).toBe(weird);
 		expect(url.searchParams.get("delimiter")).toBe(weird);
-		expectValidSignature(requests[0]);
 	});
 
 	void test("listMultipartUploads", async () => {
@@ -91,38 +121,21 @@ void describe("signed requests encode query values as required by SigV4", () => 
 			delimiter: weird,
 		});
 
-		expect(requests).toHaveLength(1);
-		const url = new URL(requests[0].url);
+		const url = expectSingleValidRequest(requests);
 		expect(url.searchParams.get("prefix")).toBe(weird);
 		expect(url.searchParams.get("key-marker")).toBe(weird);
 		expect(url.searchParams.get("upload-id-marker")).toBe(weird);
 		expect(url.searchParams.get("delimiter")).toBe(weird);
-		expectValidSignature(requests[0]);
 	});
 
-	void test("multipart upload with an upload id that needs encoding", async () => {
+	void test("multipart upload parts", async () => {
 		const { client, requests } = createClient("<ListPartsResult></ListPartsResult>");
 
-		const upload = client.multipartUpload(`key/${weird}`, weird);
-		await upload.parts({ partNumberMarker: weird });
+		await client.multipartUpload(`key/${weird}`, weird).parts({ partNumberMarker: weird });
 
-		expect(requests).toHaveLength(1);
-		const url = new URL(requests[0].url);
+		const url = expectSingleValidRequest(requests);
 		expect(decodeURIComponent(url.pathname)).toBe(`/mybucket/key/${weird}`);
 		expect(url.searchParams.get("uploadId")).toBe(weird);
 		expect(url.searchParams.get("part-number-marker")).toBe(weird);
-		expectValidSignature(requests[0]);
-	});
-
-	void test("object requests with keys that need encoding", async () => {
-		const { client, requests } = createClient("");
-
-		await client.file(`key/${weird}`).exists();
-
-		expect(requests).toHaveLength(1);
-		expect(decodeURIComponent(new URL(requests[0].url).pathname)).toBe(
-			`/mybucket/key/${weird}`,
-		);
-		expectValidSignature(requests[0]);
 	});
 });

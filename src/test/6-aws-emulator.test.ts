@@ -35,7 +35,7 @@ void describe("aws-emulator", async () => {
 		throw new Error("Could not read aws-emulator credentials");
 	}
 
-	// The emulator only supports path-style requests, so we use 127.0.0.1 instead of a host name
+	// The emulator's certificate is only valid for localhost and 127.0.0.1
 	const endpoint = `https://127.0.0.1:${s3.getMappedPort(PORT)}`;
 	const region = "us-east-1";
 	const bucket = "test-bucket-aws-emulator";
